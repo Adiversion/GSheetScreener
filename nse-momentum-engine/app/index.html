@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, viewport-fit=contain" />
   <meta name="theme-color" content="#090D14" />
   <meta name="description" content="NSE Institutional Momentum Terminal – Stage-2 Breakouts & Two-Tier GTT Engine" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="NSE Signal" />
+  <meta name="format-detection" content="telephone=no, date=no, address=no" />
   <title>NSE Momentum Terminal</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.svg" />
@@ -67,7 +68,10 @@
         <span class="dot"></span>
         <span id="offlineText">Online</span>
       </div>
-      <button class="btn-guide" id="btnOpenGlossary" title="Strategy Guide & Terminology">📖 Guide</button>
+      <button class="btn-guide" id="btnOpenGlossary" title="Strategy Guide & Terminology" aria-label="Strategy Guide and Terminology">
+        <span class="guide-icon" aria-hidden="true">📖</span>
+        <span class="guide-label">Guide</span>
+      </button>
       <button class="btn-refresh" id="btnRefresh" title="Refresh data" aria-label="Refresh">🔄</button>
     </div>
   </div>
@@ -342,18 +346,20 @@
 
             <!-- Virtual / Responsive Table Container -->
             <div class="table-scroll-container watchlist-table-wrap">
-              <table class="leader-table">
-                <thead>
-                  <tr>
-                    <th style="width:36px;">#</th>
-                    <th>Security</th>
-                    <th>CMP</th>
-                    <th>CMS</th>
-                    <th>RSI</th>
-                    <th style="text-align:right;">Action</th>
+              <!-- Explicit roles keep this a semantic table even when the phone
+                   card layout below switches the display type to grid/block. -->
+              <table class="leader-table" role="table">
+                <thead role="rowgroup">
+                  <tr role="row">
+                    <th class="cell-rank" scope="col">#</th>
+                    <th scope="col">Security</th>
+                    <th scope="col">CMP</th>
+                    <th class="cell-cms" scope="col">CMS</th>
+                    <th class="cell-rsi" scope="col">RSI</th>
+                    <th class="cell-action" scope="col">Action</th>
                   </tr>
                 </thead>
-                <tbody id="allStocksBody">
+                <tbody id="allStocksBody" role="rowgroup">
                   <!-- Populated dynamically by JS -->
                 </tbody>
               </table>

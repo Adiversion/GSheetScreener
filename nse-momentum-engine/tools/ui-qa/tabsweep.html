@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>tabsweep</title></head>
+<body style="margin:0">
+<pre id="out">pending</pre>
+<iframe id="f" src="../../app/index.html" style="border:0;height:1400px"></iframe>
+<script>
+const W = parseInt(new URLSearchParams(location.search).get('w') || '1366', 10);
+const f = document.getElementById('f');
+f.style.width = W + 'px';
+
+function tabOf(d) {
+  const p = d.querySelector('.tab-panel.active');
+  return p ? p.id.replace('tab', '') : null;
+}
+
+function check(d, w, vw) {
+  const de = d.documentElement;
+  const res = { canScrollH: false, overflowPx: de.scrollWidth - de.clientWidth, offscreen: [] };
+
+  // honest test: can the page actually scroll sideways?
+  w.scrollTo(9999, 0);
+  res.canScrollH = w.scrollX > 0;
+  w.scrollTo(0, 0);
+  if (!res.canScrollH) { de.scrollLeft = 9999; res.canScrollH = de.scrollLeft > 0; de.scrollLeft = 0; }
+
+  // interactive controls pushed outside the viewport
+  d.querySelectorAll('button, a, input, select, textarea').forEach(el => {
+    const cs = w.getComputedStyle(el);
+    if (cs.display === 'none' || cs.visibility === 'hidden') return;
+    // ignore anything inside a horizontally scrollable container (intentional)
+    let p = el.parentElement, inScroller = false;
+    while (p && p !== d.body) {
+      const pcs = w.getComputedStyle(p);
+      if (pcs.overflowX === 'auto' || pcs.overflowX === 'scroll') { inScroller = true; break; }
+      p = p.parentElement;
+    }
+    if (inScroller) return;
+    const b = el.getBoundingClientRect();
+    if (b.width === 0) return;
+    if (b.right > vw + 1 || b.left < -1) {
+      res.offscreen.push((el.id || el.className || el.tagName).toString().slice(0, 28) +
+        '@' + Math.round(b.left) + '..' + Math.round(b.right));
+    }
+  });
+  res.offscreen = res.offscreen.slice(0, 4);
+  return res;
+}
+
+function run() {
+  const d = f.contentDocument, w = f.contentWindow;
+  if (!d || !d.querySelector('.leader-table tbody tr')) { setTimeout(run, 800); return; }
+  const vw = d.documentElement.clientWidth;
+  const out = { w: W, vw, tabs: {} };
+  const tabs = ['Signal', 'Portfolio', 'History', 'Settings'];
+  let i = 0;
+  (function next() {
+    if (i >= tabs.length) {
+      document.getElementById('out').textContent = 'TABS:' + JSON.stringify(out);
+      return;
+    }
+    const name = tabs[i++];
+    const btn = d.querySelector(`.desktop-tab-btn[data-tab="${name}"]`) ||
+                d.querySelector(`[data-tab="${name}"]`);
+    if (btn) btn.click();
+    setTimeout(() => {
+      const active = tabOf(d);
+      out.tabs[name] = Object.assign({ active }, check(d, w, vw));
+      next();
+    }, 700);
+  })();
+}
+setTimeout(run, 4000);
+</script>
+</body>
+</html>

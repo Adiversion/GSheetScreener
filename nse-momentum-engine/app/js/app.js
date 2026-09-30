@@ -299,15 +299,17 @@ function renderMarketRegime(regime) {
 
   if (!regime) {
     if (banner) banner.style.display = 'none';
-    if (ticker) ticker.style.display = 'none';
+    // Toggle a class, never an inline `display`: an inline value would beat the
+    // width-gated CSS rule and render the ticker off-screen on phones.
+    if (ticker) ticker.classList.remove('is-active');
     return;
   }
 
   const cmpStr = regime.nifty_cmp ? '₹' + Number(regime.nifty_cmp).toLocaleString('en-IN') : '–';
 
   if (ticker && tickerText) {
-    ticker.style.display = 'inline-flex';
-    ticker.className = 'header-regime';
+    // `is-active` is only allowed to show at >=1536px (see .header-regime).
+    ticker.className = 'header-regime is-active';
     if (regime.regime === 'BULL_MARKET') {
       ticker.classList.add('bull');
       tickerText.innerHTML = `🟢 NIFTY 500: ${cmpStr} &middot; BULL REGIME`;
@@ -1027,7 +1029,7 @@ function renderHistory() {
       const isSelected = m.date === (state.selectedDate || '2026-09-30');
       return `
         <div class="session-archive-item ${isSelected ? 'selected' : ''}" onclick="selectSessionDate('${m.date}'); switchTab('Signal');">
-          <div>
+          <div class="session-archive-main">
             <div class="session-archive-date">${m.is_today ? '🟢' : '📅'} ${m.display_date || m.date}</div>
             <div class="session-archive-meta">NSE EOD Confirmed Bhavcopy Snapshot</div>
           </div>
@@ -1568,8 +1570,8 @@ function renderAllStocksTable(stocks, userCapital) {
 
   if (filtered.length === 0) {
     tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align:center; padding:24px 12px; color:var(--text-dim);">
+      <tr role="row">
+        <td role="cell" colspan="6" style="text-align:center; padding:24px 12px; color:var(--text-dim);">
           🔍 No leaders match "${currentSearch || currentFilter}"
         </td>
       </tr>
@@ -1587,26 +1589,32 @@ function renderAllStocksTable(stocks, userCapital) {
 
     const tr = document.createElement('tr');
     tr.className = `stock-table-row ${isSelected ? 'selected' : ''}`;
+    // Explicit roles keep the row/cell semantics when the phone card layout
+    // switches these elements from table display types to grid/block.
+    tr.setAttribute('role', 'row');
+    // Symbol on its own line, badges + size hint stacked below it: keeps the
+    // Security column narrow enough that the table does not overflow on laptops.
     tr.innerHTML = `
-      <td style="font-weight:700; color:var(--text-dim);">${idx + 1}</td>
-      <td>
-        <div style="display:flex; flex-direction:column; gap:2px;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <strong style="color:var(--text); font-size:13px; letter-spacing:0.3px;">${s.SYMBOL}</strong>
-            ${s.IS_PRIME ? '<span class="meta-chip cms-chip" style="font-size:9px; padding:1px 5px;">PRIME</span>' : ''}
-            ${s.CIRCUIT_BAND ? `<span class="badge" style="font-size:9px; padding:1px 4px;">${s.CIRCUIT_BAND}%</span>` : ''}
-          </div>
-          <div style="font-size:10px; color:var(--text-dim);">
-            ${affordable ? `<span style="color:var(--accent)">✅ ${shares} ${shares === 1 ? 'Share' : 'Shares'}</span>` : `<span style="color:var(--text-dim)">Needs ₹${Math.ceil(cmp + 26)}</span>`}
-          </div>
+      <td class="cell-rank" role="cell">${idx + 1}</td>
+      <td class="cell-security" role="cell">
+        <div class="sec-head">
+          <strong class="sec-symbol">${s.SYMBOL}</strong>
+          ${s.IS_PRIME ? '<span class="meta-chip cms-chip sec-chip">PRIME</span>' : ''}
+          ${s.CIRCUIT_BAND ? `<span class="badge sec-chip">${s.CIRCUIT_BAND}%</span>` : ''}
+        </div>
+        <div class="sec-sub">
+          ${affordable ? `<span class="pos-text">✅ ${shares} ${shares === 1 ? 'Share' : 'Shares'}</span>` : `<span class="muted-text">Needs ₹${Math.ceil(cmp + 26)}</span>`}
         </div>
       </td>
-      <td style="font-weight:700;">${fmtINR(cmp)}</td>
-      <td><span class="meta-chip cms-chip" style="padding:2px 8px; font-size:11px; font-weight:700;">${parseFloat(s.CMS_SCORE).toFixed(1)}</span></td>
-      <td><span style="color:${rsiColor}; font-weight:700;">${rsi.toFixed(1)}</span></td>
-      <td style="text-align:right;">
-        <button class="btn-select-stock ${isSelected ? 'btn-active' : ''}">
-          ${isSelected ? 'Active ✨' : 'Inspect 🎯'}
+      <td class="cell-cmp" role="cell">${fmtINR(cmp)}</td>
+      <td class="cell-cms" role="cell"><span class="meta-chip cms-chip score-chip">${parseFloat(s.CMS_SCORE).toFixed(1)}</span></td>
+      <td class="cell-rsi" role="cell"><span style="color:${rsiColor};">${rsi.toFixed(1)}</span></td>
+      <td class="cell-action" role="cell">
+        <button class="btn-select-stock ${isSelected ? 'btn-active' : ''}"
+                title="${isSelected ? 'Active position — open in Trade Studio' : 'Inspect in Trade Studio'}"
+                aria-label="${isSelected ? 'Active position — open in Trade Studio' : 'Inspect in Trade Studio'}">
+          <span class="btn-select-label">${isSelected ? 'Active' : 'Inspect'}</span>
+          <span class="btn-select-icon" aria-hidden="true">${isSelected ? '✨' : '🎯'}</span>
         </button>
       </td>
     `;

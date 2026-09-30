@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>probe</title></head>
+<body style="margin:0">
+<pre id="out">pending</pre>
+<iframe id="f" src="../../app/index.html" style="border:0;height:1400px"></iframe>
+<script>
+const W = parseInt(new URLSearchParams(location.search).get('w') || '360', 10);
+const f = document.getElementById('f');
+f.style.width = W + 'px';
+function run() {
+  const d = f.contentDocument, w = f.contentWindow;
+  const wrap = d.querySelector('.watchlist-table-wrap');
+  const tbl = d.querySelector('.leader-table');
+  if (!tbl || !tbl.querySelector('tbody tr')) { setTimeout(run, 800); return; }
+  const r = { w: W, wrapClient: wrap.clientWidth, wrapScroll: wrap.scrollWidth };
+
+  // widths of each cell in the first body row
+  r.cells = [...tbl.querySelectorAll('tbody tr')[0].children].map(td => ({
+    c: td.className || td.tagName,
+    w: Math.round(td.getBoundingClientRect().width),
+    text: td.textContent.replace(/\s+/g, ' ').trim().slice(0, 22)
+  }));
+
+  // which descendant is widest inside the security cell (drives min-content)
+  const sec = tbl.querySelector('tbody .cell-security');
+  if (sec) {
+    r.secInner = [...sec.querySelectorAll('*')].map(e => ({
+      c: e.className || e.tagName, w: Math.round(e.getBoundingClientRect().width)
+    })).sort((a,b)=>b.w-a.w).slice(0,3);
+  }
+
+  // header-right children
+  const hr = d.querySelector('.header-right');
+  if (hr) {
+    const hb = hr.getBoundingClientRect();
+    r.headerRight = { left: Math.round(hb.left), right: Math.round(hb.right), w: Math.round(hb.width), vw: d.documentElement.clientWidth };
+    r.headerKids = [...hr.children].map(c => ({ c: c.className, w: Math.round(c.getBoundingClientRect().width),
+      t: c.textContent.trim().slice(0,10) }));
+  }
+  const hi = d.querySelector('.header-inner');
+  if (hi) r.headerInnerKids = [...hi.children].map(c => ({
+    c: (c.className||c.tagName).slice(0,24), w: Math.round(c.getBoundingClientRect().width),
+    disp: w.getComputedStyle(c).display }));
+  document.getElementById('out').textContent = 'PROBE:' + JSON.stringify(r);
+}
+setTimeout(run, 4000);
+</script>
+</body>
+</html>

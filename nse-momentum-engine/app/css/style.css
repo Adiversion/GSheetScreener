@@ -52,7 +52,21 @@
   --transition:     0.22s cubic-bezier(0.16, 1, 0.3, 1);
   --sab:            env(safe-area-inset-bottom, 0px);
   --sat:            env(safe-area-inset-top, 0px);
+
+  /* Content shell width. Grows on very large displays so the terminal fills
+     a 2K/4K viewport instead of sitting in a narrow 1440px ribbon. */
+  --content-max:    1440px;
 }
+
+/* ── Large-format scaling ──
+   Tablet/phone and laptop (360px–1536px) keep the 15px base. Displays above
+   that scale the whole rem-based UI up proportionally, which is how
+   professional dashboards avoid looking miniature on 2K/4K panels. */
+@media (min-width: 1600px) { html { font-size: 15.5px; } }
+@media (min-width: 1920px) { html { font-size: 16.5px; } :root { --content-max: 1760px; } }
+@media (min-width: 2560px) { html { font-size: 18px; }   :root { --content-max: 2120px; --header-h: 68px; } }
+@media (min-width: 3200px) { html { font-size: 20px; }   :root { --content-max: 2400px; --header-h: 74px; } }
+@media (min-width: 3840px) { html { font-size: 22px; }   :root { --content-max: 2700px; } }
 
 /* ── Reset & Base ── */
 *, *::before, *::after {
@@ -76,13 +90,47 @@ body {
   padding-bottom: calc(var(--nav-h) + var(--sab));
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  overflow-wrap: anywhere;
-  hyphens: auto;
+  /* Break only at word boundaries by default. `anywhere` caused mid-word
+     wrapping such as "Ter/mi/nal" and "63./5" in narrow flex/table cells. */
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: manual;
+}
+
+/* Numeric and label-heavy UI must never break mid-token. */
+.tab-label,
+.nav-label,
+.meta-chip,
+.badge,
+.pill-preset,
+.pill-gap,
+.pill-session,
+.session-pill,
+.filter-chip,
+.btn-refresh,
+.btn-guide,
+.spec-item,
+.guide-mini-targets {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 body.modal-open {
   overflow: hidden;
   touch-action: none;
+}
+
+/* Focus-visible styling for keyboard accessibility */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default focus for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 /* Tabular Numbers for Institutional Precision */
@@ -144,7 +192,7 @@ canvas { display: block; }
 
 .header-inner {
   width: 100%;
-  max-width: 1440px;
+  max-width: var(--content-max);
   height: 100%;
   padding: 0 20px;
   display: flex;
@@ -159,7 +207,11 @@ canvas { display: block; }
   gap: 10px;
   font-weight: 800;
   letter-spacing: -0.3px;
-  flex: 0 0 auto;
+  /* Shrinkable: the wordmark truncates rather than pushing the right-hand
+     controls out of the viewport on a 320px phone. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .header-logo .logo-icon {
@@ -172,6 +224,7 @@ canvas { display: block; }
   justify-content: center;
   font-size: 1.05rem;
   box-shadow: 0 0 12px var(--accent-glow);
+  flex-shrink: 0;
 }
 
 .header-logo .logo-text {
@@ -179,6 +232,10 @@ canvas { display: block; }
   color: var(--text);
   font-weight: 800;
   letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 .header-logo .logo-sub {
@@ -188,13 +245,18 @@ canvas { display: block; }
   font-weight: 700;
   letter-spacing: 1px;
   margin-top: -2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 /* Desktop Navigation Tabs */
 .desktop-nav {
   display: none;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  flex: 0 0 auto;
 }
 
 @media (min-width: 768px) {
@@ -209,13 +271,35 @@ canvas { display: block; }
   color: var(--text-dim);
   font-size: 0.8rem;
   font-weight: 700;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 6px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   transition: var(--transition);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.desktop-tab-btn .tab-label {
+  white-space: nowrap;
+}
+
+/* Compact the nav before the header gets crowded. */
+@media (max-width: 1180px) {
+  .desktop-tab-btn {
+    padding: 6px 9px;
+  }
+  .desktop-tab-btn .tab-icon {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .desktop-tab-btn .tab-icon {
+    display: none;
+  }
 }
 
 .desktop-tab-btn:hover {
@@ -279,20 +363,26 @@ canvas { display: block; }
   box-shadow: 0 0 8px var(--red);
 }
 
-@media (min-width: 768px) {
-  .header-regime { display: flex; }
+/* The regime ticker duplicates the control ribbon below, so it only earns its
+   place on wide viewports. Hidden below 1536px to keep the header uncluttered. */
+@media (min-width: 1536px) {
+  /* Shown only when there is regime data (JS adds `is-active`). Narrower
+     viewports keep the base `display: none` so header controls stay reachable. */
+  .header-regime.is-active { display: inline-flex; }
 }
 
-/* Global Search Input in Header */
+/* Global Search Input in Header (wide viewports only; the watchlist has its own
+   filter field at every width). */
 .header-search-wrap {
   display: none;
   align-items: center;
   position: relative;
-  flex: 1 1 320px;
+  flex: 1 1 260px;
+  min-width: 180px;
   max-width: 420px;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1536px) {
   .header-search-wrap { display: flex; }
 }
 
@@ -347,6 +437,64 @@ canvas { display: block; }
   align-items: center;
   gap: 10px;
   flex: 0 0 auto;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+/* Compact command bar for small phones. At 320px the wordmark and the
+   right-hand controls cannot both keep their full width, so the guide button
+   collapses to its icon and the shell padding tightens. */
+@media (max-width: 420px) {
+  .header-inner {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .header-logo {
+    gap: 8px;
+  }
+
+  .header-logo .logo-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.95rem;
+  }
+
+  .header-logo .logo-text {
+    font-size: 0.92rem;
+    max-width: none;
+  }
+
+  .header-logo .logo-sub {
+    font-size: 0.53rem;
+    letter-spacing: 0.5px;
+    max-width: none;
+  }
+
+  .btn-guide {
+    padding: 6px 10px;
+  }
+
+  .btn-guide .guide-label {
+    display: none;
+  }
+}
+
+/* Keep the status dot but drop its label when space is tight, so the header
+   row never wraps to a second line. */
+@media (max-width: 1100px) {
+  .offline-badge #offlineText {
+    display: none;
+  }
+  .offline-badge {
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 900px) {
+  .btn-guide {
+    padding: 6px 9px;
+  }
 }
 
 .offline-badge {
@@ -360,6 +508,7 @@ canvas { display: block; }
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--accent);
+  flex-shrink: 0;
 }
 
 .offline-badge .dot {
@@ -382,6 +531,9 @@ canvas { display: block; }
 }
 
 .btn-guide {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -435,7 +587,7 @@ canvas { display: block; }
 .app-main {
   margin-top: calc(var(--header-h) + var(--sat));
   padding: 16px;
-  max-width: 1440px;
+  max-width: var(--content-max);
   margin-left: auto;
   margin-right: auto;
   width: 100%;
@@ -504,6 +656,7 @@ canvas { display: block; }
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .session-pills-row {
@@ -571,6 +724,8 @@ canvas { display: block; }
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .capital-input-wrapper {
@@ -691,10 +846,33 @@ canvas { display: block; }
 .regime-desc-text {
   font-size: 0.72rem;
   color: var(--text-dim);
-  max-width: 320px;
-  white-space: nowrap;
+  max-width: 460px;
+  /* Clamp to two lines rather than cutting an identifier mid-word. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  /* Must be shrinkable: an unshrinkable long sentence sets the ribbon's width,
+     and on mobile every stretched segment then inherits that over-wide box. */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .regime-segment {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .regime-status-chip {
+    justify-content: flex-start;
+  }
+
+  .regime-desc-text {
+    max-width: 100%;
+  }
 }
 
 /* ─────────────────────────────────────────
@@ -706,7 +884,10 @@ canvas { display: block; }
   gap: 16px;
 }
 
-@media (min-width: 1024px) {
+/* Two columns only when the right-hand sidebar is genuinely wide enough for
+   the six-column leaders table. Below 1200px the workspace stacks so the table
+   gets the full viewport width instead of scrolling sideways in a 380px rail. */
+@media (min-width: 1200px) {
   .terminal-grid {
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     gap: 20px;
@@ -718,6 +899,16 @@ canvas { display: block; }
     max-height: calc(100vh - var(--header-h) - 32px);
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .watchlist-col .watchlist-card {
+    flex: 1;
+  }
+
+  .watchlist-col .watchlist-table-wrap {
+    flex: 1;
+    min-height: 0;
   }
 }
 
@@ -989,7 +1180,7 @@ canvas { display: block; }
 
 @media (min-width: 640px) {
   .tech-matrix-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
@@ -1300,6 +1491,8 @@ canvas { display: block; }
   text-align: left;
   border-bottom: 1px solid var(--border);
   background: var(--bg2);
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 .gtt-table th:nth-child(n+2),
@@ -1314,6 +1507,8 @@ canvas { display: block; }
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   border-bottom: 1px solid rgba(30, 42, 63, 0.7);
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 .gtt-table .level-name {
@@ -1322,6 +1517,7 @@ canvas { display: block; }
   font-family: var(--font-sans);
   text-transform: uppercase;
   letter-spacing: 0.4px;
+  white-space: nowrap;
 }
 
 .gtt-table .stop-row td { background: rgba(239, 68, 68, 0.04); }
@@ -1334,15 +1530,19 @@ canvas { display: block; }
 .level-m2   { color: var(--accent); }
 .level-m3   { color: var(--cyan); }
 
-/* Sizing Pills */
+/* Sizing Pills.
+   `repeat(3, 1fr)` resolves to `minmax(auto, 1fr)`, so the pills refused to
+   shrink below their content and pushed the card ~44px past a 320px phone.
+   `auto-fit` + a minimum lets the row wrap three -> two -> one column. */
 .trade-pill-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
   gap: 8px;
   margin-bottom: 14px;
 }
 
 .trade-pill {
+  min-width: 0;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -1573,11 +1773,14 @@ canvas { display: block; }
 .watchlist-table-wrap {
   max-height: min(600px, calc(100vh - var(--header-h) - 240px));
   max-height: min(600px, calc(100dvh - var(--header-h) - 240px));
+  min-height: 200px;
 }
 
 .leader-table {
   width: 100%;
   border-collapse: collapse;
+  /* Intentionally no `min-width`: the container queries below shed columns so
+     the table fits a 320px phone instead of forcing a horizontal scrollbar. */
 }
 
 .leader-table th {
@@ -1593,6 +1796,8 @@ canvas { display: block; }
   position: sticky;
   top: 0;
   z-index: 5;
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 .leader-table td {
@@ -1601,6 +1806,266 @@ canvas { display: block; }
   border-bottom: 1px solid rgba(30, 42, 63, 0.6);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+/* Column roles: numbers centred, action right-aligned. Declared as classes
+   rather than inline styles so the responsive rules below can override them. */
+.leader-table .cell-rank {
+  width: 34px;
+  text-align: center;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.leader-table .cell-security {
+  min-width: 92px;
+}
+
+.leader-table .cell-cmp {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.leader-table .cell-cms,
+.leader-table .cell-rsi {
+  text-align: center;
+}
+
+.leader-table .cell-rsi {
+  font-weight: 700;
+}
+
+.leader-table .cell-action {
+  text-align: right;
+  padding-right: 10px;
+}
+
+/* Security cell internals. `flex-wrap` + shrinkable chips let the column
+   compress instead of forcing the whole table to scroll. */
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.sec-symbol {
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.sec-chip {
+  font-size: 0.56rem;
+  padding: 1px 4px;
+  line-height: 1.4;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.sec-sub {
+  font-size: 0.62rem;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score-chip {
+  padding: 2px 7px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.pos-text { color: var(--accent); }
+.muted-text { color: var(--text-dim); }
+
+/* Adapt to the actual width of the watchlist column rather than the viewport:
+   the same table lives in a ~380px sticky sidebar on laptop and a full-width
+   card on a phone. Container queries make both cases correct. */
+.watchlist-table-wrap {
+  container-type: inline-size;
+}
+
+@container (max-width: 470px) {
+  .leader-table .sec-chip {
+    display: none;
+  }
+  .leader-table .cell-security {
+    min-width: 74px;
+  }
+  .leader-table .score-chip {
+    padding: 2px 5px;
+    font-size: 0.64rem;
+  }
+}
+
+@container (max-width: 400px) {
+  .btn-select-stock {
+    padding: 4px 6px;
+    font-size: 0.66rem;
+  }
+  .leader-table td,
+  .leader-table th {
+    padding: 7px 5px;
+  }
+  .leader-table .cell-security {
+    min-width: 66px;
+  }
+  /* Phones: the hero card already shows CMS prominently, so drop that column
+     and collapse the row action to a touch-sized icon button. */
+  .leader-table .cell-cms {
+    display: none;
+  }
+  .btn-select-label {
+    display: none;
+  }
+  .btn-select-stock {
+    padding: 6px;
+    min-width: 34px;
+    min-height: 34px;
+  }
+}
+
+/* Fallback for engines without container queries. */
+@supports not (container-type: inline-size) {
+  @media (max-width: 560px) {
+    .leader-table .sec-chip {
+      display: none;
+    }
+    .leader-table .cell-security {
+      min-width: 74px;
+    }
+    .btn-select-stock {
+      padding: 4px 6px;
+      font-size: 0.66rem;
+    }
+    .leader-table .cell-cms {
+      display: none;
+    }
+    .btn-select-label {
+      display: none;
+    }
+  }
+}
+
+/* ─────────────────────────────────────────
+   LEADERS: PHONE CARD MODE (<=640px viewport)
+   Six numeric columns cannot fit a phone, and a horizontally scrolling table
+   is a poor primary data view. Below this width each row becomes a tappable
+   card: identity + price on the left, the primary action on the right, and
+   labelled stats beneath. Same DOM — only the display type changes.
+   Declared after the container queries so it wins on source order.
+───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .leader-table thead {
+    display: none;
+  }
+
+  .leader-table,
+  .leader-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .leader-table tr {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "rank security action"
+      "rank cmp      action"
+      "rank cms      rsi";
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 3px;
+    padding: 12px 4px;
+    min-height: 56px;
+    border-bottom: 1px solid rgba(30, 42, 63, 0.6);
+  }
+
+  .leader-table td {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    border-bottom: 0;
+    text-align: left;
+  }
+
+  .leader-table .cell-rank {
+    grid-area: rank;
+    width: auto;
+    align-self: start;
+    padding-top: 3px;
+  }
+
+  .leader-table .cell-security {
+    grid-area: security;
+    min-width: 0;
+  }
+
+  .leader-table .cell-cmp {
+    grid-area: cmp;
+    font-size: 1.05rem;
+    letter-spacing: -0.2px;
+  }
+
+  .leader-table .cell-action {
+    grid-area: action;
+    align-self: center;
+    padding-right: 0;
+    text-align: right;
+  }
+
+  .leader-table .cell-cms {
+    grid-area: cms;
+    justify-self: start;
+  }
+
+  .leader-table .cell-rsi {
+    grid-area: rsi;
+    justify-self: end;
+  }
+
+  /* Re-enabled: a card has room for the badges the cramped table had to shed. */
+  .leader-table .sec-chip {
+    display: inline-flex;
+  }
+
+  .leader-table .sec-sub {
+    font-size: 0.66rem;
+  }
+
+  /* The column headers are hidden in card mode, so the remaining stats get
+     inline labels and stay self-describing. */
+  .leader-table .cell-cms::before,
+  .leader-table .cell-rsi::before {
+    font-family: var(--font-sans);
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    margin-right: 5px;
+  }
+
+  .leader-table .cell-cms::before { content: "CMS"; }
+  .leader-table .cell-rsi::before { content: "RSI"; }
+
+  /* Comfortable touch targets for the row action. */
+  .leader-table .btn-select-stock {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  .leader-table .btn-select-label {
+    display: inline;
+  }
 }
 
 .stock-table-row {
@@ -1621,15 +2086,27 @@ canvas { display: block; }
 }
 
 .btn-select-stock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 4px 8px;
+  min-height: 30px;
   font-size: 0.7rem;
   font-weight: 700;
+  line-height: 1;
   color: var(--text-muted);
   cursor: pointer;
   transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
+  white-space: nowrap;
+}
+
+.btn-select-icon {
+  font-size: 0.85rem;
+  line-height: 1;
 }
 
 .btn-select-stock:hover {
@@ -1729,13 +2206,17 @@ canvas { display: block; }
 
 @media (min-width: 768px) {
   body {
-    padding-bottom: 0 !important;
+    padding-bottom: 0;
   }
   .bottom-nav {
-    display: none !important;
+    display: none;
   }
+}
+
+/* Tablet range only: the >=1024 rule below sets a larger bottom gap. */
+@media (min-width: 768px) and (max-width: 1023px) {
   .app-main {
-    padding-bottom: 24px !important;
+    padding-bottom: 24px;
   }
 }
 
@@ -1788,7 +2269,7 @@ canvas { display: block; }
    PORTFOLIO WORKSTATION STYLING
 ───────────────────────────────────────── */
 .portfolio-container {
-  max-width: 1280px;
+  max-width: min(var(--content-max), 1280px);
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr;
@@ -1797,7 +2278,7 @@ canvas { display: block; }
 
 @media (min-width: 1024px) {
   .portfolio-container {
-    grid-template-columns: 1.15fr 0.85fr;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
     align-items: start;
   }
 }
@@ -1867,7 +2348,7 @@ canvas { display: block; }
    HISTORY ARCHIVES & LEDGER STYLING
 ───────────────────────────────────────── */
 .history-container {
-  max-width: 1280px;
+  max-width: min(var(--content-max), 1280px);
   margin: 0 auto;
 }
 
@@ -1879,7 +2360,7 @@ canvas { display: block; }
 
 @media (min-width: 1024px) {
   .history-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
   }
 }
@@ -1901,12 +2382,14 @@ canvas { display: block; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 14px;
   transition: var(--transition);
   cursor: pointer;
+  overflow: hidden;
 }
 
 .session-archive-item:hover {
@@ -1919,24 +2402,41 @@ canvas { display: block; }
   background: rgba(0, 230, 153, 0.08);
 }
 
+/* Without `min-width: 0` this flex item floors at its nowrap text width, which
+   shoves the CTA button past the right edge of a 320px phone. */
+.session-archive-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.session-archive-item .btn-action {
+  flex-shrink: 0;
+}
+
 .session-archive-date {
   font-weight: 700;
   font-size: 0.85rem;
   color: var(--text);
   font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .session-archive-meta {
   font-size: 0.72rem;
   color: var(--text-dim);
   margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ─────────────────────────────────────────
    SETTINGS 2-COLUMN GRID
 ───────────────────────────────────────── */
 .settings-container {
-  max-width: 1200px;
+  max-width: min(var(--content-max), 1280px);
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr;
@@ -1945,7 +2445,7 @@ canvas { display: block; }
 
 @media (min-width: 1024px) {
   .settings-container {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
   }
 }
@@ -1974,7 +2474,7 @@ canvas { display: block; }
 
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -2375,5 +2875,17 @@ body.modal-open {
   .hero-chip, .filter-chip, .btn-action, .tab-btn, .pill-preset, .chip-copy,
   .pill-session, .pill-gap, .btn-select-stock, .btn-clear-search {
     min-height: 44px;
+  }
+}
+
+/* On phones the archive row stacks so the session date stays fully readable and
+   the call-to-action becomes a full-width target instead of being squeezed. */
+@media (max-width: 480px) {
+  .session-archive-item {
+    flex-wrap: wrap;
+  }
+
+  .session-archive-item .btn-action {
+    width: 100%;
   }
 }

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>drill</title></head>
+<body style="margin:0">
+<pre id="out">pending</pre>
+<iframe id="f" src="../../app/index.html" style="border:0;height:1400px"></iframe>
+<script>
+const W = parseInt(new URLSearchParams(location.search).get('w') || '320', 10);
+const f = document.getElementById('f');
+f.style.width = W + 'px';
+function run() {
+  const d = f.contentDocument, w = f.contentWindow;
+  if (!d || !d.querySelector('.gtt-card')) { setTimeout(run, 800); return; }
+  const de = d.documentElement;
+  const base = de.scrollWidth;
+  const path = [];
+  let node = d.querySelector('.gtt-card');
+  let guard = 0;
+  while (node && guard++ < 40) {
+    const before = de.scrollWidth;
+    let culprit = null;
+    for (const child of node.children) {
+      const prev = child.style.display;
+      child.style.display = 'none';
+      const after = de.scrollWidth;
+      child.style.display = prev;
+      if (after < before) { culprit = child; break; }
+    }
+    if (!culprit) break;
+    const cs = w.getComputedStyle(culprit);
+    const b = culprit.getBoundingClientRect();
+    path.push({
+      c: (culprit.className || culprit.tagName).toString().slice(0, 34),
+      tag: culprit.tagName, disp: cs.display, w: Math.round(b.width),
+      l: Math.round(b.left), r: Math.round(b.right),
+      scrollW: culprit.scrollWidth, clientW: culprit.clientWidth,
+      ov: cs.overflowX, gtc: cs.gridTemplateColumns
+    });
+    node = culprit;
+  }
+  document.getElementById('out').textContent = 'DRILL:' + JSON.stringify({ w: W, vw: de.clientWidth, base, path });
+}
+setTimeout(run, 4000);
+</script>
+</body>
+</html>

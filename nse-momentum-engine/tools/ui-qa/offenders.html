@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>offenders</title></head>
+<body style="margin:0">
+<pre id="out">pending</pre>
+<iframe id="f" src="../../app/index.html" style="border:0;height:1400px"></iframe>
+<script>
+const W = parseInt(new URLSearchParams(location.search).get('w') || '320', 10);
+const f = document.getElementById('f');
+f.style.width = W + 'px';
+function run() {
+  const d = f.contentDocument, w = f.contentWindow;
+  if (!d || !d.querySelector('.gtt-table')) { setTimeout(run, 800); return; }
+  const de = d.documentElement, vw = de.clientWidth;
+  const r = { w: W, vw, deScrollW: de.scrollWidth, bodyScrollW: d.body.scrollWidth,
+              htmlOverflowX: w.getComputedStyle(de).overflowX,
+              bodyOverflowX: w.getComputedStyle(d.body).overflowX };
+
+  // widest right edge over ALL elements (incl. fixed), even clamped ones
+  let worst = [];
+  d.querySelectorAll('body *').forEach(el => {
+    const cs = w.getComputedStyle(el);
+    if (cs.display === 'none') return;
+    const b = el.getBoundingClientRect();
+    if (b.width === 0) return;
+    if (b.right > vw + 1) worst.push({ c: (el.className||'').toString().slice(0,26), tag: el.tagName,
+      l: Math.round(b.left), r: Math.round(b.right), pos: cs.position });
+  });
+  r.worst = worst.sort((a,b)=>b.r-a.r).slice(0, 6);
+
+  // ancestor chain of the GTT table: who is failing to contain it?
+  const chain = [];
+  let el = d.querySelector('.gtt-table');
+  while (el && el !== d.body) {
+    const cs = w.getComputedStyle(el);
+    const b = el.getBoundingClientRect();
+    chain.push({ c: (el.className||el.tagName).toString().slice(0,26),
+      w: Math.round(b.width), l: Math.round(b.left), r: Math.round(b.right),
+      ov: cs.overflowX, disp: cs.display, minW: cs.minWidth });
+    el = el.parentElement;
+  }
+  r.chain = chain;
+  document.getElementById('out').textContent = 'OFF:' + JSON.stringify(r);
+}
+setTimeout(run, 4000);
+</script>
+</body>
+</html>

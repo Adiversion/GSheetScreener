@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>scrolltest</title></head>
+<body style="margin:0">
+<pre id="out">pending</pre>
+<iframe id="f" src="../../app/index.html" style="border:0;height:1400px"></iframe>
+<script>
+const W = parseInt(new URLSearchParams(location.search).get('w') || '320', 10);
+const f = document.getElementById('f');
+f.style.width = W + 'px';
+function run() {
+  const d = f.contentDocument, w = f.contentWindow;
+  if (!d || !d.querySelector('.gtt-table')) { setTimeout(run, 800); return; }
+  w.scrollTo(9999, 0);
+  const x = w.scrollX;
+  w.scrollTo(0, 0);
+  // also test the documentElement directly
+  d.documentElement.scrollLeft = 9999;
+  const x2 = d.documentElement.scrollLeft;
+  d.documentElement.scrollLeft = 0;
+  const de = d.documentElement;
+  document.getElementById('out').textContent = 'SCROLL:' + JSON.stringify({
+    w: W, vw: de.clientWidth, scrollW: de.scrollWidth, bodyScrollW: d.body.scrollWidth,
+    windowScrollX: Math.round(x), htmlScrollLeft: Math.round(x2),
+    canScrollHorizontally: x > 0 || x2 > 0
+  });
+}
+setTimeout(run, 4000);
+</script>
+</body>
+</html>

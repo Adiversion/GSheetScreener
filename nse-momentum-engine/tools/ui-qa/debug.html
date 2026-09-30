@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>debug</title></head>
+<body style="margin:0">
+<pre id="out">pending</pre>
+<iframe id="f" src="../../app/index.html" style="border:0;height:1200px"></iframe>
+<script>
+const W = parseInt(new URLSearchParams(location.search).get('w') || '360', 10);
+const f = document.getElementById('f');
+f.style.width = W + 'px';
+
+function run() {
+  const d = f.contentDocument, w = f.contentWindow;
+  const out = { w: W };
+
+  const wrap = d.querySelector('.watchlist-table-wrap');
+  if (wrap) {
+    const cs = w.getComputedStyle(wrap);
+    out.wrapContainerType = cs.containerType;
+    out.wrapWidth = Math.round(wrap.getBoundingClientRect().width);
+  }
+  const chip = d.querySelector('.leader-table .sec-chip');
+  out.chipExists = !!chip;
+  if (chip) out.chipDisplay = w.getComputedStyle(chip).display;
+
+  const table = d.querySelector('.leader-table');
+  if (table) {
+    out.tableW = Math.round(table.getBoundingClientRect().width);
+    out.ths = [...table.querySelectorAll('thead th')].map(th => ({
+      t: th.textContent.trim(), w: Math.round(th.getBoundingClientRect().width)
+    }));
+    out.wsRsi = table.querySelector('.cell-rsi') ? w.getComputedStyle(table.querySelector('.cell-rsi')).whiteSpace : null;
+    out.wsCmp = table.querySelector('.cell-cmp') ? w.getComputedStyle(table.querySelector('.cell-cmp')).whiteSpace : null;
+  }
+
+  // Find elements wider than the viewport / sticking out to the right
+  const vw = w.innerWidth;
+  const offenders = [];
+  d.querySelectorAll('*').forEach(el => {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.right > vw + 1) {
+      offenders.push({
+        tag: el.tagName.toLowerCase(),
+        cls: (el.className && typeof el.className === 'string') ? el.className.slice(0, 45) : '',
+        right: Math.round(r.right),
+        w: Math.round(r.width)
+      });
+    }
+  });
+  out.offenders = offenders.slice(0, 12);
+  out.vw = vw;
+  out.docScrollW = d.documentElement.scrollWidth;
+
+  document.getElementById('out').textContent = 'RESULT:' + JSON.stringify(out, null, 1);
+}
+setTimeout(run, 4000);
+</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>measure</title></head>
+<body style="margin:0">
+<pre id="out">pending</pre>
+<iframe id="f" src="../../app/index.html" style="border:0;height:1400px"></iframe>
+<script>
+const params = new URLSearchParams(location.search);
+const W = parseInt(params.get('w') || '1366', 10);
+const f = document.getElementById('f');
+f.style.width = W + 'px';
+
+function measure() {
+  const d = f.contentDocument, w = f.contentWindow;
+  if (!d || !d.querySelector('.leader-table')) { setTimeout(measure, 800); return; }
+  const r = { w: W };
+  const vw = d.documentElement.clientWidth;
+
+  // 1. page-level horizontal overflow
+  r.pageOverflow = d.documentElement.scrollWidth > vw + 1;
+
+  // 2. every interactive control must be inside the viewport horizontally
+  const offScreen = [];
+  d.querySelectorAll('.header button, .header .header-right *, .header-inner > *').forEach(el => {
+    const b = el.getBoundingClientRect();
+    if (b.width === 0 && b.height === 0) return;      // display:none -> fine
+    if (b.right > vw + 1 || b.left < -1) {
+      offScreen.push((el.id || el.className || el.tagName) + '@' + Math.round(b.left) + '..' + Math.round(b.right));
+    }
+  });
+  r.offScreen = offScreen.slice(0, 4);
+  r.offScreenCount = offScreen.length;
+
+  // 3. regime ticker must be display:none below 1536px
+  const tick = d.getElementById('headerRegimeTicker');
+  r.regimeDisplay = tick ? w.getComputedStyle(tick).display : null;
+
+  // 4. nav labels single line
+  r.navWrap = [...d.querySelectorAll('.desktop-tab-btn .tab-label')]
+    .filter(el => el.getBoundingClientRect().height > 22).length;
+
+  // 5. terminal grid columns
+  const g = d.querySelector('.terminal-grid');
+  r.gridCols = g ? w.getComputedStyle(g).gridTemplateColumns.split(' ').length : 0;
+
+  // 6. leaders table must NOT scroll inside its container
+  const wrap = d.querySelector('.watchlist-table-wrap');
+  if (wrap) {
+    r.tblClient = wrap.clientWidth;
+    r.tblScroll = wrap.scrollWidth;
+    r.tblOverflows = wrap.scrollWidth > wrap.clientWidth + 1;
+  }
+
+  // 7. numeric cells single line (no "63.\n5"). Count line boxes with a Range
+  // instead of dividing heights by line-height (which is 'normal' for mono).
+  function oneLine(el) {
+    if (!el) return null;
+    const range = d.createRange();
+    range.selectNodeContents(el);
+    return range.getClientRects().length <= 1;
+  }
+  r.rsiOneLine = oneLine(d.querySelector('.leader-table .cell-rsi'));
+  r.cmpOneLine = oneLine(d.querySelector('.leader-table .cell-cmp'));
+
+  // 8. which optional columns survive at this width
+  const vis = sel => { const el = d.querySelector(sel); return el ? w.getComputedStyle(el).display !== 'none' : null; };
+  r.cmsColVisible = vis('.leader-table .cell-cms');
+  r.actionLabelVisible = vis('.leader-table .btn-select-label');
+  r.chipsVisible = vis('.leader-table .sec-head .sec-chip');
+
+  // 8b. row action must be a comfortable touch target once it is the primary
+  // control (card mode), and the stat labels must be present there.
+  const btn = d.querySelector('.leader-table .btn-select-stock');
+  if (btn) {
+    const bb = btn.getBoundingClientRect();
+    r.btnW = Math.round(bb.width);
+    r.btnH = Math.round(bb.height);
+  }
+  const cmsCell = d.querySelector('.leader-table .cell-cms');
+  r.cardMode = cmsCell ? w.getComputedStyle(cmsCell).gridArea !== 'auto' : null;
+
+  // 9. shell width vs viewport (4K fill / max-width behaviour)
+  const main = d.querySelector('.app-main');
+  if (main) r.mainW = Math.round(main.getBoundingClientRect().width);
+  r.rootFont = w.getComputedStyle(d.documentElement).fontSize;
+
+  document.getElementById('out').textContent = 'RESULT:' + JSON.stringify(r);
+}
+setTimeout(measure, 4000);
+</script>
+</body>
+</html>

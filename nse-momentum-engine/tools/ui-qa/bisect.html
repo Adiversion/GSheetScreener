@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>bisect</title></head>
+<body style="margin:0">
+<pre id="out">pending</pre>
+<iframe id="f" src="../../app/index.html" style="border:0;height:1400px"></iframe>
+<script>
+const W = parseInt(new URLSearchParams(location.search).get('w') || '320', 10);
+const f = document.getElementById('f');
+f.style.width = W + 'px';
+const CANDIDATES = ['.studio-col', '.watchlist-col', '.terminal-ribbon', '.app-header',
+                    '.gtt-card', '.leader-table', '#signalContent', '#tabPortfolio', '#tabHistory', '#tabSettings'];
+function run() {
+  const d = f.contentDocument, w = f.contentWindow;
+  if (!d || !d.querySelector('.gtt-table')) { setTimeout(run, 800); return; }
+  const base = d.documentElement.scrollWidth;
+  const results = [];
+  CANDIDATES.forEach(sel => {
+    const el = d.querySelector(sel);
+    if (!el) return;
+    const prev = el.style.display;
+    el.style.display = 'none';
+    const after = d.documentElement.scrollWidth;
+    el.style.display = prev;
+    if (after !== base) results.push({ sel, base, after, delta: base - after });
+  });
+  document.getElementById('out').textContent = 'BISECT:' + JSON.stringify({
+    w: W, vw: d.documentElement.clientWidth, base, results
+  });
+}
+setTimeout(run, 4000);
+</script>
+</body>
+</html>
