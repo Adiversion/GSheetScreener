@@ -112,38 +112,44 @@
         </table>
         <div class="trade-pill-row" id="tradePills"></div>
 
-        <!-- Zerodha Kite Action Buttons -->
+        <!-- Manual GTT Order Assistant (Viewer Mode) -->
         <div class="zerodha-actions" id="zerodhaActions" style="display:none">
           <div class="card-title" style="margin-top:16px; margin-bottom:10px;">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='6' fill='%23387ED1'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' font-size='22' font-family='sans-serif' font-weight='bold' fill='white'%3EZ%3C/text%3E%3C/svg%3E"
-              width="18" height="18" style="vertical-align:middle; margin-right:6px; border-radius:3px;">
-            Zerodha Actions
+            📝 Manual GTT Order Guide (Zerodha Kite)
           </div>
+
+          <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:0.8rem; line-height:1.7;">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:4px; margin-bottom:6px;">
+              <span style="color:var(--text-muted)">Order Type:</span>
+              <strong style="color:var(--accent)">BUY CNC (Delivery)</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-muted)">GTT Stop Loss:</span>
+              <strong style="color:var(--red)" id="guideStopLoss">–</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--text-muted)">GTT Target (M1):</span>
+              <strong style="color:var(--accent)" id="guideTarget">–</strong>
+            </div>
+          </div>
+
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn-zerodha" id="btnOpenKite" title="Open Kite with this stock">
-              🔗 Open in Kite
+            <button class="btn-primary" id="btnCopyGTT" style="padding:10px 16px; font-weight:700; flex:1 1 auto;" title="Copy complete GTT order instructions to clipboard">
+              📋 1-Tap Copy GTT Form
             </button>
-            <button class="btn-zerodha-outline" id="btnCopyGTT" title="Copy GTT order details to clipboard">
-              📋 Copy GTT Details
+            <button class="btn-zerodha" id="btnOpenKite" style="padding:10px 14px;" title="Open Zerodha Kite to place order">
+              🔗 Open Kite
             </button>
-            <button class="btn-secondary" id="btnOpenGroww" style="font-size:0.8rem; padding:8px 12px;" title="Open in Groww as fallback broker">
+            <button class="btn-secondary" id="btnOpenGroww" style="font-size:0.8rem; padding:8px 12px;" title="Open in Groww">
               🌱 Groww
             </button>
-            <button class="btn-secondary" id="btnOpenTV" style="font-size:0.8rem; padding:8px 12px;" title="View interactive chart on TradingView">
+            <button class="btn-secondary" id="btnOpenTV" style="font-size:0.8rem; padding:8px 12px;" title="Open TradingView Chart">
               📊 Chart
             </button>
           </div>
-          <!-- Kite Connect GTT (shown only if API key is set) -->
-          <div id="kiteApiActions" style="display:none; margin-top:8px;">
-            <button class="btn-primary" id="btnAutoGTT" style="font-size:0.82rem; padding:10px 16px;">
-              ⚡ Auto-Place GTT via Kite API
-            </button>
-            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">
-              Uses Kite Connect Personal (free). Token refreshed daily.
-            </div>
-          </div>
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:10px; line-height:1.4; border-top:1px dashed var(--border); padding-top:6px;">
-            🛡️ <strong>Broker Fallback & Independence:</strong> Signals are derived 100% from <em>NSE Official Bhavcopy</em>. If Zerodha is down or changes policy, tap <strong>Copy GTT Details</strong> to execute on Groww, Upstox, Angel One, or via phone in seconds.
+
+          <div style="font-size:0.73rem; color:var(--text-muted); margin-top:10px; line-height:1.4; border-top:1px dashed var(--border); padding-top:6px;">
+            💡 <strong>Fast 30-Sec Entry:</strong> Tap <em>Copy GTT Form</em> → Open Kite app → Tap <em>Create GTT</em> → Set Stop & Target → Done! Zero API token hassle.
           </div>
         </div>
       </div>

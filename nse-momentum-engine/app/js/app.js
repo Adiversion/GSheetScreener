@@ -955,9 +955,12 @@ function wireZerodhaButtons(sig) {
   if (!wrap || !sig) return;
   wrap.style.display = 'block';
 
-  // Show Auto-GTT button only if Kite is configured
-  const apiBlock = document.getElementById('kiteApiActions');
-  if (apiBlock) apiBlock.style.display = kiteConfigured() ? 'block' : 'none';
+  // Populate manual guide cheat-sheet
+  const stopEl = document.getElementById('guideStopLoss');
+  if (stopEl) stopEl.textContent = `₹${fmt(sig.INITIAL_STOP)} (Hard SL)`;
+
+  const tgtEl = document.getElementById('guideTarget');
+  if (tgtEl) tgtEl.textContent = `₹${fmt(sig.M1_TARGET)} (+15.0%)`;
 
   const btnKite = document.getElementById('btnOpenKite');
   if (btnKite) {

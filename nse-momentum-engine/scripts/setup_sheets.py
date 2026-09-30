@@ -18,6 +18,14 @@ import sys
 import time
 from datetime import datetime
 
+# Fix Windows console UTF-8 emoji encoding
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -83,15 +91,31 @@ def load_credentials(creds_path: str | None) -> Credentials:
 # SPREADSHEET OPEN / CREATE
 # ──────────────────────────────────────────────────────────────────────────────
 
-def open_or_create_spreadsheet(gc: gspread.Client) -> gspread.Spreadsheet:
+def open_or_create_spreadsheet(gc: gspread.Client, service_email: str = "") -> gspread.Spreadsheet:
     """Open existing spreadsheet or create a new one."""
     try:
         sh = gc.open(SPREADSHEET_NAME)
         print(f"📂  Opened existing spreadsheet: '{SPREADSHEET_NAME}'")
+        return sh
     except gspread.SpreadsheetNotFound:
-        sh = gc.create(SPREADSHEET_NAME)
-        print(f"✨  Created new spreadsheet: '{SPREADSHEET_NAME}'")
-    return sh
+        try:
+            sh = gc.create(SPREADSHEET_NAME)
+            print(f"✨  Created new spreadsheet: '{SPREADSHEET_NAME}'")
+            return sh
+        except Exception as e:
+            email_hint = service_email or "your service account email"
+            print("\n" + "═" * 65)
+            print("⚠️  Google Cloud Service Accounts have 0 MB of Drive storage.")
+            print(f"    Error: {e}")
+            print("\n👉  QUICK 30-SECOND FIX (Do this once):")
+            print(f"    1. Open your browser and go to: https://sheets.new")
+            print(f"    2. Name the blank spreadsheet: '{SPREADSHEET_NAME}'")
+            print(f"    3. Click 'Share' (top right) and paste your bot's email:")
+            print(f"       👉  {email_hint}")
+            print(f"    4. Set permission to 'Editor' and click 'Share'.")
+            print(f"    5. Re-run this command: python scripts/setup_sheets.py --creds path/to/key.json")
+            print("═" * 65 + "\n")
+            sys.exit(1)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -705,7 +729,8 @@ def main():
     service = build("sheets", "v4", credentials=creds)
 
     # ── 4. Open / create spreadsheet
-    sh = open_or_create_spreadsheet(gc)
+    service_email = getattr(creds, "service_account_email", "")
+    sh = open_or_create_spreadsheet(gc, service_email)
 
     # ── 5. Ensure all required tabs exist first (so reorder works)
     print("\n🗂️   Ensuring all 5 tabs exist …")
