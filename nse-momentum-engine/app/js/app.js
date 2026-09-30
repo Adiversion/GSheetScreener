@@ -420,6 +420,7 @@ function renderActiveSignal(h, alts, isDefensive = false) {
   const cms = parseFloat(h.CMS_SCORE);
   const high52 = parseFloat(h.HIGH_52W) || cmp;
   const proxPct = Math.max(0, ((high52 - cmp) / high52) * 100);
+  const fillRatio = (Math.max(5, 100 - proxPct) / 100).toFixed(3);
   const atr = parseFloat(h.ATR_14) || (cmp * 0.04);
   const atrPct = (atr / cmp) * 100;
 
@@ -444,7 +445,7 @@ function renderActiveSignal(h, alts, isDefensive = false) {
             <strong style="color:var(--accent); font-family:var(--font-mono);">${fmtINR(high52)} (-${proxPct.toFixed(1)}%)</strong>
           </div>
           <div class="hero-52w-bar">
-            <div class="hero-52w-fill" style="width: ${Math.max(5, 100 - proxPct)}%"></div>
+            <div class="hero-52w-fill" style="--fill-pct: ${fillRatio};"></div>
           </div>
         </div>
       </div>
@@ -473,7 +474,7 @@ function renderActiveSignal(h, alts, isDefensive = false) {
             <strong style="color:var(--accent); font-family:var(--font-mono);">${fmtINR(high52)} (-${proxPct.toFixed(1)}%)</strong>
           </div>
           <div class="hero-52w-bar">
-            <div class="hero-52w-fill" style="width: ${Math.max(5, 100 - proxPct)}%"></div>
+            <div class="hero-52w-fill" style="--fill-pct: ${fillRatio};"></div>
           </div>
         </div>
       </div>
@@ -586,7 +587,7 @@ function renderRSIGauge(rsi) {
 
   if (marker) {
     const pct = Math.min(Math.max(rsi, 0), 100);
-    marker.style.left = `${pct}%`;
+    marker.style.setProperty('--rsi-pos', `${pct}%`);
   }
 }
 
@@ -914,6 +915,7 @@ document.getElementById('exitModal').addEventListener('click', e => {
 function openExitModal() {
   const modal = document.getElementById('exitModal');
   modal.classList.add('open');
+  document.body.classList.add('modal-open');
   if (state.signalData && state.signalData[0] && state.signalData[0].STATUS === 'ACTIVE_SIGNAL') {
     const h = state.signalData[0];
     document.getElementById('exitSymbol').value = h.SYMBOL || '';
@@ -926,6 +928,7 @@ function openExitModal() {
 function closeExitModal() {
   document.getElementById('exitModal').classList.remove('open');
   document.getElementById('exitCalcPreview').style.display = 'none';
+  document.body.classList.remove('modal-open');
 }
 
 ['exitEntry', 'exitPrice', 'exitShares'].forEach(id => {
@@ -1438,9 +1441,19 @@ function setupWatchlistSearchAndFilters() {
     renderAllStocksTable(all, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
   }
 
-  // Keyboard shortcut '/' to focus global search
+  // Keyboard shortcuts: '/' to focus global search, 'Escape' to blur or close modals
   window.addEventListener('keydown', e => {
-    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    if (e.key === 'Escape') {
+      if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+        document.activeElement.blur();
+      }
+      closeExitModal();
+      const glossaryModal = document.getElementById('glossaryModal');
+      if (glossaryModal && glossaryModal.classList.contains('open')) {
+        glossaryModal.classList.remove('open');
+        document.body.classList.remove('modal-open');
+      }
+    } else if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
       e.preventDefault();
       if (globalSearch) {
         globalSearch.focus();
@@ -1751,17 +1764,29 @@ function wireGlossaryModal() {
   const btnCloseBottom = document.getElementById('btnCloseGlossaryBottom');
 
   if (btnOpen && modal) {
-    btnOpen.onclick = () => modal.classList.add('open');
+    btnOpen.onclick = () => {
+      modal.classList.add('open');
+      document.body.classList.add('modal-open');
+    };
   }
   if (btnClose && modal) {
-    btnClose.onclick = () => modal.classList.remove('open');
+    btnClose.onclick = () => {
+      modal.classList.remove('open');
+      document.body.classList.remove('modal-open');
+    };
   }
   if (btnCloseBottom && modal) {
-    btnCloseBottom.onclick = () => modal.classList.remove('open');
+    btnCloseBottom.onclick = () => {
+      modal.classList.remove('open');
+      document.body.classList.remove('modal-open');
+    };
   }
   if (modal) {
     modal.onclick = e => {
-      if (e.target === modal) modal.classList.remove('open');
+      if (e.target === modal) {
+        modal.classList.remove('open');
+        document.body.classList.remove('modal-open');
+      }
     };
   }
 }
