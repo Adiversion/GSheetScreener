@@ -40,11 +40,12 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Network-first for Google Sheets CSV (always try to get fresh signal data)
+  // Network-first for signal data and Google Sheets CSV (always try fresh first)
   if (
     url.hostname === 'docs.google.com' ||
     url.hostname === 'spreadsheets.google.com' ||
-    url.searchParams.has('tqx')
+    url.searchParams.has('tqx') ||
+    url.pathname.includes('/data/signal.')
   ) {
     event.respondWith(networkFirstDataStrategy(event.request));
     return;

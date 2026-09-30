@@ -190,42 +190,60 @@ function switchTab(name) {
 
 async function fetchSignal(showLoading = true) {
   if (state.refreshing) return;
-  const url = store.get(LS.SHEET_URL, '');
-  if (!url) {
-    showSkeleton(false);
-    renderCashState(null, 'Configure your Sheet URL in ⚙️ Settings');
-    return;
-  }
-
   if (showLoading) { setRefreshing(true); showSkeleton(true); }
 
+  const customUrl = store.get(LS.SHEET_URL, '');
+
   try {
-    // Add cache-bust timestamp so SW uses network-first for this URL
-    const fetchUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-    const res = await fetch(fetchUrl, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    const rows = parseCSV(text);
-    if (!rows.length) throw new Error('Empty CSV');
+    let rows = null;
+    let payload = null;
+
+    // 1. If user set a custom Google Sheet URL in settings, use that; otherwise use static native JSON!
+    if (customUrl) {
+      const fetchUrl = customUrl + (customUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
+      const res = await fetch(fetchUrl, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Sheet HTTP ${res.status}`);
+      const text = await res.text();
+      rows = parseCSV(text);
+    } else {
+      // Native static API from GitHub Pages / local
+      const res = await fetch('data/signal.json?_t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        payload = await res.json();
+        rows = payload.rows || [];
+      } else {
+        const csvRes = await fetch('data/signal.csv?_t=' + Date.now(), { cache: 'no-store' });
+        if (csvRes.ok) {
+          const text = await csvRes.text();
+          rows = parseCSV(text);
+        }
+      }
+    }
+
+    if (!rows || !rows.length) throw new Error('No signal data available');
 
     state.signalData = rows;
-    store.set(LS.LAST_SIGNAL, { rows, fetchedAt: new Date().toISOString() });
-    renderSignal(rows);
+    state.payload = payload;
+    store.set(LS.LAST_SIGNAL, { rows, payload, fetchedAt: new Date().toISOString() });
+
+    renderMarketRegime(payload ? payload.regime : null);
+    renderSignal(rows, payload ? payload.reason : null);
     updateLastUpdated(new Date());
     if (showLoading) showToast('Signal refreshed', 'success', '📡');
   } catch (err) {
-    console.error('[Fetch]', err);
-    // Try to show cached data
+    console.warn('[Fetch error, checking cache]', err);
     const cached = store.get(LS.LAST_SIGNAL, null);
     if (cached && cached.rows) {
       state.signalData = cached.rows;
-      renderSignal(cached.rows);
+      state.payload = cached.payload;
+      renderMarketRegime(cached.payload ? cached.payload.regime : null);
+      renderSignal(cached.rows, cached.payload ? cached.payload.reason : null);
       updateLastUpdated(new Date(cached.fetchedAt), true);
       showToast('Showing cached data (offline)', 'info', '📦');
     } else {
       showSkeleton(false);
-      renderCashState(null, 'No data available. Check Settings or connection.');
-      showToast('Failed to fetch signal: ' + err.message, 'error');
+      renderCashState(null, 'Preserve Capital (Defensive Mode)');
+      showToast('Fetch error: ' + err.message, 'error');
     }
   } finally {
     setRefreshing(false);
@@ -252,23 +270,61 @@ function updateLastUpdated(date, fromCache = false) {
   txt.textContent = `${dateStr}, ${timeStr}${fromCache ? ' (cached)' : ''}`;
 }
 
+function renderMarketRegime(regime) {
+  const banner = document.getElementById('regimeBanner');
+  if (!banner) return;
+  if (!regime) {
+    banner.style.display = 'none';
+    return;
+  }
+  banner.style.display = 'block';
+  const title = document.getElementById('regimeTitle');
+  const badge = document.getElementById('regimeBadge');
+  const desc = document.getElementById('regimeDesc');
+
+  banner.className = 'card regime-card';
+  badge.className = 'badge';
+
+  const cmpStr = regime.nifty_cmp ? '₹' + Number(regime.nifty_cmp).toLocaleString('en-IN') : '–';
+
+  if (regime.regime === 'BULL_MARKET') {
+    banner.classList.add('bull');
+    badge.classList.add('badge-bull');
+    badge.textContent = '🟢 BULL REGIME';
+    title.textContent = `Nifty 50: ${cmpStr}`;
+    desc.textContent = regime.description || 'Confirmed uptrend. Aggressive momentum active.';
+  } else if (regime.regime === 'CORRECTION_WATCH') {
+    banner.classList.add('caution');
+    badge.classList.add('badge-caution');
+    badge.textContent = '🟡 CORRECTION WATCH';
+    title.textContent = `Nifty 50: ${cmpStr}`;
+    desc.textContent = regime.description || 'Market pullback. Conservative entries only.';
+  } else {
+    banner.classList.add('defensive');
+    badge.classList.add('badge-defensive');
+    badge.textContent = '🛡️ DEFENSIVE CASH';
+    title.textContent = `Nifty 50: ${cmpStr}`;
+    desc.textContent = regime.description || 'Nifty below moving averages. 100% Capital preserved in CASH.';
+  }
+}
+
 /* ══════════════════════════════════════════════════════
    SIGNAL RENDERING
 ══════════════════════════════════════════════════════ */
 
-function renderSignal(rows) {
+function renderSignal(rows, overrideReason = null) {
   showSkeleton(false);
   const hero  = rows[0];
   const alts  = rows.slice(1);
-  const total = hero.TOTAL_QUALIFIED || '–';
+  const total = hero ? (hero.TOTAL_QUALIFIED || '–') : '–';
 
   // Qualified banner
   const qBanner = document.getElementById('qualBanner');
   qBanner.style.display = 'flex';
   document.getElementById('totalQualified').textContent = total;
 
-  if (!hero || hero.STATUS === 'CASH' || !hero.SYMBOL) {
-    renderCashState(hero);
+  if (!hero || hero.STATUS === 'CASH' || !hero.SYMBOL || hero.SYMBOL === '—') {
+    renderCashState(hero, overrideReason);
     return;
   }
 
@@ -279,10 +335,10 @@ function renderCashState(hero, overrideMsg = null) {
   const heroCard = document.getElementById('heroCard');
   heroCard.className = 'card signal-hero';
   heroCard.innerHTML = `
-    <div class="status-badge cash">💤 CASH</div>
+    <div class="status-badge cash">🛡️ 100% CASH</div>
     <div class="cash-state">
       <div class="cash-icon">🏦</div>
-      <div class="cash-label">${overrideMsg || 'No Active Signal'}</div>
+      <div class="cash-label">${overrideMsg || 'Preserve Capital: Market in Defensive Mode'}</div>
       <div class="cash-sub">${hero && hero.TIMESTAMP ? 'Screened: ' + hero.TIMESTAMP : 'Stay patient. Momentum will come.'}</div>
     </div>
   `;

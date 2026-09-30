@@ -851,3 +851,30 @@ canvas { display: block; }
   border: 1.5px solid #387ED1;
 }
 .btn-zerodha-outline:active { transform: scale(0.97); background: rgba(56,126,209,0.1); }
+
+/* ── Market Regime Card ── */
+.regime-card {
+  border-left: 4px solid var(--accent);
+  background: var(--card);
+}
+.regime-card.caution {
+  border-left-color: var(--yellow);
+}
+.regime-card.defensive {
+  border-left-color: var(--red);
+}
+.badge-bull {
+  background: rgba(0,200,150,0.15);
+  color: var(--accent);
+  border: 1px solid rgba(0,200,150,0.3);
+}
+.badge-caution {
+  background: rgba(255,215,0,0.15);
+  color: #ffd700;
+  border: 1px solid rgba(255,215,0,0.3);
+}
+.badge-defensive {
+  background: rgba(255,71,87,0.15);
+  color: var(--red);
+  border: 1px solid rgba(255,71,87,0.3);
+}
