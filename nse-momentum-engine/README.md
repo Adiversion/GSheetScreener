@@ -110,6 +110,7 @@ nse-momentum-engine/
 │       └── icon-512.svg
 │
 ├── 📁 docs/                 ← Full documentation
+│   ├── WHAT_YOU_SHOULD_DO.md ← ⭐ Action Checklist & Fallback Guide
 │   ├── ARCHITECTURE.md      ← System design + data flow
 │   ├── GOOGLE_SHEETS_SETUP.md ← Step-by-step GSheets guide
 │   ├── ANDROID_SETUP.md     ← APK build via GitHub Actions

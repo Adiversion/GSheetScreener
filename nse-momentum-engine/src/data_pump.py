@@ -13,6 +13,7 @@ import os
 import io
 import json
 import math
+import zipfile
 import requests
 import numpy as np
 import pandas as pd
@@ -38,37 +39,198 @@ M2_STOP_PCT    = 0.15
 M3_PCT         = 0.50
 BUFFER         = 26.0   # DP + taxes + rounding buffer
 
-BHAVCOPY_URL = "https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{date}.csv"
-HEADERS      = {"User-Agent": "Mozilla/5.0 (compatible; NSE-Screener/2.0; +https://github.com)"}
+# Standard canonical column schema required by the screener
+CANONICAL_COLUMNS = [
+    "SYMBOL", "SERIES", "OPEN", "HIGH", "LOW", "CLOSE",
+    "LAST", "PREVCLOSE", "TOTTRDQTY", "TOTTRDVAL",
+    "TIMESTAMP", "TOTALTRADES", "ISIN", "FETCH_DATE"
+]
+
+# Browser headers to ensure smooth connection with NSE servers
+BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+}
 
 
 # ─────────────────────────────────────────────────────────────────────────
-# STEP 1 — Get last Friday's date
+# STEP 1 — Get last Friday's date in multiple formats
 # ─────────────────────────────────────────────────────────────────────────
 
-def get_last_friday_ddmmyyyy() -> str:
+def get_last_friday() -> tuple[str, str, datetime]:
+    """
+    Returns (ddmmyyyy, yyyymmdd, datetime_obj) for the most recent Friday (IST).
+    """
     today     = datetime.now(IST)
     days_back = (today.weekday() - 4) % 7  # 4 = Friday
     friday    = today - timedelta(days=days_back)
-    return friday.strftime("%d%m%Y")
+    return friday.strftime("%d%m%Y"), friday.strftime("%Y%m%d"), friday
+
+
+def get_last_friday_ddmmyyyy() -> str:
+    ddmmyyyy, _, _ = get_last_friday()
+    return ddmmyyyy
 
 
 # ─────────────────────────────────────────────────────────────────────────
-# STEP 2 — Download Bhavcopy
+# STEP 2 — Multi-Tier Resilient NSE Bhavcopy Downloader
 # ─────────────────────────────────────────────────────────────────────────
+
+def _create_nse_session() -> requests.Session:
+    """Creates a browser-mimicking session with cookies from nseindia.com."""
+    s = requests.Session()
+    s.headers.update(BROWSER_HEADERS)
+    try:
+        s.get("https://www.nseindia.com/", timeout=12)
+    except Exception as e:
+        print(f"[WARN] Initial NSE cookie handshake: {e}")
+    return s
+
+
+def _clean_bhavcopy_df(df: pd.DataFrame, date_str: str) -> pd.DataFrame:
+    """Cleans, normalizes column names, and maps UDiFF/Legacy headers to canonical format."""
+    df.columns = [c.strip().upper() for c in df.columns]
+
+    # UDiFF Header Normalization (effective from July 2024 onwards)
+    udiff_map = {
+        "TCKRSYMB": "SYMBOL",
+        "SCTYSRS":  "SERIES",
+        "OPNPRIC":  "OPEN",
+        "HGHPRIC":  "HIGH",
+        "LWPRIC":   "LOW",
+        "CLSPRIC":  "CLOSE",
+        "LASTPRIC": "LAST",
+        "PRVSCLSGPRIC": "PREVCLOSE",
+        "TTLTRADQTY": "TOTTRDQTY",
+        "TTLTRDVAL":  "TOTTRDVAL",
+        "TRADDT":   "TIMESTAMP",
+        "TTLNBOFTXSEXCTD": "TOTALTRADES",
+        "ISIN":     "ISIN",
+    }
+    df = df.rename(columns=udiff_map)
+
+    # Filter EQ series (equity delivery only; drops SME, FO, bonds, etc.)
+    if "SERIES" in df.columns:
+        df = df[df["SERIES"].astype(str).str.strip().str.upper() == "EQ"].copy()
+
+    # Fill any missing canonical columns with default blank
+    for col in CANONICAL_COLUMNS:
+        if col not in df.columns:
+            df[col] = ""
+
+    df["FETCH_DATE"] = date_str
+    return df[CANONICAL_COLUMNS].copy()
+
 
 def download_bhavcopy(date_str: str) -> pd.DataFrame:
-    url  = BHAVCOPY_URL.format(date=date_str)
-    resp = requests.get(url, headers=HEADERS, timeout=30)
-    resp.raise_for_status()
-    df = pd.read_csv(io.StringIO(resp.text))
-    # Normalize column names (NSE sometimes has trailing spaces)
-    df.columns = [c.strip().upper() for c in df.columns]
-    # Keep EQ series (exclude FO, BE, SME, IL, N1, etc.)
-    df = df[df["SERIES"].str.strip() == "EQ"].copy()
-    df["FETCH_DATE"] = date_str
-    print(f"[INFO] Bhavcopy {date_str}: {len(df)} EQ stocks downloaded")
-    return df
+    """
+    Downloads full NSE equity data with automatic multi-tier fallback:
+      Tier 1: NSE UDiFF Common Bhavcopy (.csv.zip) [Official modern standard]
+      Tier 2: NSE Legacy sec_bhavdata_full (.csv)
+      Tier 3: NSE Historical Archives (.csv.zip)
+      Tier 4: Emergency Yahoo Finance / Nifty 500 fallback (if NSE server maintenance)
+    """
+    ddmmyyyy, yyyymmdd, date_obj = get_last_friday()
+    session = _create_nse_session()
+
+    # ── Tier 1: NSE UDiFF Common Bhavcopy (Newest official standard) ─────
+    url_udiff = f"https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{yyyymmdd}_F_0000.csv.zip"
+    try:
+        print(f"[INFO] Tier 1: Fetching NSE UDiFF Bhavcopy: {url_udiff}")
+        resp = session.get(url_udiff, headers={"Referer": "https://www.nseindia.com/all-reports"}, timeout=25)
+        if resp.status_code == 200 and len(resp.content) > 5000:
+            with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+                csv_files = [f for f in zf.namelist() if f.endswith(".csv")]
+                if csv_files:
+                    with zf.open(csv_files[0]) as f:
+                        df = pd.read_csv(f)
+                        df_clean = _clean_bhavcopy_df(df, date_str)
+                        if len(df_clean) > 500:
+                            print(f"[INFO] Tier 1 SUCCESS: {len(df_clean)} EQ stocks loaded via UDiFF")
+                            return df_clean
+    except Exception as e:
+        print(f"[WARN] Tier 1 failed ({e}). Proceeding to Tier 2...")
+
+    # ── Tier 2: NSE Legacy Bhavdata ──────────────────────────────────────
+    url_legacy = f"https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{date_str}.csv"
+    try:
+        print(f"[INFO] Tier 2: Fetching NSE Legacy Bhavcopy: {url_legacy}")
+        resp = session.get(url_legacy, headers={"Referer": "https://www.nseindia.com/"}, timeout=25)
+        if resp.status_code == 200 and len(resp.content) > 5000:
+            df = pd.read_csv(io.StringIO(resp.text))
+            df_clean = _clean_bhavcopy_df(df, date_str)
+            if len(df_clean) > 500:
+                print(f"[INFO] Tier 2 SUCCESS: {len(df_clean)} EQ stocks loaded via Legacy Bhavcopy")
+                return df_clean
+    except Exception as e:
+        print(f"[WARN] Tier 2 failed ({e}). Proceeding to Tier 3...")
+
+    # ── Tier 3: NSE Historical Archive URL ───────────────────────────────
+    mon = date_obj.strftime("%b").upper()
+    url_hist = f"https://archives.nseindia.com/content/historical/EQUITIES/{date_obj.year}/{mon}/cm{date_str[:2]}{mon}{date_obj.year}bhav.csv.zip"
+    try:
+        print(f"[INFO] Tier 3: Fetching NSE Historical Archives: {url_hist}")
+        resp = session.get(url_hist, headers={"Referer": "https://www.nseindia.com/"}, timeout=25)
+        if resp.status_code == 200 and len(resp.content) > 5000:
+            with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+                csv_files = [f for f in zf.namelist() if f.endswith(".csv")]
+                if csv_files:
+                    with zf.open(csv_files[0]) as f:
+                        df = pd.read_csv(f)
+                        df_clean = _clean_bhavcopy_df(df, date_str)
+                        if len(df_clean) > 500:
+                            print(f"[INFO] Tier 3 SUCCESS: {len(df_clean)} EQ stocks loaded via Historical Archive")
+                            return df_clean
+    except Exception as e:
+        print(f"[WARN] Tier 3 failed ({e}). Proceeding to Tier 4 Emergency Fallback...")
+
+    # ── Tier 4: Emergency Fallback via yfinance ───────────────────────────
+    try:
+        print("[INFO] Tier 4: Fetching live prices via yfinance emergency fallback...")
+        import yfinance as yf
+        # Curated highly liquid broad universe
+        broad_symbols = [
+            "BEL.NS", "TATAPOWER.NS", "BHEL.NS", "ASHOKLEY.NS", "FEDERALBNK.NS",
+            "NMDC.NS", "SAIL.NS", "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS",
+            "TATAMOTORS.NS", "BAJFINANCE.NS", "AXISBANK.NS", "INFY.NS", "TCS.NS",
+            "NTPC.NS", "ONGC.NS", "POWERGRID.NS", "COALINDIA.NS", "IOC.NS"
+        ]
+        data = yf.download(broad_symbols, period="5d", interval="1d", group_by="ticker", progress=False)
+        rows = []
+        for sym in broad_symbols:
+            try:
+                sdf = data[sym].dropna()
+                if len(sdf) > 0:
+                    last_row = sdf.iloc[-1]
+                    rows.append({
+                        "SYMBOL": sym.replace(".NS", ""),
+                        "SERIES": "EQ",
+                        "OPEN": float(last_row.get("Open", 0)),
+                        "HIGH": float(last_row.get("High", 0)),
+                        "LOW": float(last_row.get("Low", 0)),
+                        "CLOSE": float(last_row.get("Close", 0)),
+                        "LAST": float(last_row.get("Close", 0)),
+                        "PREVCLOSE": float(sdf.iloc[-2].get("Close", 0)) if len(sdf) > 1 else float(last_row.get("Close", 0)),
+                        "TOTTRDQTY": int(last_row.get("Volume", 0)),
+                        "TOTTRDVAL": 0,
+                        "TIMESTAMP": date_str,
+                        "TOTALTRADES": 0,
+                        "ISIN": "",
+                        "FETCH_DATE": date_str
+                    })
+            except Exception:
+                continue
+
+        if rows:
+            print(f"[INFO] Tier 4 SUCCESS: {len(rows)} stocks loaded via emergency fallback")
+            return pd.DataFrame(rows)[CANONICAL_COLUMNS]
+    except Exception as e:
+        print(f"[ERROR] Tier 4 emergency fallback failed: {e}")
+
+    raise RuntimeError(f"All 4 data download tiers failed for {date_str}. Check NSE connectivity or market holidays.")
 
 
 # ─────────────────────────────────────────────────────────────────────────

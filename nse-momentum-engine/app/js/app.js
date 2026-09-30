@@ -990,6 +990,20 @@ function wireZerodhaButtons(sig) {
   if (btnAuto) {
     btnAuto.onclick = () => autoPlaceGTT(sig);
   }
+
+  const btnGroww = document.getElementById('btnOpenGroww');
+  if (btnGroww) {
+    btnGroww.onclick = () => {
+      window.open(`https://groww.in/stocks/${encodeURIComponent(sig.SYMBOL.toLowerCase())}`, '_blank', 'noopener');
+    };
+  }
+
+  const btnTV = document.getElementById('btnOpenTV');
+  if (btnTV) {
+    btnTV.onclick = () => {
+      window.open(`https://in.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(sig.SYMBOL)}`, '_blank', 'noopener');
+    };
+  }
 }
 
 /** Kite Settings: Save */
