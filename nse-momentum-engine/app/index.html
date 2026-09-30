@@ -165,20 +165,20 @@
         </div>
 
         <!-- Interactive Actual Entry Price (Gap-Up) Controller -->
-        <div class="entry-price-box" style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:14px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px;">⚡ Actual Entry Price (Market Open / Gap)</span>
-            <span id="gapBadge" class="badge" style="background:rgba(0,200,150,0.15); color:var(--accent); font-size:11px; font-weight:700; padding:2px 8px; border-radius:8px;">0.0% Flat</span>
+        <div class="entry-price-box">
+          <div class="entry-price-header">
+            <span class="entry-price-title">⚡ Actual Entry Price (Market Open / Gap)</span>
+            <span id="gapBadge" class="badge">0.0% Flat</span>
           </div>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <div style="position:relative; flex:1;">
-              <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:700; color:var(--text-muted); font-size:15px;">₹</span>
-              <input type="number" id="inputActualEntry" step="0.05" min="1" style="width:100%; padding:8px 12px 8px 28px; background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px; font-weight:700;">
+          <div class="entry-input-group">
+            <div class="entry-input-wrapper">
+              <span class="currency-prefix">₹</span>
+              <input type="number" id="inputActualEntry" class="actual-entry-input" step="0.05" min="1" placeholder="CMP" />
             </div>
-            <button id="btnResetEntry" class="btn-secondary" style="padding:8px 12px; font-size:12px; font-weight:700; border-radius:8px; white-space:nowrap;">Reset CMP</button>
+            <button id="btnResetEntry" class="btn-reset-entry">Reset CMP</button>
           </div>
           <!-- Quick Gap Presets -->
-          <div style="display:flex; gap:6px; margin-top:8px; overflow-x:auto;">
+          <div class="entry-pills-row">
             <button class="pill-gap active" data-gap="0">Flat (CMP)</button>
             <button class="pill-gap" data-gap="1">+1%</button>
             <button class="pill-gap" data-gap="2">+2%</button>
@@ -186,7 +186,7 @@
             <button class="pill-gap" data-gap="5">+5%</button>
           </div>
           <!-- Gap Advice Box -->
-          <div id="gapAdviceBox" style="font-size:11px; color:var(--accent); margin-top:8px; line-height:1.4;">
+          <div id="gapAdviceBox" class="gap-advice-box">
             🟢 <strong>Ideal Entry:</strong> Opening within 0–3% of CMP preserves optimal risk-reward.
           </div>
         </div>

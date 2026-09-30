@@ -168,10 +168,15 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
     is_today = (trade_date == today_str)
     bhavcopy_status = "CURRENT_SESSION" if is_today else "PREVIOUS_SESSION_FALLBACK"
 
-    # 2. Filter liquid active equities (Price >= ₹50, Volume >= 300,000)
-    cands_df = df_bhav[(df_bhav["CMP"] >= 50.0) & (df_bhav["VOLUME"] >= 300000)].copy()
-    dynamic_symbols = cands_df.head(200)["SYMBOL"].unique().tolist()
-    print(f"🔍 Discovered {len(dynamic_symbols)} high-volume liquid equities across entire NSE.")
+    # 2. Filter liquid active equities (Price >= ₹50, Volume >= 100,000 OR Turnover >= ₹2 Crore)
+    df_bhav["TURNOVER"] = pd.to_numeric(df_bhav["TtlTrfVal"], errors="coerce").fillna(0)
+    cands_df = df_bhav[
+        (df_bhav["CMP"] >= 50.0) & 
+        ((df_bhav["VOLUME"] >= 100000) | (df_bhav["TURNOVER"] >= 20000000.0))
+    ].copy()
+    cands_df = cands_df.sort_values(by="TURNOVER", ascending=False)
+    dynamic_symbols = cands_df.head(300)["SYMBOL"].unique().tolist()
+    print(f"🔍 Discovered {len(dynamic_symbols)} high-liquidity active equities across entire NSE.")
 
     # 3. Batch fetch 1-year historical daily bars in parallel threads
     tickers = [f"{s}.NS" for s in dynamic_symbols]
