@@ -13,9 +13,10 @@
     "date": "2026-09-29",
     "display_date": "29 Sep 2026",
     "is_today": false,
-    "winner": "CYIENTDLM",
-    "cmp": 914.1,
-    "cms": 78.13,
-    "total_qualified": 23
+    "winner": "CASH",
+    "cmp": 0,
+    "cms": 0,
+    "total_qualified": 44,
+    "regime": "DEFENSIVE_CASH"
   }
 ]
