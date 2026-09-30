@@ -66,6 +66,30 @@
         <div id="regimeDesc" style="font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.4;">–</div>
       </div>
 
+      <!-- Interactive Capital Controller Card -->
+      <div class="card capital-card" id="capitalControllerCard" style="margin-bottom:14px; padding:14px 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px;">💰 Investment Capital</span>
+          <span id="capitalModeBadge" class="badge" style="background:rgba(0,200,150,0.15); color:var(--accent); font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;">Dynamic Sizing</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div style="position:relative; flex:1;">
+            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:700; color:var(--text-muted); font-size:15px;">₹</span>
+            <input type="number" id="inputUserCapital" value="1000" min="100" step="500" style="width:100%; padding:9px 12px 9px 28px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:15px; font-weight:700;">
+          </div>
+          <button id="btnApplyCapital" class="btn-primary" style="padding:9px 16px; font-size:13px; font-weight:700; border-radius:8px; white-space:nowrap;">Set Budget</button>
+        </div>
+        <!-- Quick Preset Pills -->
+        <div class="preset-pills-row" style="display:flex; gap:6px; margin-top:10px; overflow-x:auto; padding-bottom:2px;">
+          <button class="pill-preset active" data-cap="1000">₹1,000</button>
+          <button class="pill-preset" data-cap="2500">₹2,500</button>
+          <button class="pill-preset" data-cap="5000">₹5,000</button>
+          <button class="pill-preset" data-cap="10000">₹10,000</button>
+          <button class="pill-preset" data-cap="25000">₹25,000</button>
+          <button class="pill-preset" data-cap="50000">₹50,000</button>
+        </div>
+      </div>
+
       <!-- Hero Signal Card -->
       <div class="card signal-hero" id="heroCard">
         <!-- Populated by JS -->
@@ -173,6 +197,35 @@
           <span class="chevron">▼</span>
         </div>
         <div class="collapsible-body" id="altsBody"></div>
+      </div>
+
+      <!-- All Qualified Momentum Stocks Table (Entire NSE Universe) -->
+      <div class="card" id="allStocksCard" style="margin-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="card-title" style="margin-bottom:0;">🏆 All Stage-2 Leaders (Entire NSE)</div>
+          <span id="allStocksCountBadge" class="badge" style="background:var(--border); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:10px;">0 Stocks</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">
+          💡 Tap any stock row to select it and generate its 1-Tap GTT form.
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="gtt-table" style="width:100%; font-size:12px;">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Stock</th>
+                <th>CMP ₹</th>
+                <th>CMS</th>
+                <th>RSI</th>
+                <th>Budget</th>
+                <th>Select</th>
+              </tr>
+            </thead>
+            <tbody id="allStocksBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>

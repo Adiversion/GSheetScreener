@@ -878,3 +878,37 @@ canvas { display: block; }
   color: var(--red);
   border: 1px solid rgba(255,71,87,0.3);
 }
+
+/* ── Capital Controller Presets ── */
+.pill-preset {
+  padding: 5px 12px;
+  border-radius: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+.pill-preset:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.pill-preset.active {
+  background: rgba(0,200,150,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.stock-table-row {
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.stock-table-row:hover {
+  background: rgba(255,255,255,0.04);
+}
+.stock-table-row.selected {
+  background: rgba(0,200,150,0.1) !important;
+}

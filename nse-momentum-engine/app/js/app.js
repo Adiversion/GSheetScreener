@@ -227,7 +227,14 @@ async function fetchSignal(showLoading = true) {
     store.set(LS.LAST_SIGNAL, { rows, payload, fetchedAt: new Date().toISOString() });
 
     renderMarketRegime(payload ? payload.regime : null);
-    renderSignal(rows, payload ? payload.reason : null);
+    if (state.userCapital && state.userCapital !== DEFAULT_CAPITAL && payload && payload.all_qualified) {
+      onCapitalChange(state.userCapital);
+    } else {
+      renderSignal(rows, payload ? payload.reason : null);
+      if (payload && payload.all_qualified) {
+        renderAllStocksTable(payload.all_qualified, state.userCapital || DEFAULT_CAPITAL);
+      }
+    }
     updateLastUpdated(new Date());
     if (showLoading) showToast('Signal refreshed', 'success', '📡');
   } catch (err) {
@@ -237,7 +244,14 @@ async function fetchSignal(showLoading = true) {
       state.signalData = cached.rows;
       state.payload = cached.payload;
       renderMarketRegime(cached.payload ? cached.payload.regime : null);
-      renderSignal(cached.rows, cached.payload ? cached.payload.reason : null);
+      if (state.userCapital && state.userCapital !== DEFAULT_CAPITAL && cached.payload && cached.payload.all_qualified) {
+        onCapitalChange(state.userCapital);
+      } else {
+        renderSignal(cached.rows, cached.payload ? cached.payload.reason : null);
+        if (cached.payload && cached.payload.all_qualified) {
+          renderAllStocksTable(cached.payload.all_qualified, state.userCapital || DEFAULT_CAPITAL);
+        }
+      }
       updateLastUpdated(new Date(cached.fetchedAt), true);
       showToast('Showing cached data (offline)', 'info', '📦');
     } else {
@@ -1103,8 +1117,132 @@ function loadKiteSettings() {
   }
 }
 
-// Hook into tab switch to load Kite settings
-const origSwitchTab = window.switchTab;
+/* ══════════════════════════════════════════════════════
+   CAPITAL CONTROLLER & DYNAMIC STOCK EXPLORER
+══════════════════════════════════════════════════════ */
+
+function wireCapitalController() {
+  const input = document.getElementById('inputUserCapital');
+  const btn = document.getElementById('btnApplyCapital');
+  const pills = document.querySelectorAll('.pill-preset');
+
+  const currentCap = store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL);
+  state.userCapital = currentCap;
+  if (input) input.value = currentCap;
+  updatePillActive(currentCap);
+
+  if (btn && input) {
+    btn.onclick = () => {
+      const val = parseFloat(input.value);
+      if (!isNaN(val) && val >= 100) {
+        onCapitalChange(val);
+        showToast(`Budget set to ₹${val.toLocaleString('en-IN')}`, 'success', '💰');
+      } else {
+        showToast('Please enter at least ₹100', 'warn');
+      }
+    };
+    input.addEventListener('keypress', e => {
+      if (e.key === 'Enter') btn.click();
+    });
+  }
+
+  pills.forEach(p => {
+    p.onclick = () => {
+      const cap = parseFloat(p.dataset.cap);
+      if (!isNaN(cap)) {
+        if (input) input.value = cap;
+        onCapitalChange(cap);
+        showToast(`Budget set to ₹${cap.toLocaleString('en-IN')}`, 'success', '💰');
+      }
+    };
+  });
+}
+
+function updatePillActive(cap) {
+  document.querySelectorAll('.pill-preset').forEach(p => {
+    p.classList.toggle('active', parseFloat(p.dataset.cap) === cap);
+  });
+}
+
+function onCapitalChange(newCapital) {
+  state.userCapital = newCapital;
+  store.set(LS.CURRENT_CAPITAL, newCapital);
+  updatePillActive(newCapital);
+
+  const allStocks = (state.payload && state.payload.all_qualified) || [];
+  if (allStocks.length > 0) {
+    const affordable = allStocks.filter(s => parseFloat(s.CMP) <= (newCapital - 26));
+    if (affordable.length > 0) {
+      const winner = Object.assign({}, affordable[0]);
+      const shares = Math.max(Math.floor((newCapital - 26) / parseFloat(winner.CMP)), 1);
+      winner.SHARES = shares;
+      winner.CAPITAL_REQUIRED = shares * parseFloat(winner.CMP);
+      winner.CAPITAL_BASE = newCapital;
+      renderActiveSignal(winner, affordable.slice(1, 4));
+    } else {
+      renderCashState(null, `No stocks fit your entered budget of ₹${newCapital.toLocaleString('en-IN')}. Lowest priced leader is ₹${allStocks[allStocks.length-1].CMP}.`);
+    }
+    renderAllStocksTable(allStocks, newCapital);
+  }
+}
+
+function renderAllStocksTable(stocks, userCapital) {
+  const card = document.getElementById('allStocksCard');
+  const tbody = document.getElementById('allStocksBody');
+  const countBadge = document.getElementById('allStocksCountBadge');
+  if (!card || !tbody) return;
+
+  if (!stocks || !stocks.length) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+  if (countBadge) countBadge.textContent = `${stocks.length} Leaders`;
+
+  tbody.innerHTML = '';
+  stocks.forEach((s, idx) => {
+    const cmp = parseFloat(s.CMP);
+    const affordable = cmp <= (userCapital - 26);
+    const shares = affordable ? Math.floor((userCapital - 26) / cmp) : 0;
+    const tr = document.createElement('tr');
+    tr.className = 'stock-table-row';
+    tr.innerHTML = `
+      <td style="font-weight:700; color:var(--text-muted);">${idx + 1}</td>
+      <td style="font-weight:800; color:var(--accent); font-size:13px;">${s.SYMBOL}</td>
+      <td style="font-weight:700;">₹${cmp.toFixed(2)}</td>
+      <td><span class="meta-chip cms-chip" style="padding:1px 6px; font-size:10px;">${parseFloat(s.CMS_SCORE).toFixed(1)}</span></td>
+      <td style="color:${s.RSI_14 >= 70 ? '#ffd700' : (s.RSI_14 <= 45 ? '#ff4757' : '#00c896')}; font-weight:700;">${parseFloat(s.RSI_14).toFixed(1)}</td>
+      <td>
+        ${affordable 
+          ? `<span class="badge" style="background:rgba(0,200,150,0.15); color:var(--accent); font-size:10px; padding:2px 6px; border-radius:6px;">✅ Buy ${shares}</span>` 
+          : `<span class="badge" style="background:rgba(255,71,87,0.12); color:var(--red); font-size:10px; padding:2px 6px; border-radius:6px;">Needs ₹${Math.ceil(cmp + 26)}</span>`
+        }
+      </td>
+      <td>
+        <button class="btn-select-stock" style="background:transparent; border:1px solid var(--accent); color:var(--accent); border-radius:6px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer;">
+          Trade 🎯
+        </button>
+      </td>
+    `;
+    tr.onclick = () => selectStockForTrading(s, userCapital);
+    tbody.appendChild(tr);
+  });
+}
+
+function selectStockForTrading(s, userCapital) {
+  const stock = Object.assign({}, s);
+  const cmp = parseFloat(stock.CMP);
+  const shares = Math.max(Math.floor((userCapital - 26) / cmp), 1);
+  stock.SHARES = shares;
+  stock.CAPITAL_REQUIRED = shares * cmp;
+  stock.CAPITAL_BASE = userCapital;
+
+  renderActiveSignal(stock, []);
+  showToast(`Selected ${stock.SYMBOL} for trading!`, 'success', '🎯');
+
+  const hero = document.getElementById('heroCard');
+  if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 /* ══════════════════════════════════════════════════════
    BOOT
@@ -1112,15 +1250,6 @@ const origSwitchTab = window.switchTab;
 
 (function init() {
   updateOfflineBadge(navigator.onLine);
-
-  // If no URL configured, show skeleton briefly then show cash
-  const url = store.get(LS.SHEET_URL, '');
-  if (!url) {
-    setTimeout(() => {
-      showSkeleton(false);
-      renderCashState(null, 'Configure Google Sheet URL in ⚙️ Settings');
-    }, 600);
-  } else {
-    fetchSignal(true);
-  }
+  wireCapitalController();
+  fetchSignal(true);
 })();
