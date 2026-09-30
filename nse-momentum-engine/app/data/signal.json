@@ -1,8 +1,19 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-09-30 17:08 IST",
+  "timestamp": "2026-09-30 17:14 IST",
+  "trade_date": "2026-09-30",
+  "trade_date_display": "30-Sep-2026",
+  "is_today": true,
+  "bhavcopy_status": "CURRENT_SESSION",
   "capital_base": 1000.0,
   "total_qualified": 27,
+  "regime": {
+    "regime": "DEFENSIVE_CASH",
+    "nifty_cmp": 22620.45,
+    "sma_50": 23901.58,
+    "sma_200": 24372.85,
+    "description": "Nifty 50 below 200 SMA. Broader market in correction; Stage-2 leaders protected by GTT stop."
+  },
   "winner": {
     "SYMBOL": "BHAGERIA",
     "CMP": 406.45,
@@ -95,7 +106,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-09-30 17:08 IST",
+      "TIMESTAMP": "2026-09-30 17:14 IST",
       "SYMBOL": "BHAGERIA",
       "CMP": 406.45,
       "CMS_SCORE": 100.16,
@@ -120,7 +131,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-09-30 17:08 IST",
+      "TIMESTAMP": "2026-09-30 17:14 IST",
       "SYMBOL": "BIRLACABLE",
       "CMP": 381.15,
       "CMS_SCORE": 99.64,
@@ -145,7 +156,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-09-30 17:08 IST",
+      "TIMESTAMP": "2026-09-30 17:14 IST",
       "SYMBOL": "EMIL",
       "CMP": 205.36,
       "CMS_SCORE": 72.65,
@@ -170,7 +181,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-09-30 17:08 IST",
+      "TIMESTAMP": "2026-09-30 17:14 IST",
       "SYMBOL": "CUPID",
       "CMP": 311.65,
       "CMS_SCORE": 68.99,
@@ -761,6 +772,17 @@
       "M2_TARGET": 524.49,
       "M2_STOP": 463.97,
       "M3_TARGET": 605.18
+    }
+  ],
+  "history_manifest": [
+    {
+      "date": "2026-09-30",
+      "display_date": "30 Sep 2026",
+      "is_today": true,
+      "winner": "BHAGERIA",
+      "cmp": 406.45,
+      "cms": 100.16,
+      "total_qualified": 27
     }
   ]
 }

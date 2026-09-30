@@ -19,6 +19,7 @@ env/
 !app/.well-known/assetlinks.json
 !app/manifest.json
 !app/data/*.json
+!app/data/**/*.json
 !data/*.json
 credentials.json
 service_account*.json

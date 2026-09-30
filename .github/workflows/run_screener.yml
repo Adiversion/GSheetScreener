@@ -2,8 +2,15 @@ name: Daily NSE Momentum Screener
 
 on:
   schedule:
-    # Every weekday (Monday to Friday) at 12:00 PM UTC = 5:30 PM IST (post market close)
+    # Multi-cron schedule covering NSE Bhavcopy release windows:
+    # 1. 11:30 UTC = 5:00 PM IST (Earliest standard release)
+    # 2. 12:00 UTC = 5:30 PM IST (Standard post-close reconciliation)
+    # 3. 13:30 UTC = 7:00 PM IST (Heavy volume / delayed Bhavcopy release)
+    # 4. 14:30 UTC = 8:00 PM IST (Final evening reconciliation)
+    - cron: '30 11 * * 1-5'
     - cron: '0 12 * * 1-5'
+    - cron: '30 13 * * 1-5'
+    - cron: '30 14 * * 1-5'
   workflow_dispatch:  # Manual trigger from GitHub mobile app or browser
 
 permissions:
@@ -27,7 +34,7 @@ jobs:
         run: pip install -r nse-momentum-engine/requirements.txt
 
       - name: Run Quant Engine (DuckDB & Minervini SEPA)
-        run: python nse-momentum-engine/src/quant_engine.py 1000
+        run: python nse-momentum-engine/src/quant_engine.py 1000 --backfill 1
 
       - name: Commit updated signal data
         run: |

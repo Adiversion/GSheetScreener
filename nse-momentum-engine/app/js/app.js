@@ -235,6 +235,10 @@ async function fetchSignal(showLoading = true) {
         renderAllStocksTable(payload.all_qualified, state.userCapital || DEFAULT_CAPITAL);
       }
     }
+    if (payload) {
+      let manifest = payload.history_manifest;
+      renderSessionSwitcher(manifest, payload.trade_date);
+    }
     updateLastUpdated(new Date());
     if (showLoading) showToast('Signal refreshed', 'success', '📡');
   } catch (err) {
@@ -251,6 +255,9 @@ async function fetchSignal(showLoading = true) {
         if (cached.payload && cached.payload.all_qualified) {
           renderAllStocksTable(cached.payload.all_qualified, state.userCapital || DEFAULT_CAPITAL);
         }
+      }
+      if (cached.payload) {
+        renderSessionSwitcher(cached.payload.history_manifest, cached.payload.trade_date);
       }
       updateLastUpdated(new Date(cached.fetchedAt), true);
       showToast('Showing cached data (offline)', 'info', '📦');
@@ -451,62 +458,127 @@ function renderRSIGauge(rsi) {
 }
 
 function renderGTT(h) {
+  state.activeStock = h;
   const gttCard = document.getElementById('gttCard');
-  const body    = document.getElementById('gttBody');
-  const cmp     = parseFloat(h.CMP);
+  const entryInput = document.getElementById('inputActualEntry');
+  const currentEntry = parseFloat(h.ACTUAL_ENTRY || h.CMP);
+
+  if (entryInput) {
+    entryInput.value = currentEntry;
+  }
+  updateGapPillActive(0);
+  recalculateFromEntry(currentEntry);
+  gttCard.style.display = 'block';
+}
+
+function recalculateFromEntry(entry) {
+  const s = state.activeStock;
+  if (!s) return;
+  const cmp = parseFloat(s.CMP);
+  const atr = parseFloat(s.ATR_14) || (cmp * 0.03);
+  const capital = state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL);
+
+  // 1. Calculate gap pct
+  const gapPct = ((entry - cmp) / cmp) * 100;
+  const gapBadge = document.getElementById('gapBadge');
+  const adviceBox = document.getElementById('gapAdviceBox');
+  const basisBadge = document.getElementById('gttEntryBasisBadge');
+
+  if (gapBadge) {
+    const sign = gapPct >= 0 ? '+' : '';
+    gapBadge.textContent = `${sign}${gapPct.toFixed(1)}% Gap`;
+    if (gapPct <= 3.0) {
+      gapBadge.style.background = 'rgba(0,200,150,0.15)';
+      gapBadge.style.color = 'var(--accent)';
+    } else if (gapPct <= 5.0) {
+      gapBadge.style.background = 'rgba(255,215,0,0.15)';
+      gapBadge.style.color = '#ffd700';
+    } else {
+      gapBadge.style.background = 'rgba(255,71,87,0.15)';
+      gapBadge.style.color = 'var(--red)';
+    }
+  }
+
+  if (adviceBox) {
+    if (gapPct <= 3.0) {
+      adviceBox.innerHTML = `🟢 <strong>Ideal Entry (0–3% Gap):</strong> Optimal risk-reward. Stop Loss is calibrated at -7% from ₹${entry.toFixed(2)}.`;
+      adviceBox.style.color = 'var(--accent)';
+    } else if (gapPct <= 5.0) {
+      adviceBox.innerHTML = `🟡 <strong>Extended Gap (+3% to +5%):</strong> Chasing increases pullback risk. Consider scaling in with 50% shares.`;
+      adviceBox.style.color = '#ffd700';
+    } else {
+      adviceBox.innerHTML = `🔴 <strong>Over-Extended Gap (>+5% / Circuit):</strong> DO NOT CHASE! High risk of reversal. Switch to <strong>Alternate #1</strong>.`;
+      adviceBox.style.color = 'var(--red)';
+    }
+  }
+
+  if (basisBadge) {
+    basisBadge.textContent = `Entry: ₹${entry.toFixed(2)}`;
+  }
+
+  // 2. Recalculate GTT levels based on entry
+  const stopPct = 0.07;
+  const initStop = Math.max(Math.round((entry * (1 - stopPct)) * 100) / 100, Math.round((entry - 2 * atr) * 100) / 100);
+  const m1Target = Math.round((entry * 1.15) * 100) / 100;
+  const m1Stop   = Math.round((entry * 1.025) * 100) / 100;
+  const m2Target = Math.round((entry * 1.30) * 100) / 100;
+  const m2Stop   = Math.round((entry * 1.15) * 100) / 100;
+  const m3Target = Math.round((entry * 1.50) * 100) / 100;
 
   const levels = [
-    {
-      cls: 'stop-row', name: 'Initial Stop', nameClass: 'level-stop',
-      target: h.INITIAL_STOP, stop: null,
-      chg: pctChange(cmp, parseFloat(h.INITIAL_STOP))
-    },
-    {
-      cls: 'm1-row', name: 'M1', nameClass: 'level-m1',
-      target: h.M1_TARGET, stop: h.M1_STOP,
-      chg: pctChange(cmp, parseFloat(h.M1_TARGET))
-    },
-    {
-      cls: 'm2-row', name: 'M2', nameClass: 'level-m2',
-      target: h.M2_TARGET, stop: h.M2_STOP,
-      chg: pctChange(cmp, parseFloat(h.M2_TARGET))
-    },
-    {
-      cls: 'm3-row', name: 'M3', nameClass: 'level-m3',
-      target: h.M3_TARGET, stop: null,
-      chg: pctChange(cmp, parseFloat(h.M3_TARGET))
-    },
+    { cls: 'stop-row', name: 'Initial Stop', nameClass: 'level-stop', target: initStop, stop: null, chg: pctChange(entry, initStop) },
+    { cls: 'm1-row', name: 'M1', nameClass: 'level-m1', target: m1Target, stop: m1Stop, chg: pctChange(entry, m1Target) },
+    { cls: 'm2-row', name: 'M2', nameClass: 'level-m2', target: m2Target, stop: m2Stop, chg: pctChange(entry, m2Target) },
+    { cls: 'm3-row', name: 'M3', nameClass: 'level-m3', target: m3Target, stop: null, chg: pctChange(entry, m3Target) },
   ];
 
-  body.innerHTML = levels.map(lv => {
-    const pct = fmtPct(lv.chg);
-    return `
-      <tr class="${lv.cls}">
-        <td><span class="level-name ${lv.nameClass}">${lv.name}</span></td>
-        <td>${fmtINR(lv.target)}</td>
-        <td>${lv.stop ? fmtINR(lv.stop) : '–'}</td>
-        <td><span class="${pct.cls}">${pct.text}</span></td>
-      </tr>
-    `;
-  }).join('');
+  const body = document.getElementById('gttBody');
+  if (body) {
+    body.innerHTML = levels.map(lv => {
+      const pct = fmtPct(lv.chg);
+      return `
+        <tr class="${lv.cls}">
+          <td><span class="level-name ${lv.nameClass}">${lv.name}</span></td>
+          <td>${fmtINR(lv.target)}</td>
+          <td>${lv.stop ? fmtINR(lv.stop) : '–'}</td>
+          <td><span class="${pct.cls}">${pct.text}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // 3. Recalculate Shares & Capital based on entry
+  const affordableShares = Math.max(Math.floor((capital - 26) / entry), 1);
+  const capRequired = affordableShares * entry;
 
   const pills = document.getElementById('tradePills');
-  pills.innerHTML = `
-    <div class="trade-pill">
-      <div class="pill-label">🛒 Shares</div>
-      <div class="pill-value">${h.SHARES || '–'}</div>
-    </div>
-    <div class="trade-pill">
-      <div class="pill-label">💰 Capital</div>
-      <div class="pill-value">${fmtINR(h.CAPITAL_REQUIRED)}</div>
-    </div>
-    <div class="trade-pill">
-      <div class="pill-label">🏦 Base</div>
-      <div class="pill-value">${fmtINR(h.CAPITAL_BASE)}</div>
-    </div>
-  `;
+  if (pills) {
+    pills.innerHTML = `
+      <div class="trade-pill">
+        <div class="pill-label">🛒 Shares</div>
+        <div class="pill-value">${affordableShares}</div>
+      </div>
+      <div class="trade-pill">
+        <div class="pill-label">💰 Capital</div>
+        <div class="pill-value">${fmtINR(capRequired)}</div>
+      </div>
+      <div class="trade-pill">
+        <div class="pill-label">🏦 Base</div>
+        <div class="pill-value">${fmtINR(capital)}</div>
+      </div>
+    `;
+  }
 
-  gttCard.style.display = 'block';
+  // 4. Update Zerodha Guide
+  const guideStop = document.getElementById('guideStopLoss');
+  const guideTarget = document.getElementById('guideTarget');
+  if (guideStop) guideStop.textContent = `${fmtINR(initStop)} (-7.00%)`;
+  if (guideTarget) guideTarget.textContent = `${fmtINR(m1Target)} (+15.00%)`;
+
+  s.ACTUAL_ENTRY = entry;
+  s.CALC_SHARES = affordableShares;
+  s.CALC_STOP = initStop;
+  s.CALC_M1 = m1Target;
 }
 
 function renderAlternates(alts) {
@@ -922,29 +994,35 @@ function openInKite(symbol) {
 
 /** Format GTT details as copy-paste text */
 function buildGTTClipboardText(sig) {
+  const entry = sig.ACTUAL_ENTRY || sig.CMP;
+  const shares = sig.CALC_SHARES || sig.SHARES;
+  const stop = sig.CALC_STOP || sig.INITIAL_STOP;
+  const m1 = sig.CALC_M1 || sig.M1_TARGET;
+  const cap = shares * entry;
+
   return [
     `═══ NSE Signal GTT Order ═══`,
     `Stock   : ${sig.SYMBOL} (NSE)`,
-    `CMP     : ₹${fmt(sig.CMP)}`,
-    `Shares  : ${sig.SHARES} shares`,
-    `Capital : ₹${fmt(sig.CAPITAL_REQUIRED)}`,
+    `Entry   : ₹${fmt(entry)}`,
+    `Shares  : ${shares} shares`,
+    `Capital : ₹${fmt(cap)}`,
     ``,
-    `── Initial Stop ──────────────`,
-    `Trigger : ₹${fmt(sig.INITIAL_STOP)}  (hard stop)`,
+    `── Initial Stop (-7%) ────────`,
+    `Trigger : ₹${fmt(stop)} (hard stop)`,
     ``,
     `── Milestone 1 (+15%) ────────`,
-    `Target  : ₹${fmt(sig.M1_TARGET)}`,
-    `→ Move stop to ₹${fmt(sig.M1_STOP)} after M1 hit`,
+    `Target  : ₹${fmt(m1)}`,
+    `→ Move stop to +2.5% Breakeven after M1 hit`,
     ``,
     `── Milestone 2 (+30%) ────────`,
     `Target  : ₹${fmt(sig.M2_TARGET)}`,
-    `→ Move stop to ₹${fmt(sig.M2_STOP)} after M2 hit`,
+    `→ Move stop to +15% after M2 hit`,
     ``,
     `── Milestone 3 (+50%) ────────`,
     `Target  : ₹${fmt(sig.M3_TARGET)}`,
     `→ Trail via 20-DMA after M3 hit`,
     ``,
-    `CMS Score: ${sig.CMS_SCORE}  |  RSI: ${sig.RSI_14}  |  ATR: ${sig.ATR_14}`,
+    `CMS Score: ${sig.CMS_SCORE}  |  RSI: ${sig.RSI_14}`,
     `Generated: ${new Date().toLocaleString('en-IN')}`,
   ].join('\n');
 }
@@ -1245,11 +1323,146 @@ function selectStockForTrading(s, userCapital) {
 }
 
 /* ══════════════════════════════════════════════════════
+   ENTRY PRICE (GAP-UP) CONTROLLER
+══════════════════════════════════════════════════════ */
+
+function wireEntryPriceController() {
+  const input = document.getElementById('inputActualEntry');
+  const btnReset = document.getElementById('btnResetEntry');
+  const pills = document.querySelectorAll('.pill-gap');
+
+  if (input) {
+    input.addEventListener('input', () => {
+      const val = parseFloat(input.value);
+      if (!isNaN(val) && val > 0 && state.activeStock) {
+        recalculateFromEntry(val);
+        updateGapPillActive(null);
+      }
+    });
+  }
+
+  if (btnReset) {
+    btnReset.onclick = () => {
+      if (state.activeStock) {
+        const cmp = parseFloat(state.activeStock.CMP);
+        input.value = cmp;
+        recalculateFromEntry(cmp);
+        updateGapPillActive(0);
+      }
+    };
+  }
+
+  pills.forEach(p => {
+    p.onclick = () => {
+      const gap = parseFloat(p.dataset.gap);
+      if (!isNaN(gap) && state.activeStock) {
+        const cmp = parseFloat(state.activeStock.CMP);
+        const newEntry = Math.round((cmp * (1 + gap / 100)) * 100) / 100;
+        if (input) input.value = newEntry;
+        recalculateFromEntry(newEntry);
+        updateGapPillActive(gap);
+      }
+    };
+  });
+}
+
+function updateGapPillActive(gap) {
+  document.querySelectorAll('.pill-gap').forEach(p => {
+    p.classList.toggle('active', gap !== null && parseFloat(p.dataset.gap) === gap);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   SESSION DATE SWITCHER
+══════════════════════════════════════════════════════ */
+
+function renderSessionSwitcher(manifest, currentTradeDate) {
+  const sessionCard = document.getElementById('sessionCard');
+  const pillsContainer = document.getElementById('sessionPills');
+  const pendingNotice = document.getElementById('bhavcopyPendingNotice');
+  if (!sessionCard || !pillsContainer) return;
+
+  if (!manifest || manifest.length <= 1) {
+    sessionCard.style.display = 'none';
+    return;
+  }
+  sessionCard.style.display = 'block';
+
+  if (state.payload && state.payload.bhavcopy_status === 'PREVIOUS_SESSION_FALLBACK') {
+    if (pendingNotice) pendingNotice.style.display = 'block';
+  } else {
+    if (pendingNotice) pendingNotice.style.display = 'none';
+  }
+
+  pillsContainer.innerHTML = '';
+  manifest.slice(0, 5).forEach(m => {
+    const btn = document.createElement('button');
+    const isActive = (m.date === (state.selectedDate || currentTradeDate));
+    btn.className = `pill-session ${isActive ? 'active' : ''}`;
+    btn.innerHTML = `${m.is_today ? '🟢' : '📅'} ${m.display_date || m.date}`;
+    btn.onclick = () => selectSessionDate(m.date);
+    pillsContainer.appendChild(btn);
+  });
+}
+
+async function selectSessionDate(dateStr) {
+  state.selectedDate = dateStr;
+  try {
+    showSkeleton(true);
+    const res = await fetch(`data/history/${dateStr}.json?_t=` + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Could not load session ${dateStr}`);
+    const payload = await res.json();
+    state.payload = payload;
+    state.signalData = payload.rows || [];
+
+    renderMarketRegime(payload.regime);
+    renderSignal(payload.rows, payload.reason);
+    if (payload.all_qualified) {
+      renderAllStocksTable(payload.all_qualified, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
+    }
+    renderSessionSwitcher(payload.history_manifest || (state.payload && state.payload.history_manifest), dateStr);
+    showToast(`Viewing session: ${payload.trade_date_display || dateStr}`, 'info', '📅');
+  } catch (err) {
+    showToast('Failed to load past session: ' + err.message, 'error');
+  } finally {
+    showSkeleton(false);
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   GLOSSARY & STRATEGY GUIDE MODAL
+══════════════════════════════════════════════════════ */
+
+function wireGlossaryModal() {
+  const modal = document.getElementById('glossaryModal');
+  const btnOpen = document.getElementById('btnOpenGlossary');
+  const btnClose = document.getElementById('btnCloseGlossary');
+  const btnCloseBottom = document.getElementById('btnCloseGlossaryBottom');
+
+  if (btnOpen && modal) {
+    btnOpen.onclick = () => modal.classList.add('open');
+  }
+  if (btnClose && modal) {
+    btnClose.onclick = () => modal.classList.remove('open');
+  }
+  if (btnCloseBottom && modal) {
+    btnCloseBottom.onclick = () => modal.classList.remove('open');
+  }
+  if (modal) {
+    modal.onclick = e => {
+      if (e.target === modal) modal.classList.remove('open');
+    };
+  }
+}
+
+/* ══════════════════════════════════════════════════════
    BOOT
 ══════════════════════════════════════════════════════ */
 
 (function init() {
   updateOfflineBadge(navigator.onLine);
   wireCapitalController();
+  wireEntryPriceController();
+  wireGlossaryModal();
   fetchSignal(true);
 })();

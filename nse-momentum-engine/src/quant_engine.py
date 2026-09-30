@@ -5,7 +5,8 @@ quant_engine.py — 100% Dynamic Serverless Quant Engine for Indian Equities (NS
 ================================================================================
 Zero hardcoded tickers. Downloads official NSE Bhavcopy dynamically every day.
 Screens all 2,600+ equities for Minervini Stage-2 breakout momentum.
-Outputs full universe to app/data/screener.json and app/data/signal.json.
+Outputs full universe to app/data/screener.json, app/data/signal.json,
+and daily historical snapshots in app/data/history/{trade_date}.json.
 """
 
 import os
@@ -14,15 +15,13 @@ import io
 import math
 import json
 import zipfile
+import argparse
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 import requests
 import yfinance as yf
-import duckdb
-import pyarrow as pa
-import pyarrow.parquet as pq
 
 # Windows console UTF-8 fix
 if hasattr(sys.stdout, "reconfigure"):
@@ -35,10 +34,11 @@ IST = ZoneInfo("Asia/Kolkata")
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 APP_DATA_DIR = os.path.join(ROOT_DIR, "app", "data")
-PARQUET_FILE = os.path.join(DATA_DIR, "nse_history.parquet")
+HISTORY_DIR = os.path.join(APP_DATA_DIR, "history")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(APP_DATA_DIR, exist_ok=True)
+os.makedirs(HISTORY_DIR, exist_ok=True)
 
 STOP_PCT = 0.07       # -7% Hard stop
 M1_PCT = 0.15         # +15% Target
@@ -48,33 +48,36 @@ M2_STOP_PCT = 0.15    # +15% Profit lock
 M3_PCT = 0.50         # +50% Ultimate Target
 BUFFER = 26.0
 
-def get_recent_trading_dates():
+def get_recent_trading_dates(limit=7):
     """Returns candidate trading dates backwards from today."""
     now = datetime.now(IST)
     dates = []
-    for i in range(7):
+    for i in range(limit * 2):
         dt = now - timedelta(days=i)
         if dt.weekday() < 5:  # Skip Saturday (5) and Sunday (6)
             dates.append(dt)
+            if len(dates) >= limit:
+                break
     return dates
 
-def download_latest_nse_bhavcopy():
+def download_nse_bhavcopy(target_date_str=None):
     """
     Downloads official NSE UDiFF Common Bhavcopy (.csv.zip) directly from archives.nseindia.com.
-    Returns (DataFrame of all equities, trading_date_str).
+    Returns (DataFrame of all equities, trading_date_str, date_obj).
     """
-    print("=" * 65)
-    print("📡 FETCHING OFFICIAL NSE EXCHANGE BHAVCOPY (ALL EQUITIES)...")
-    print("=" * 65)
-
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept": "*/*",
         "Referer": "https://www.nseindia.com/"
     }
 
-    dates = get_recent_trading_dates()
-    for dt in dates:
+    if target_date_str:
+        dt_target = datetime.strptime(target_date_str, "%Y-%m-%d").replace(tzinfo=IST)
+        candidate_dates = [dt_target]
+    else:
+        candidate_dates = get_recent_trading_dates()
+
+    for dt in candidate_dates:
         date_udiff = dt.strftime("%Y%m%d")
         url = f"https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{date_udiff}_F_0000.csv.zip"
         try:
@@ -91,11 +94,51 @@ def download_latest_nse_bhavcopy():
                 df_eq = df_eq.dropna(subset=["CMP", "SYMBOL"])
                 print(f"✅ Successfully loaded official NSE Bhavcopy for {dt.strftime('%d-%b-%Y')}")
                 print(f"   • Total Active EQ Equities: {len(df_eq):,}")
-                return df_eq, dt.strftime("%Y-%m-%d")
-        except Exception as e:
+                return df_eq, dt.strftime("%Y-%m-%d"), dt
+        except Exception:
             continue
 
-    raise RuntimeError("Could not download recent NSE Bhavcopy from official archives.")
+    raise RuntimeError(f"Could not download NSE Bhavcopy from archives. Target: {target_date_str or 'recent'}")
+
+def get_nifty_regime():
+    """Inspects Nifty 50 moving averages to provide market context."""
+    try:
+        nifty = yf.Ticker("^NSEI").history(period="1y")
+        if len(nifty) >= 200:
+            c = nifty["Close"]
+            cmp = float(c.iloc[-1])
+            sma50 = float(c.rolling(50).mean().iloc[-1])
+            sma200 = float(c.rolling(200).mean().iloc[-1])
+            if cmp > sma50 > sma200:
+                return {
+                    "regime": "BULL_MARKET",
+                    "nifty_cmp": round(cmp, 2),
+                    "sma_50": round(sma50, 2),
+                    "sma_200": round(sma200, 2),
+                    "description": "Nifty 50 in confirmed uptrend (Price > SMA50 > SMA200). Aggressive momentum active."
+                }
+            elif cmp > sma200:
+                return {
+                    "regime": "CORRECTION_WATCH",
+                    "nifty_cmp": round(cmp, 2),
+                    "sma_50": round(sma50, 2),
+                    "sma_200": round(sma200, 2),
+                    "description": "Nifty 50 consolidating above 200 SMA. Stage-2 breakout candidates active with -7% stop."
+                }
+            else:
+                return {
+                    "regime": "DEFENSIVE_CASH",
+                    "nifty_cmp": round(cmp, 2),
+                    "sma_50": round(sma50, 2),
+                    "sma_200": round(sma200, 2),
+                    "description": "Nifty 50 below 200 SMA. Broader market in correction; Stage-2 leaders protected by GTT stop."
+                }
+    except Exception as e:
+        print(f"⚠️ Nifty regime lookup note: {e}")
+    return {
+        "regime": "NEUTRAL",
+        "description": "Standard market regime. Minervini Stage-2 criteria applied."
+    }
 
 def compute_rsi(series: pd.Series, period: int = 14) -> pd.Series:
     delta = series.diff()
@@ -112,16 +155,21 @@ def compute_atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
     tr = pd.concat([(h - l), (h - pc).abs(), (l - pc).abs()], axis=1).max(axis=1)
     return tr.rolling(period).mean()
 
-def run_screener():
+def run_screener(capital_override=None, target_date_str=None, is_latest=True):
     now_ist = datetime.now(IST).strftime("%Y-%m-%d %H:%M IST")
+    today_str = datetime.now(IST).strftime("%Y-%m-%d")
+
+    print("\n" + "=" * 65)
+    print(f"📡 SCREENING NSE EQUITIES — TARGET DATE: {target_date_str or 'LATEST'}")
+    print("=" * 65)
 
     # 1. Download official NSE Bhavcopy
-    df_bhav, trade_date = download_latest_nse_bhavcopy()
+    df_bhav, trade_date, dt_obj = download_nse_bhavcopy(target_date_str)
+    is_today = (trade_date == today_str)
+    bhavcopy_status = "CURRENT_SESSION" if is_today else "PREVIOUS_SESSION_FALLBACK"
 
     # 2. Filter liquid active equities (Price >= ₹50, Volume >= 300,000)
-    # This filters out dead penny stocks while preserving all active small/mid/large caps
     cands_df = df_bhav[(df_bhav["CMP"] >= 50.0) & (df_bhav["VOLUME"] >= 300000)].copy()
-    # Take top 200 most liquid equities across the entire exchange
     dynamic_symbols = cands_df.head(200)["SYMBOL"].unique().tolist()
     print(f"🔍 Discovered {len(dynamic_symbols)} high-volume liquid equities across entire NSE.")
 
@@ -223,22 +271,8 @@ def run_screener():
     total_qualified = len(qualified_stocks)
     print(f"\n🏆 STAGE-2 QUALIFIED MOMENTUM LEADERS ACROSS ENTIRE NSE: {total_qualified}")
 
-    # Build Master Screener Output
-    screener_payload = {
-        "timestamp": now_ist,
-        "trade_date": trade_date,
-        "total_screened": len(dynamic_symbols),
-        "total_qualified": total_qualified,
-        "stocks": qualified_stocks
-    }
-
-    # Save to app/data/screener.json
-    screener_path = os.path.join(APP_DATA_DIR, "screener.json")
-    with open(screener_path, "w", encoding="utf-8") as f:
-        json.dump(screener_payload, f, indent=2)
-
-    # Build Default Signal Output (defaults to ₹1,000 base, UI can scale dynamically to ₹2K, ₹5K, ₹10K+)
-    capital_default = 1000.0
+    # Capital base
+    capital_default = float(capital_override) if capital_override else 1000.0
     cands_under_default = [s for s in qualified_stocks if s["CMP"] <= (capital_default - BUFFER)]
     winner = cands_under_default[0] if cands_under_default else (qualified_stocks[0] if qualified_stocks else None)
     alternates = cands_under_default[1:4] if len(cands_under_default) > 1 else qualified_stocks[1:4]
@@ -287,36 +321,115 @@ def run_screener():
         cash_row["TOTAL_QUALIFIED"] = total_qualified
         signal_rows.append(cash_row)
 
+    # Market regime
+    regime_info = get_nifty_regime()
+
+    # Build Signal Payload
     signal_payload = {
         "status": status,
         "timestamp": now_ist,
+        "trade_date": trade_date,
+        "trade_date_display": dt_obj.strftime("%d-%b-%Y"),
+        "is_today": is_today,
+        "bhavcopy_status": bhavcopy_status,
         "capital_base": capital_default,
         "total_qualified": total_qualified,
+        "regime": regime_info,
         "winner": winner_sized,
         "alternates": alternates,
         "rows": signal_rows,
-        "all_qualified": qualified_stocks  # Full dynamic list for UI capital scaling
+        "all_qualified": qualified_stocks
     }
 
-    signal_json_path = os.path.join(APP_DATA_DIR, "signal.json")
-    signal_csv_path = os.path.join(APP_DATA_DIR, "signal.csv")
-
-    with open(signal_json_path, "w", encoding="utf-8") as f:
+    # Save daily history snapshot
+    history_file = os.path.join(HISTORY_DIR, f"{trade_date}.json")
+    with open(history_file, "w", encoding="utf-8") as f:
         json.dump(signal_payload, f, indent=2)
+    print(f"📦 Saved historical snapshot: {history_file}")
 
-    df_csv = pd.DataFrame(signal_rows)
-    df_csv.to_csv(signal_csv_path, index=False)
+    # Maintain history manifest
+    manifest_path = os.path.join(HISTORY_DIR, "manifest.json")
+    manifest = []
+    if os.path.exists(manifest_path):
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+        except Exception:
+            manifest = []
 
-    print(f"✅ Generated master screener dataset: {screener_path}")
-    print(f"✅ Generated live signal API: {signal_json_path}")
-    print(f"✅ Generated CSV feed: {signal_csv_path}")
+    manifest = [m for m in manifest if m.get("date") != trade_date]
+    manifest.append({
+        "date": trade_date,
+        "display_date": dt_obj.strftime("%d %b %Y"),
+        "is_today": is_today,
+        "winner": winner_sized["SYMBOL"] if winner_sized else "CASH",
+        "cmp": winner_sized["CMP"] if winner_sized else 0,
+        "cms": winner_sized["CMS_SCORE"] if winner_sized else 0,
+        "total_qualified": total_qualified
+    })
+    manifest = sorted(manifest, key=lambda x: x["date"], reverse=True)
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+
+    signal_payload["history_manifest"] = manifest
+
+    if is_latest:
+        screener_payload = {
+            "timestamp": now_ist,
+            "trade_date": trade_date,
+            "total_screened": len(dynamic_symbols),
+            "total_qualified": total_qualified,
+            "stocks": qualified_stocks
+        }
+        screener_path = os.path.join(APP_DATA_DIR, "screener.json")
+        with open(screener_path, "w", encoding="utf-8") as f:
+            json.dump(screener_payload, f, indent=2)
+
+        signal_json_path = os.path.join(APP_DATA_DIR, "signal.json")
+        signal_csv_path = os.path.join(APP_DATA_DIR, "signal.csv")
+
+        with open(signal_json_path, "w", encoding="utf-8") as f:
+            json.dump(signal_payload, f, indent=2)
+
+        df_csv = pd.DataFrame(signal_rows)
+        df_csv.to_csv(signal_csv_path, index=False)
+
+        print(f"✅ Generated master screener dataset: {screener_path}")
+        print(f"✅ Generated live signal API: {signal_json_path}")
+        print(f"✅ Generated CSV feed: {signal_csv_path}")
 
     print("\n" + "=" * 65)
-    print("🎯  TOP BREAKOUT MOMENTUM LEADERS FOUND TODAY:")
+    print(f"🎯  TOP BREAKOUT MOMENTUM LEADERS FOR {dt_obj.strftime('%d-%b-%Y')}:")
     print("=" * 65)
     for idx, s in enumerate(qualified_stocks[:10], 1):
         print(f"{idx:2d}. {s['SYMBOL']:12s} | CMP: ₹{s['CMP']:7.2f} | CMS: {s['CMS_SCORE']:5.1f} | RSI: {s['RSI_14']:4.1f} | Stop: ₹{s['INITIAL_STOP']:7.2f} | M1: ₹{s['M1_TARGET']:7.2f}")
     print("=" * 65)
 
+    return signal_payload
+
 if __name__ == "__main__":
-    run_screener()
+    parser = argparse.ArgumentParser(description="NSE Momentum Quant Engine")
+    parser.add_argument("capital", nargs="?", default="1000", help="Capital base (default 1000)")
+    parser.add_argument("--date", help="Specific trade date (YYYY-MM-DD)")
+    parser.add_argument("--backfill", type=int, default=0, help="Number of previous trading days to backfill into history")
+    args = parser.parse_args()
+
+    cap = float(args.capital) if args.capital else 1000.0
+
+    if args.date:
+        run_screener(capital_override=cap, target_date_str=args.date, is_latest=False)
+    else:
+        # Run latest (today)
+        run_screener(capital_override=cap, is_latest=True)
+
+        # Backfill previous trading days if requested
+        if args.backfill > 0:
+            dates = get_recent_trading_dates(limit=args.backfill + 2)
+            # dates[0] is latest; backfill the older dates
+            for dt in dates[1:1 + args.backfill]:
+                dt_str = dt.strftime("%Y-%m-%d")
+                print(f"\n⏳ Backfilling historical screener for {dt_str}...")
+                try:
+                    run_screener(capital_override=cap, target_date_str=dt_str, is_latest=False)
+                except Exception as e:
+                    print(f"⚠️ Failed backfill for {dt_str}: {e}")

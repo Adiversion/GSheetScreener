@@ -912,3 +912,70 @@ canvas { display: block; }
 .stock-table-row.selected {
   background: rgba(0,200,150,0.1) !important;
 }
+
+/* ── Entry Gap Pills ── */
+.pill-gap {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+.pill-gap:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.pill-gap.active {
+  background: rgba(0,200,150,0.18);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Session Selector Pills ── */
+.pill-session {
+  padding: 4px 10px;
+  border-radius: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+.pill-session:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.pill-session.active {
+  background: rgba(0,200,150,0.18);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Header Guide Button ── */
+.btn-guide {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.btn-guide:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
