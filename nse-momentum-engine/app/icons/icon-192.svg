@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="38" fill="#0D1B2A"/>
+  <circle cx="96" cy="96" r="68" fill="#1E3A5F"/>
+  <circle cx="96" cy="96" r="60" fill="#1E3A5F" opacity="0.6"/>
+  <!-- Glow effect -->
+  <circle cx="96" cy="96" r="48" fill="none" stroke="#00C896" stroke-width="2" opacity="0.3"/>
+  <!-- Arrow up -->
+  <path d="M96 44 L126 84 L108 84 L108 148 L84 148 L84 84 L66 84 Z" fill="#00C896"/>
+  <!-- Glow behind arrow -->
+  <path d="M96 44 L126 84 L108 84 L108 148 L84 148 L84 84 L66 84 Z" fill="#00C896" filter="blur(8px)" opacity="0.5"/>
+</svg>

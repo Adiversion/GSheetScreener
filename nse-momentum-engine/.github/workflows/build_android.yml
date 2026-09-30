@@ -1,0 +1,211 @@
+name: Build Android App (TWA → APK)
+
+# ─────────────────────────────────────────────────────────────────────────
+# This workflow:
+#  1. Reads twa-manifest.json (Bubblewrap config)
+#  2. Generates the Android TWA project via Bubblewrap CLI
+#  3. Compiles it with Gradle + Android SDK
+#  4. Signs the APK with your keystore (stored in GitHub Secrets)
+#  5. Creates a GitHub Release and attaches the APK
+#
+# USER SETUP (one-time):
+#  a) Replace YOUR_GITHUB_USERNAME in android/twa-manifest.json
+#  b) Generate keystore:
+#       keytool -genkey -v -keystore android.keystore -alias nsesignal \
+#               -keyalg RSA -keysize 2048 -validity 10000
+#  c) Encode + add to GitHub Secrets:
+#       base64 -w 0 android.keystore → copy output → Secret: ANDROID_KEYSTORE_B64
+#  d) Add these GitHub Secrets:
+#       ANDROID_KEYSTORE_B64   : base64-encoded keystore file
+#       ANDROID_KEY_ALIAS      : nsesignal
+#       ANDROID_KEY_PASSWORD   : your key password
+#       ANDROID_STORE_PASSWORD : your store password
+#  e) After first successful build, copy the SHA-256 fingerprint from
+#     the build log → paste into app/.well-known/assetlinks.json
+# ─────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:       # Manual trigger from GitHub mobile app / browser
+  push:
+    tags:
+      - 'v*'               # Auto-trigger on version tags like v1.0.0
+    paths:
+      - 'android/twa-manifest.json'
+      - 'app/**'
+
+permissions:
+  contents: write          # Needed to create GitHub Release
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Setup Java ────────────────────────────────────────────────────
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      # ── 3. Setup Android SDK ─────────────────────────────────────────────
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ── 4. Setup Node (for Bubblewrap) ───────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── 5. Install Bubblewrap CLI ─────────────────────────────────────────
+      - name: Install Bubblewrap CLI
+        run: |
+          npm install -g @bubblewrap/cli@latest
+          bubblewrap --version
+
+      # ── 6. Restore keystore from secret ──────────────────────────────────
+      - name: Restore keystore
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_B64" | base64 --decode > android/android.keystore
+          echo "✅ Keystore restored"
+
+      # ── 7. Update twa-manifest with GitHub Pages URL ──────────────────────
+      - name: Patch twa-manifest.json with correct username
+        run: |
+          REPO="${{ github.repository }}"          # e.g. "john/nse-momentum-engine"
+          USERNAME="${REPO%%/*}"                   # extract "john"
+          REPONAME="${REPO##*/}"                   # extract "nse-momentum-engine"
+          HOST="${USERNAME}.github.io"
+          FULL_URL="https://${HOST}/${REPONAME}/"
+
+          echo "📦 TWA Host: ${HOST}"
+          echo "🔗 Full URL: ${FULL_URL}"
+
+          # Patch twa-manifest.json
+          jq \
+            --arg host "$HOST" \
+            --arg url  "$FULL_URL" \
+            --arg murl "${FULL_URL}manifest.json" \
+            '.host = $host | .fullScopeUrl = $url | .webManifestUrl = $murl | .startUrl = "/" + ($url | split("/") | .[-2]) + "/"' \
+            android/twa-manifest.json > /tmp/twa-patched.json
+          mv /tmp/twa-patched.json android/twa-manifest.json
+          cat android/twa-manifest.json
+
+      # ── 8. Generate Android project from TWA manifest ─────────────────────
+      - name: Generate Android project via Bubblewrap
+        working-directory: android
+        env:
+          ANDROID_KEY_ALIAS:      ${{ secrets.ANDROID_KEY_ALIAS      || 'nsesignal' }}
+          ANDROID_KEY_PASSWORD:   ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          bubblewrap update --skipPwaValidation
+          echo "✅ Android project generated"
+
+      # ── 9. Build signed APK ───────────────────────────────────────────────
+      - name: Build signed APK
+        working-directory: android
+        env:
+          ANDROID_KEY_ALIAS:      ${{ secrets.ANDROID_KEY_ALIAS      || 'nsesignal' }}
+          ANDROID_KEY_PASSWORD:   ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file="$(pwd)/android.keystore" \
+            -Pandroid.injected.signing.store.password="${ANDROID_STORE_PASSWORD}" \
+            -Pandroid.injected.signing.key.alias="${ANDROID_KEY_ALIAS}" \
+            -Pandroid.injected.signing.key.password="${ANDROID_KEY_PASSWORD}"
+
+          # Also build AAB for future Play Store submission
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file="$(pwd)/android.keystore" \
+            -Pandroid.injected.signing.store.password="${ANDROID_STORE_PASSWORD}" \
+            -Pandroid.injected.signing.key.alias="${ANDROID_KEY_ALIAS}" \
+            -Pandroid.injected.signing.key.password="${ANDROID_KEY_PASSWORD}"
+
+      # ── 10. Print SHA-256 fingerprint (for assetlinks.json) ───────────────
+      - name: Print certificate fingerprint
+        working-directory: android
+        env:
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS:      ${{ secrets.ANDROID_KEY_ALIAS || 'nsesignal' }}
+        run: |
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo "  COPY THIS SHA-256 → paste into assetlinks.json"
+          echo "══════════════════════════════════════════════"
+          keytool -list -v \
+            -keystore android.keystore \
+            -alias "${ANDROID_KEY_ALIAS}" \
+            -storepass "${ANDROID_STORE_PASSWORD}" \
+            2>/dev/null | grep "SHA256:" | awk '{print $2}'
+          echo "══════════════════════════════════════════════"
+
+      # ── 11. Rename outputs ────────────────────────────────────────────────
+      - name: Collect build artifacts
+        run: |
+          mkdir -p dist
+          VERSION="${{ github.ref_name }}"
+          [ -z "$VERSION" ] && VERSION="dev-$(date +'%Y%m%d')"
+
+          find android -name "*.apk" -exec cp {} "dist/NSESignal-${VERSION}.apk" \;
+          find android -name "*.aab" -exec cp {} "dist/NSESignal-${VERSION}.aab" \;
+
+          echo "APK_NAME=NSESignal-${VERSION}.apk" >> $GITHUB_ENV
+          echo "AAB_NAME=NSESignal-${VERSION}.aab" >> $GITHUB_ENV
+          echo "VERSION=${VERSION}"                  >> $GITHUB_ENV
+
+          ls -lh dist/
+
+      # ── 12. Upload APK as artifact (always available) ─────────────────────
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NSESignal-APK
+          path: dist/*.apk
+          retention-days: 30
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NSESignal-AAB
+          path: dist/*.aab
+          retention-days: 30
+
+      # ── 13. Create GitHub Release (only on version tags) ──────────────────
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "NSE Signal ${{ github.ref_name }}"
+          body: |
+            ## 📲 NSE Signal ${{ github.ref_name }}
+
+            ### Install on Android
+            1. Download `NSESignal-${{ env.VERSION }}.apk` below
+            2. Open it on your Android phone
+            3. Allow "Install from unknown sources" if prompted
+            4. Open the app → Settings → paste your Google Sheets CSV URL
+
+            ### Files
+            - **APK**: Direct install on Android (recommended)
+            - **AAB**: For future Play Store submission only
+
+            ### After installing
+            Open the app → tap ⚙️ Settings → paste your Google Sheet Signal URL → Save
+          files: |
+            dist/*.apk
+            dist/*.aab
+          draft: false
+          prerelease: false

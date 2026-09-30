@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.env
+
+# Credentials — NEVER commit these
+*.json
+!android/twa-manifest.json
+!app/.well-known/assetlinks.json
+!app/manifest.json
+credentials.json
+service_account*.json
+keystore_b64.txt
+
+# Android signing
+*.keystore
+*.jks
+*.p12
+
+# Android build artifacts
+android/app/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/build/
+android/.gradle/
+android/*.apk
+android/*.aab
+dist/
+
+# Node / Bubblewrap
+node_modules/
+npm-debug.log*
+.npmrc
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.orig
+
+# Temp / scratch
+*.tmp
+*.bak
+/tmp/
+
+# Data output (committed selectively)
+# data/signals/  ← keep
+# data/last_run.json ← keep

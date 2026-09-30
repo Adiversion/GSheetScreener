@@ -1,0 +1,28 @@
+# Normalize line endings across OS
+* text=auto eol=lf
+
+# Force LF for shell scripts and YAML (GitHub Actions requires LF)
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+
+# Force LF for Python
+*.py text eol=lf
+
+# Force LF for web files
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.svg text eol=lf
+
+# Binary files — no line ending conversion
+*.jpg binary
+*.png binary
+*.ico binary
+*.keystore binary
+*.jks binary
+*.apk binary
+*.aab binary
