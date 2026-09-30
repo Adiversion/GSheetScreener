@@ -11,6 +11,7 @@ Role: GitHub Actions data fetcher.
 
 import os
 import io
+import sys
 import json
 import math
 import zipfile
@@ -20,6 +21,14 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime, timezone, timedelta
+
+# Fix Windows console UTF-8 emoji and Rupee symbol encoding
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # ─────────────────────────────────────────────────────────────────────────
 # CONFIG  (all read from env / GitHub Secrets)
@@ -280,12 +289,21 @@ def download_bhavcopy(target_date_str: str = None) -> tuple[pd.DataFrame, str]:
 # ─────────────────────────────────────────────────────────────────────────
 
 def connect_sheets() -> gspread.Spreadsheet:
-    if not GOOGLE_CREDENTIALS_JSON:
-        raise ValueError("Missing GOOGLE_CREDENTIALS_JSON environment variable or GitHub Secret.")
-    creds_info = json.loads(GOOGLE_CREDENTIALS_JSON)
+    creds_raw = GOOGLE_CREDENTIALS_JSON
+    if not creds_raw:
+        # Check local directory for any service account json file
+        for fname in os.listdir("."):
+            if fname.endswith(".json") and ("screener" in fname.lower() or "credentials" in fname.lower()):
+                print(f"[INFO] Using local service account file: {fname}")
+                with open(fname, "r", encoding="utf-8") as f:
+                    creds_raw = f.read()
+                break
+    if not creds_raw:
+        raise ValueError("Missing GOOGLE_CREDENTIALS_JSON environment variable or local service account JSON file.")
+    creds_info = json.loads(creds_raw)
     scopes     = [
         "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive",
     ]
     creds  = Credentials.from_service_account_info(creds_info, scopes=scopes)
     client = gspread.authorize(creds)
