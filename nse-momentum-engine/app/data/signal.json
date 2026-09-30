@@ -1,0 +1,45 @@
+{
+  "status": "CASH",
+  "timestamp": "2026-09-30 16:40 IST",
+  "capital_base": 1000.0,
+  "regime": {
+    "regime": "DEFENSIVE_CASH",
+    "is_bull": false,
+    "is_caution": false,
+    "nifty_cmp": 22620.45,
+    "nifty_sma50": 23901.58,
+    "nifty_sma200": 24372.85,
+    "description": "Nifty 50 in bear/correction (Below 200 SMA). 100% Capital preserved in CASH."
+  },
+  "reason": "Preserve 100% Cash: Nifty 50 in bear/correction (Below 200 SMA). 100% Capital preserved in CASH.",
+  "total_qualified": 1,
+  "winner": null,
+  "alternates": [],
+  "rows": [
+    {
+      "STATUS": "CASH",
+      "TIMESTAMP": "2026-09-30 16:40 IST",
+      "SYMBOL": "\u2014",
+      "CMP": "\u2014",
+      "CMS_SCORE": "\u2014",
+      "ROC_1M": "\u2014",
+      "ROC_2M": "\u2014",
+      "ROC_3M": "\u2014",
+      "RSI_14": "\u2014",
+      "SMA_50": "\u2014",
+      "SMA_200": "\u2014",
+      "ATR_14": "\u2014",
+      "HIGH_52W": "\u2014",
+      "SHARES": "\u2014",
+      "CAPITAL_REQUIRED": "\u2014",
+      "INITIAL_STOP": "\u2014",
+      "M1_TARGET": "\u2014",
+      "M1_STOP": "\u2014",
+      "M2_TARGET": "\u2014",
+      "M2_STOP": "\u2014",
+      "M3_TARGET": "\u2014",
+      "CAPITAL_BASE": 1000.0,
+      "TOTAL_QUALIFIED": 1
+    }
+  ]
+}

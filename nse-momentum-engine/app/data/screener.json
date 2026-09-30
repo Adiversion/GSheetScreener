@@ -1,0 +1,26 @@
+[
+  {
+    "SYMBOL": "MOTHERSON",
+    "CMP": 163.26,
+    "CMS_SCORE": 40.22,
+    "ROC_1M": "-0.02%",
+    "ROC_2M": "+5.77%",
+    "ROC_3M": "+16.28%",
+    "RSI_14": 50.1,
+    "SMA_50": 161.68,
+    "SMA_150": 141.36,
+    "SMA_200": 136.0,
+    "ATR_14": 4.01,
+    "HIGH_52W": 173.27,
+    "LOW_52W": 100.52,
+    "SHARES": 5,
+    "CAPITAL_REQUIRED": 816.3,
+    "INITIAL_STOP": 155.24,
+    "M1_TARGET": 187.75,
+    "M1_STOP": 167.34,
+    "M2_TARGET": 212.24,
+    "M2_STOP": 187.75,
+    "M3_TARGET": 244.89,
+    "CAPITAL_BASE": 1000.0
+  }
+]

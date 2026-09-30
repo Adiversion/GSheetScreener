@@ -18,6 +18,8 @@ env/
 !android/twa-manifest.json
 !app/.well-known/assetlinks.json
 !app/manifest.json
+!app/data/*.json
+!data/*.json
 credentials.json
 service_account*.json
 keystore_b64.txt
