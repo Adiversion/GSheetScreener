@@ -347,18 +347,14 @@
     <div class="card">
       <div class="card-title">⚙️ Data Source</div>
       <div class="form-group">
-        <label class="form-label" for="inputSheetUrl">
-          Google Sheet CSV URL
-          <span>— Published Signal tab URL</span>
+      <div class="form-group">
+        <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>⚡ High-Speed Quant Feed</span>
+          <span class="badge" style="background:rgba(0,200,150,0.15); color:var(--accent); font-size:10px; padding:2px 8px; border-radius:10px;">Native Static API ✅</span>
         </label>
-        <input
-          type="url"
-          class="form-input"
-          id="inputSheetUrl"
-          placeholder="https://docs.google.com/spreadsheets/d/…"
-          autocomplete="off"
-          spellcheck="false"
-        />
+        <div style="font-size:0.78rem; color:var(--text-muted); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 12px; line-height:1.5;">
+          Direct connection to GitHub Pages CDN feed. Zero Google Sheets delays, zero daily token hassle.
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label" for="inputCapitalBase">
@@ -438,8 +434,8 @@
     </div>
 
     <div class="version-note" style="margin-top:16px; padding:8px;">
-      NSE Signal v2.0.0 · Daily Momentum Engine<br>
-      Data via Google Sheets · Offline-capable PWA
+      NSE Signal v3.0.0 · Dynamic Momentum Quant Engine<br>
+      100% Serverless · Zero Google Sheets · Real-Time Static API
     </div>
 
   </section>

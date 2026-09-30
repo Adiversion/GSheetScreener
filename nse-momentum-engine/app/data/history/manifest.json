@@ -3,18 +3,18 @@
     "date": "2026-09-30",
     "display_date": "30 Sep 2026",
     "is_today": true,
-    "winner": "BHAGERIA",
-    "cmp": 406.45,
-    "cms": 100.16,
+    "winner": "EMIL",
+    "cmp": 205.36,
+    "cms": 72.65,
     "total_qualified": 27
   },
   {
     "date": "2026-09-29",
     "display_date": "29 Sep 2026",
     "is_today": false,
-    "winner": "BIRLACABLE",
-    "cmp": 381.15,
-    "cms": 99.64,
+    "winner": "CYIENTDLM",
+    "cmp": 914.1,
+    "cms": 78.13,
     "total_qualified": 23
   }
 ]

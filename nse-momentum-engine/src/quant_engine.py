@@ -236,6 +236,17 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
         prox_score = (1 - abs(dist52_high)) * 100
         cms = 0.60 * roc_3m + 0.40 * prox_score
 
+        # Institutional Quality Metrics
+        dist_50 = ((cmp - sma50) / sma50) * 100
+        atr_pct = (atr_val / cmp) * 100
+        vol_20 = float(df_s["Volume"].tail(20).mean())
+        vol_latest = float(df_s["Volume"].iloc[-1])
+        vol_ratio = round(vol_latest / vol_20, 2) if vol_20 > 0 else 1.0
+
+        # Mark Minervini Extension & Volatility Rule (Leak-Proof Guard)
+        is_prime = (dist_50 <= 25.0) and (atr_pct <= 5.0)
+        setup_quality = "PRIME_LOW_RISK" if is_prime else ("OVER_EXTENDED" if dist_50 > 25.0 else "HIGH_VOLATILITY")
+
         # GTT Calculation
         init_stop = max(round(cmp * (1 - STOP_PCT), 2), round(cmp - 2 * atr_val, 2))
         m1 = round(cmp * (1 + M1_PCT), 2)
@@ -256,6 +267,11 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
             "SMA_150": round(sma150, 2),
             "SMA_200": round(sma200, 2),
             "ATR_14": round(atr_val, 2),
+            "ATR_PCT": round(atr_pct, 1),
+            "DIST_50SMA": round(dist_50, 1),
+            "VOL_RATIO": vol_ratio,
+            "IS_PRIME": is_prime,
+            "SETUP_QUALITY": setup_quality,
             "HIGH_52W": round(h52, 2),
             "LOW_52W": round(l52, 2),
             "INITIAL_STOP": init_stop,
@@ -266,8 +282,8 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
             "M3_TARGET": m3
         })
 
-    # Sort entire qualified universe by CMS descending
-    qualified_stocks.sort(key=lambda x: x["CMS_SCORE"], reverse=True)
+    # Sort: Prime low-risk setups first, then sorted by CMS descending
+    qualified_stocks.sort(key=lambda x: (x["IS_PRIME"], x["CMS_SCORE"]), reverse=True)
     total_qualified = len(qualified_stocks)
     print(f"\n🏆 STAGE-2 QUALIFIED MOMENTUM LEADERS ACROSS ENTIRE NSE: {total_qualified}")
 

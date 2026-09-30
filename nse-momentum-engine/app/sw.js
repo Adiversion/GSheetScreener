@@ -1,10 +1,11 @@
 /* ═══════════════════════════════════════════════════════
    NSE Signal – Service Worker (sw.js)
-   Cache-first for assets, Network-first for CSV
+   Serverless Native Quant Screener (Zero Google Sheets)
+   Cache-first for static assets, Network-first for static JSON
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_NAME   = 'nse-signal-v1';
-const DATA_CACHE   = 'nse-signal-data-v1';
+const CACHE_NAME = 'nse-signal-v4';
+const DATA_CACHE = 'nse-signal-data-v4';
 
 const STATIC_ASSETS = [
   './',
@@ -23,14 +24,17 @@ self.addEventListener('install', event => {
   );
 });
 
-/* ── Activate: clean old caches ── */
+/* ── Activate: clean ALL old caches and claim clients immediately ── */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
         keys
           .filter(k => k !== CACHE_NAME && k !== DATA_CACHE)
-          .map(k => caches.delete(k))
+          .map(k => {
+            console.log('[SW] Purging old cache:', k);
+            return caches.delete(k);
+          })
       )
     ).then(() => self.clients.claim())
   );
@@ -40,18 +44,13 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Network-first for signal data and Google Sheets CSV (always try fresh first)
-  if (
-    url.hostname === 'docs.google.com' ||
-    url.hostname === 'spreadsheets.google.com' ||
-    url.searchParams.has('tqx') ||
-    url.pathname.includes('/data/signal.')
-  ) {
+  // Network-first for dynamic quant data (data/signal.json, data/history/, data/screener.json)
+  if (url.pathname.includes('/data/')) {
     event.respondWith(networkFirstDataStrategy(event.request));
     return;
   }
 
-  // Cache-first for all other static assets
+  // Cache-first for all other static assets (HTML/CSS/JS)
   event.respondWith(cacheFirstStrategy(event.request));
 });
 
@@ -61,44 +60,36 @@ async function networkFirstDataStrategy(request) {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
       const cache = await caches.open(DATA_CACHE);
-      // Clone so we can store and return
-      cache.put('last-signal-csv', networkResponse.clone());
+      cache.put(request.url, networkResponse.clone());
     }
     return networkResponse;
   } catch (_) {
-    // Offline fallback: return last known CSV
-    const cached = await caches.match('last-signal-csv', { cacheName: DATA_CACHE });
+    // Offline fallback: return cached JSON if available
+    const cached = await caches.match(request.url, { cacheName: DATA_CACHE });
     if (cached) return cached;
-    return new Response('STATUS,TIMESTAMP\nCASH,offline', {
-      headers: { 'Content-Type': 'text/csv' }
+    return new Response(JSON.stringify({ status: 'OFFLINE', rows: [] }), {
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 }
 
-/** Cache-first: return cache, update in background, fall back to network */
+/** Cache-first: return cached asset, fetch from network if missing */
 async function cacheFirstStrategy(request) {
   const cached = await caches.match(request);
-  if (cached) {
-    // Update cache in background (stale-while-revalidate)
-    fetch(request).then(response => {
-      if (response && response.ok) {
-        caches.open(CACHE_NAME).then(cache => cache.put(request, response));
-      }
-    }).catch(() => {});
-    return cached;
-  }
+  if (cached) return cached;
+
   try {
-    const response = await fetch(request);
-    if (response && response.ok) {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      cache.put(request, networkResponse.clone());
     }
-    return response;
+    return networkResponse;
   } catch (err) {
-    // Return a minimal offline page for navigation requests
+    // If navigation request fails, return cached index.html
     if (request.mode === 'navigate') {
-      const cached = await caches.match('./index.html');
-      if (cached) return cached;
+      const fallback = await caches.match('./index.html');
+      if (fallback) return fallback;
     }
     throw err;
   }

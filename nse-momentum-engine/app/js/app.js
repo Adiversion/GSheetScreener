@@ -116,7 +116,8 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => {
-        console.log('[SW] Registered:', reg.scope);
+        reg.update();
+        console.log('[SW] Registered & Checked for updates:', reg.scope);
         updateOfflineBadge(navigator.onLine);
       })
       .catch(err => console.warn('[SW] Registration failed:', err));
@@ -192,31 +193,25 @@ async function fetchSignal(showLoading = true) {
   if (state.refreshing) return;
   if (showLoading) { setRefreshing(true); showSkeleton(true); }
 
-  const customUrl = store.get(LS.SHEET_URL, '');
+  // Purge legacy Google Sheets setting to ensure 100% native serverless pipeline
+  try {
+    localStorage.removeItem(LS.SHEET_URL);
+  } catch (_) {}
 
   try {
     let rows = null;
     let payload = null;
 
-    // 1. If user set a custom Google Sheet URL in settings, use that; otherwise use static native JSON!
-    if (customUrl) {
-      const fetchUrl = customUrl + (customUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
-      const res = await fetch(fetchUrl, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Sheet HTTP ${res.status}`);
-      const text = await res.text();
-      rows = parseCSV(text);
+    // Direct Native High-Speed Static API (GitHub Pages CDN / local)
+    const res = await fetch('data/signal.json?_t=' + Date.now(), { cache: 'no-store' });
+    if (res.ok) {
+      payload = await res.json();
+      rows = payload.rows || [];
     } else {
-      // Native static API from GitHub Pages / local
-      const res = await fetch('data/signal.json?_t=' + Date.now(), { cache: 'no-store' });
-      if (res.ok) {
-        payload = await res.json();
-        rows = payload.rows || [];
-      } else {
-        const csvRes = await fetch('data/signal.csv?_t=' + Date.now(), { cache: 'no-store' });
-        if (csvRes.ok) {
-          const text = await csvRes.text();
-          rows = parseCSV(text);
-        }
+      const csvRes = await fetch('data/signal.csv?_t=' + Date.now(), { cache: 'no-store' });
+      if (csvRes.ok) {
+        const text = await csvRes.text();
+        rows = parseCSV(text);
       }
     }
 
@@ -883,18 +878,16 @@ function renderHistory() {
 ══════════════════════════════════════════════════════ */
 
 function populateSettings() {
-  document.getElementById('inputSheetUrl').value    = store.get(LS.SHEET_URL, '');
-  document.getElementById('inputCapitalBase').value = store.get(LS.CAPITAL_BASE, DEFAULT_CAPITAL);
+  const capInput = document.getElementById('inputCapitalBase');
+  if (capInput) capInput.value = store.get(LS.CAPITAL_BASE, DEFAULT_CAPITAL);
 }
 
 document.getElementById('btnSaveSettings').addEventListener('click', () => {
-  const url  = document.getElementById('inputSheetUrl').value.trim();
-  const base = parseFloat(document.getElementById('inputCapitalBase').value);
+  const capInput = document.getElementById('inputCapitalBase');
+  const base = capInput ? parseFloat(capInput.value) : DEFAULT_CAPITAL;
 
-  if (!url) { showToast('Please enter the Google Sheet CSV URL', 'error'); return; }
   if (!base || base < 0) { showToast('Please enter a valid capital base', 'error'); return; }
 
-  store.set(LS.SHEET_URL, url);
   store.set(LS.CAPITAL_BASE, base);
 
   // If current capital not set yet, seed it with base
@@ -1460,6 +1453,15 @@ function wireGlossaryModal() {
 ══════════════════════════════════════════════════════ */
 
 (function init() {
+  // Purge legacy caches and legacy Google Sheet setting
+  try {
+    localStorage.removeItem(LS.SHEET_URL);
+    const cached = store.get(LS.LAST_SIGNAL, null);
+    if (cached && (!cached.rows || cached.rows.length === 0 || cached.rows[0].STATUS === 'CASH')) {
+      localStorage.removeItem(LS.LAST_SIGNAL);
+    }
+  } catch (_) {}
+
   updateOfflineBadge(navigator.onLine);
   wireCapitalController();
   wireEntryPriceController();
