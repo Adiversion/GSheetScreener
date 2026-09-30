@@ -2,11 +2,11 @@
   {
     "date": "2026-09-30",
     "display_date": "30 Sep 2026",
-    "is_today": true,
+    "is_today": false,
     "winner": "CASH",
     "cmp": 0,
     "cms": 0,
-    "total_qualified": 46,
+    "total_qualified": 43,
     "regime": "DEFENSIVE_CASH"
   },
   {
