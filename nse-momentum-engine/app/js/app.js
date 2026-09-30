@@ -360,9 +360,7 @@ function renderSignal(rows, overrideReason = null) {
     ? state.payload.total_qualified
     : (hero ? (hero.TOTAL_QUALIFIED || '–') : '–');
 
-  // Qualified banner
-  const qBanner = document.getElementById('qualBanner');
-  if (qBanner) qBanner.style.display = 'flex';
+  // Qualified banner — keep hidden, just update text for internal reads
   const totalEl = document.getElementById('totalQualified');
   if (totalEl) totalEl.textContent = total;
 

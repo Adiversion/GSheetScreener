@@ -76,6 +76,8 @@ body {
   padding-bottom: calc(var(--nav-h) + var(--sab));
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 body.modal-open {
@@ -459,6 +461,15 @@ canvas { display: block; }
   padding: 8px 16px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+  .terminal-ribbon {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+  }
 }
 
 .ribbon-segment {
@@ -1560,7 +1571,8 @@ canvas { display: block; }
 }
 
 .watchlist-table-wrap {
-  max-height: 600px;
+  max-height: min(600px, calc(100vh - var(--header-h) - 240px));
+  max-height: min(600px, calc(100dvh - var(--header-h) - 240px));
 }
 
 .leader-table {
@@ -2184,6 +2196,12 @@ body.modal-open {
   pointer-events: none;
 }
 
+@media (min-width: 768px) {
+  .toast-container {
+    bottom: 24px;
+  }
+}
+
 .toast {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -2354,7 +2372,8 @@ body.modal-open {
    MOBILE TOUCH TARGET DISCIPLINE (<640px)
 ───────────────────────────────────────── */
 @media (max-width: 640px) {
-  .hero-chip, .filter-chip, .btn-action, .tab-btn, .pill-preset, .chip-copy {
-    min-height: 40px;
+  .hero-chip, .filter-chip, .btn-action, .tab-btn, .pill-preset, .chip-copy,
+  .pill-session, .pill-gap, .btn-select-stock, .btn-clear-search {
+    min-height: 44px;
   }
 }
