@@ -3,8 +3,6 @@ name: Deploy NSE Signal App to GitHub Pages
 on:
   push:
     branches: [main]
-    paths:
-      - 'app/**'
   workflow_dispatch:
 
 permissions:
@@ -39,7 +37,7 @@ jobs:
           ls -la app/css/
 
       - name: ⚙️ Configure GitHub Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: 📦 Upload app/ folder as Pages artifact
         uses: actions/upload-pages-artifact@v3
