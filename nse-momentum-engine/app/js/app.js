@@ -63,6 +63,12 @@ function parseCSV(text) {
   });
 }
 
+/** Format number as plain float string */
+function fmt(val) {
+  const n = parseFloat(val);
+  return isNaN(n) ? '–' : n.toFixed(2);
+}
+
 /** Format number as Indian currency ₹X,XX,XXX.XX */
 function fmtINR(val) {
   const n = parseFloat(val);
@@ -287,40 +293,58 @@ function updateLastUpdated(date, fromCache = false) {
 }
 
 function renderMarketRegime(regime) {
+  const ticker = document.getElementById('headerRegimeTicker');
+  const tickerText = document.getElementById('headerRegimeText');
   const banner = document.getElementById('regimeBanner');
-  if (!banner) return;
+
   if (!regime) {
-    banner.style.display = 'none';
+    if (banner) banner.style.display = 'none';
+    if (ticker) ticker.style.display = 'none';
     return;
   }
-  banner.style.display = 'block';
-  const title = document.getElementById('regimeTitle');
-  const badge = document.getElementById('regimeBadge');
-  const desc = document.getElementById('regimeDesc');
-
-  banner.className = 'card regime-card';
-  badge.className = 'badge';
 
   const cmpStr = regime.nifty_cmp ? '₹' + Number(regime.nifty_cmp).toLocaleString('en-IN') : '–';
 
-  if (regime.regime === 'BULL_MARKET') {
-    banner.classList.add('bull');
-    badge.classList.add('badge-bull');
-    badge.textContent = '🟢 BULL REGIME';
-    title.textContent = `Nifty 50: ${cmpStr}`;
-    desc.textContent = regime.description || 'Confirmed uptrend. Aggressive momentum active.';
-  } else if (regime.regime === 'CORRECTION_WATCH') {
-    banner.classList.add('caution');
-    badge.classList.add('badge-caution');
-    badge.textContent = '🟡 CORRECTION WATCH';
-    title.textContent = `Nifty 50: ${cmpStr}`;
-    desc.textContent = regime.description || 'Market pullback. Conservative entries only.';
-  } else {
-    banner.classList.add('defensive');
-    badge.classList.add('badge-defensive');
-    badge.textContent = '🛡️ DEFENSIVE CASH';
-    title.textContent = `Nifty 50: ${cmpStr}`;
-    desc.textContent = regime.description || 'Nifty below moving averages. 100% Capital preserved in CASH.';
+  if (ticker && tickerText) {
+    ticker.style.display = 'inline-flex';
+    ticker.className = 'header-regime';
+    if (regime.regime === 'BULL_MARKET') {
+      ticker.classList.add('bull');
+      tickerText.innerHTML = `🟢 NIFTY 500: ${cmpStr} &middot; BULL REGIME`;
+    } else if (regime.regime === 'CORRECTION_WATCH') {
+      ticker.classList.add('caution');
+      tickerText.innerHTML = `🟡 NIFTY 500: ${cmpStr} &middot; CORRECTION WATCH`;
+    } else {
+      ticker.classList.add('defensive');
+      tickerText.innerHTML = `🛡️ NIFTY 500: ${cmpStr} &middot; DEFENSIVE CASH`;
+    }
+  }
+
+  if (banner) {
+    banner.style.display = 'block';
+    const title = document.getElementById('regimeTitle');
+    const badge = document.getElementById('regimeBadge');
+    const desc = document.getElementById('regimeDesc');
+
+    banner.className = 'regime-banner-pill';
+    if (badge) badge.className = 'badge';
+
+    if (regime.regime === 'BULL_MARKET') {
+      banner.classList.add('bull');
+      if (badge) { badge.classList.add('badge-bull'); badge.textContent = '🟢 BULL REGIME'; }
+      if (title) title.textContent = `Nifty 500: ${cmpStr}`;
+      if (desc) desc.textContent = regime.description || 'Confirmed uptrend. Aggressive momentum active.';
+    } else if (regime.regime === 'CORRECTION_WATCH') {
+      banner.classList.add('caution');
+      if (badge) { badge.classList.add('badge-caution'); badge.textContent = '🟡 CORRECTION WATCH'; }
+      if (title) title.textContent = `Nifty 500: ${cmpStr}`;
+      if (desc) desc.textContent = regime.description || 'Market pullback. Conservative entries only.';
+    } else {
+      banner.classList.add('defensive');
+      if (badge) { badge.classList.add('badge-defensive'); badge.textContent = '🛡️ DEFENSIVE CASH'; }
+      if (title) title.textContent = `Nifty 500: ${cmpStr}`;
+      if (desc) desc.textContent = regime.description || 'Nifty 500 below 200 SMA. 100% Capital preserved in CASH.';
+    }
   }
 }
 
@@ -330,102 +354,205 @@ function renderMarketRegime(regime) {
 
 function renderSignal(rows, overrideReason = null) {
   showSkeleton(false);
-  const hero  = rows[0];
-  const alts  = rows.slice(1);
-  const total = hero ? (hero.TOTAL_QUALIFIED || '–') : '–';
+  const hero  = rows ? rows[0] : null;
+  const alts  = rows ? rows.slice(1) : [];
+  const total = (state.payload && state.payload.total_qualified !== undefined)
+    ? state.payload.total_qualified
+    : (hero ? (hero.TOTAL_QUALIFIED || '–') : '–');
 
   // Qualified banner
   const qBanner = document.getElementById('qualBanner');
-  qBanner.style.display = 'flex';
-  document.getElementById('totalQualified').textContent = total;
+  if (qBanner) qBanner.style.display = 'flex';
+  const totalEl = document.getElementById('totalQualified');
+  if (totalEl) totalEl.textContent = total;
 
-  if (!hero || hero.STATUS === 'CASH' || !hero.SYMBOL || hero.SYMBOL === '—') {
-    renderCashState(hero, overrideReason);
-    return;
+  const isDefensive = (state.payload && state.payload.regime && state.payload.regime.regime === 'DEFENSIVE_CASH')
+    || (!hero || hero.STATUS === 'CASH' || !hero.SYMBOL || hero.SYMBOL === '—');
+
+  if (isDefensive) {
+    const all = (state.payload && state.payload.all_qualified) || [];
+    if (all.length > 0) {
+      const topStock = Object.assign({}, all[0]);
+      const userCap = state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL);
+      const cmp = parseFloat(topStock.CMP);
+      const shares = Math.max(Math.floor((userCap - 26) / cmp), 1);
+      topStock.SHARES = shares;
+      topStock.CAPITAL_REQUIRED = shares * cmp;
+      topStock.CAPITAL_BASE = userCap;
+      renderActiveSignal(topStock, all.slice(1, 4), true);
+      return;
+    } else {
+      renderCashState(hero, overrideReason);
+      return;
+    }
   }
 
-  renderActiveSignal(hero, alts);
+  renderActiveSignal(hero, alts, false);
 }
 
 function renderCashState(hero, overrideMsg = null) {
   const heroCard = document.getElementById('heroCard');
-  heroCard.className = 'card signal-hero cash-hero';
-  heroCard.innerHTML = `
-    <div class="status-badge cash">🛡️ 100% CASH</div>
-    <div class="cash-state">
-      <div class="cash-icon">🏦</div>
-      <div class="cash-label">${overrideMsg || 'Preserve Capital: Market in Defensive Mode'}</div>
-      <div class="cash-sub">${hero && hero.TIMESTAMP ? 'Screened: ' + hero.TIMESTAMP : 'Stay patient. Momentum will come.'}</div>
-    </div>
-  `;
-  document.getElementById('rsiCard').style.display  = 'none';
-  document.getElementById('gttCard').style.display  = 'none';
-  document.getElementById('altsCard').style.display = 'none';
+  if (heroCard) {
+    heroCard.className = 'card signal-hero cash-hero';
+    heroCard.innerHTML = `
+      <div class="status-badge cash">🛡️ 100% CASH</div>
+      <div class="cash-state">
+        <div class="cash-icon">🏦</div>
+        <div class="cash-label">${overrideMsg || 'Preserve Capital: Market in Defensive Mode'}</div>
+        <div class="cash-sub">${hero && hero.TIMESTAMP ? 'Screened: ' + hero.TIMESTAMP : 'Stay patient. Momentum will come.'}</div>
+      </div>
+    `;
+  }
+  const rsiCard = document.getElementById('rsiCard');
+  const gttCard = document.getElementById('gttCard');
+  const altsCard = document.getElementById('altsCard');
+  if (rsiCard) rsiCard.style.display = 'none';
+  if (gttCard) gttCard.style.display = 'none';
+  if (altsCard) altsCard.style.display = 'none';
   showSkeleton(false);
 }
 
-function renderActiveSignal(h, alts) {
+function renderActiveSignal(h, alts, isDefensive = false) {
   const heroCard = document.getElementById('heroCard');
-  heroCard.className = 'card signal-hero glowing';
+  if (!heroCard) return;
 
   const cmp = parseFloat(h.CMP);
   const cms = parseFloat(h.CMS_SCORE);
-  const roc1 = fmtPct(h.ROC_1M);
-  const roc2 = fmtPct(h.ROC_2M);
-  const roc3 = fmtPct(h.ROC_3M);
+  const high52 = parseFloat(h.HIGH_52W) || cmp;
+  const proxPct = Math.max(0, ((high52 - cmp) / high52) * 100);
+  const atr = parseFloat(h.ATR_14) || (cmp * 0.04);
+  const atrPct = (atr / cmp) * 100;
 
-  heroCard.innerHTML = `
-    <div class="status-badge active">🟢 ACTIVE SIGNAL</div>
-    <div class="hero-symbol">${h.SYMBOL}</div>
-    <div class="hero-cmp">${fmtINR(cmp)}</div>
-    <div class="hero-meta">
-      <span class="meta-chip cms-chip">🏆 CMS ${isNaN(cms) ? h.CMS_SCORE : cms.toFixed(1)}</span>
-      <span class="meta-chip"><span style="color:var(--text-dim); font-size:0.65rem;">RSI</span> ${parseFloat(h.RSI_14).toFixed(1)}</span>
-      <span class="meta-chip"><span style="color:var(--text-dim); font-size:0.65rem;">52W High</span> ${fmtINR(h.HIGH_52W)}</span>
-      <span class="meta-chip"><span style="color:var(--text-dim); font-size:0.65rem;">ATR</span> ${parseFloat(h.ATR_14).toFixed(2)}</span>
-    </div>
-  `;
+  if (isDefensive) {
+    heroCard.className = 'card signal-hero defensive';
+    heroCard.innerHTML = `
+      <div class="hero-top-row">
+        <div class="status-badge defensive">🛡️ DEFENSIVE WATCHLIST (CASH MODE)</div>
+        <span class="hero-rank-badge">Candidate #1 Setup</span>
+      </div>
+      <div class="defensive-advisory-banner">
+        🛡️ <strong>Preserve Capital:</strong> Nifty 500 is trading below its 200-day moving average. New capital deployment is capped at 0 shares (100% Cash preservation). Inspecting candidate for risk monitoring and GTT simulation.
+      </div>
+      <div class="hero-main-flex">
+        <div>
+          <div class="hero-symbol">${h.SYMBOL} ${h.IS_PRIME ? '<span class="badge badge-accent" style="font-size:11px; vertical-align:middle; margin-left:6px;">⭐ PRIME</span>' : ''}</div>
+          <div class="hero-cmp">${fmtINR(cmp)}</div>
+        </div>
+        <div class="hero-52w-wrap">
+          <div class="hero-52w-labels">
+            <span>52W High</span>
+            <strong style="color:var(--accent); font-family:var(--font-mono);">${fmtINR(high52)} (-${proxPct.toFixed(1)}%)</strong>
+          </div>
+          <div class="hero-52w-bar">
+            <div class="hero-52w-fill" style="width: ${Math.max(5, 100 - proxPct)}%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-meta-strip">
+        <span class="meta-chip cms-chip">🏆 CMS ${isNaN(cms) ? h.CMS_SCORE : cms.toFixed(1)}</span>
+        <span class="meta-chip"><span style="color:var(--text-dim); font-size:0.65rem;">RSI</span> ${parseFloat(h.RSI_14).toFixed(1)}</span>
+        <span class="meta-chip"><span style="color:var(--text-dim); font-size:0.65rem;">ATR</span> ${fmtINR(atr)} (${atrPct.toFixed(1)}%)</span>
+        <span class="meta-chip"><span style="color:var(--text-dim); font-size:0.65rem;">Band</span> ${h.CIRCUIT_BAND || '20'}%</span>
+      </div>
+    `;
+  } else {
+    heroCard.className = 'card signal-hero glowing';
+    heroCard.innerHTML = `
+      <div class="hero-top-row">
+        <div class="status-badge active">🟢 ACTIVE SIGNAL</div>
+        <span class="hero-rank-badge">Leader #1 Setup</span>
+      </div>
+      <div class="hero-main-flex">
+        <div>
+          <div class="hero-symbol">${h.SYMBOL} ${h.IS_PRIME ? '<span class="badge badge-accent" style="font-size:11px; vertical-align:middle; margin-left:6px;">⭐ PRIME</span>' : ''}</div>
+          <div class="hero-cmp">${fmtINR(cmp)}</div>
+        </div>
+        <div class="hero-52w-wrap">
+          <div class="hero-52w-labels">
+            <span>52W High</span>
+            <strong style="color:var(--accent); font-family:var(--font-mono);">${fmtINR(high52)} (-${proxPct.toFixed(1)}%)</strong>
+          </div>
+          <div class="hero-52w-bar">
+            <div class="hero-52w-fill" style="width: ${Math.max(5, 100 - proxPct)}%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-meta-strip">
+        <span class="meta-chip cms-chip">🏆 CMS ${isNaN(cms) ? h.CMS_SCORE : cms.toFixed(1)}</span>
+        <span class="meta-chip"><span style="color:var(--text-dim); font-size:0.65rem;">RSI</span> ${parseFloat(h.RSI_14).toFixed(1)}</span>
+        <span class="meta-chip"><span style="color:var(--text-dim); font-size:0.65rem;">ATR</span> ${fmtINR(atr)} (${atrPct.toFixed(1)}%)</span>
+        <span class="meta-chip"><span style="color:var(--text-dim); font-size:0.65rem;">Band</span> ${h.CIRCUIT_BAND || '20'}%</span>
+      </div>
+    `;
+  }
 
-  // RSI Gauge
+  // RSI Gauge & Linear Meter
   const rsiVal = parseFloat(h.RSI_14);
   renderRSIGauge(rsiVal);
-  document.getElementById('rsiCard').style.display = 'block';
+  const rsiCard = document.getElementById('rsiCard');
+  if (rsiCard) rsiCard.style.display = 'block';
 
   // ROC Row
   const rocRow = document.getElementById('rocRow');
-  rocRow.innerHTML = `
-    <div class="roc-item">
-      <div class="roc-period">1 Month</div>
-      <div class="roc-val ${roc1.cls}">${roc1.text}</div>
-    </div>
-    <div class="roc-item">
-      <div class="roc-period">2 Month</div>
-      <div class="roc-val ${roc2.cls}">${roc2.text}</div>
-    </div>
-    <div class="roc-item">
-      <div class="roc-period">3 Month</div>
-      <div class="roc-val ${roc3.cls}">${roc3.text}</div>
-    </div>
-  `;
+  if (rocRow) {
+    const roc1 = fmtPct(h.ROC_1M);
+    const roc2 = fmtPct(h.ROC_2M);
+    const roc3 = fmtPct(h.ROC_3M);
+    rocRow.innerHTML = `
+      <div class="roc-item">
+        <div class="roc-period">1 Month</div>
+        <div class="roc-val ${roc1.cls}">${roc1.text}</div>
+      </div>
+      <div class="roc-item">
+        <div class="roc-period">2 Month</div>
+        <div class="roc-val ${roc2.cls}">${roc2.text}</div>
+      </div>
+      <div class="roc-item">
+        <div class="roc-period">3 Month</div>
+        <div class="roc-val ${roc3.cls}">${roc3.text}</div>
+      </div>
+    `;
+  }
 
   // SMA Row
   const smaRow = document.getElementById('smaRow');
-  const sma50  = parseFloat(h.SMA_50);
-  const sma200 = parseFloat(h.SMA_200);
-  const aboveSma50  = cmp > sma50;
-  const aboveSma200 = cmp > sma200;
-  smaRow.innerHTML = `
-    <div class="sma-item">
-      <div class="sma-label">SMA 50</div>
-      <div class="sma-val" style="color:${aboveSma50 ? 'var(--accent)' : 'var(--red)'}">
-        ${fmtINR(sma50)}</div>
-    </div>
-    <div class="sma-item">
-      <div class="sma-label">SMA 200</div>
-      <div class="sma-val" style="color:${aboveSma200 ? 'var(--accent)' : 'var(--red)'}">
-        ${fmtINR(sma200)}</div>
-    </div>
-  `;
+  if (smaRow) {
+    const sma50  = parseFloat(h.SMA_50);
+    const sma200 = parseFloat(h.SMA_200);
+    const aboveSma50  = cmp > sma50;
+    const aboveSma200 = cmp > sma200;
+    const dist50  = ((cmp - sma50) / sma50) * 100;
+    const dist200 = ((cmp - sma200) / sma200) * 100;
+    smaRow.innerHTML = `
+      <div class="sma-item">
+        <div class="sma-label">SMA 50</div>
+        <div class="sma-val" style="color:${aboveSma50 ? 'var(--accent)' : 'var(--red)'}">
+          ${fmtINR(sma50)} <span style="font-size:10px;">(${dist50 >= 0 ? '+' : ''}${dist50.toFixed(1)}%)</span>
+        </div>
+      </div>
+      <div class="sma-item">
+        <div class="sma-label">SMA 200</div>
+        <div class="sma-val" style="color:${aboveSma200 ? 'var(--accent)' : 'var(--red)'}">
+          ${fmtINR(sma200)} <span style="font-size:10px;">(${dist200 >= 0 ? '+' : ''}${dist200.toFixed(1)}%)</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Liquidity Specs
+  const specTurnover = document.getElementById('specTurnover');
+  const specATR = document.getElementById('specATR');
+  const specCircuit = document.getElementById('specCircuit');
+  if (specTurnover) {
+    const toCr = parseFloat(h.TURNOVER_CRORES);
+    specTurnover.textContent = !isNaN(toCr) ? `₹${toCr.toFixed(1)} Cr` : '₹5.0+ Cr (Liquid)';
+  }
+  if (specATR) {
+    specATR.textContent = `${fmtINR(atr)} (${atrPct.toFixed(1)}%)`;
+  }
+  if (specCircuit) {
+    specCircuit.textContent = `${h.CIRCUIT_BAND || '20'}% Band`;
+  }
 
   // GTT Table
   renderGTT(h);
@@ -437,19 +564,30 @@ function renderActiveSignal(h, alts) {
 function renderRSIGauge(rsi) {
   const needle = document.getElementById('rsiNeedle');
   const label  = document.getElementById('rsiValueLabel');
-  if (!needle || isNaN(rsi)) return;
+  const marker = document.getElementById('rsiMarker');
+  if (isNaN(rsi)) return;
 
-  // Map RSI 0–100 → -90° to +90° (semicircle)
-  const angle = ((Math.min(Math.max(rsi, 0), 100) / 100) * 180) - 90;
-  needle.setAttribute('transform', `rotate(${angle}, 80, 80)`);
+  if (needle) {
+    const angle = ((Math.min(Math.max(rsi, 0), 100) / 100) * 180) - 90;
+    needle.setAttribute('transform', `rotate(${angle}, 80, 80)`);
+  }
 
-  let color = 'var(--text)';
-  if (rsi < 30)       color = 'var(--red)';
-  else if (rsi > 70)  color = 'var(--yellow)';
-  else                color = 'var(--accent)';
+  let color = 'var(--accent)';
+  if (rsi < 45) {
+    color = 'var(--red)';
+  } else if (rsi > 82) {
+    color = 'var(--yellow)';
+  }
 
-  label.textContent = rsi.toFixed(1);
-  label.style.color = color;
+  if (label) {
+    label.textContent = rsi.toFixed(1);
+    label.style.color = color;
+  }
+
+  if (marker) {
+    const pct = Math.min(Math.max(rsi, 0), 100);
+    marker.style.left = `${pct}%`;
+  }
 }
 
 function renderGTT(h) {
@@ -473,6 +611,9 @@ function recalculateFromEntry(entry) {
   const atr = parseFloat(s.ATR_14) || (cmp * 0.03);
   const capital = state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL);
 
+  const isDefensive = (state.payload && state.payload.regime && state.payload.regime.regime === 'DEFENSIVE_CASH')
+    || (s.STATUS === 'CASH');
+
   // 1. Calculate gap pct
   const gapPct = ((entry - cmp) / cmp) * 100;
   const gapBadge = document.getElementById('gapBadge');
@@ -483,26 +624,26 @@ function recalculateFromEntry(entry) {
     const sign = gapPct >= 0 ? '+' : '';
     gapBadge.textContent = `${sign}${gapPct.toFixed(1)}% Gap`;
     if (gapPct <= 3.0) {
-      gapBadge.style.background = 'rgba(0,200,150,0.15)';
+      gapBadge.style.background = 'rgba(16,185,129,0.15)';
       gapBadge.style.color = 'var(--accent)';
     } else if (gapPct <= 5.0) {
-      gapBadge.style.background = 'rgba(255,215,0,0.15)';
-      gapBadge.style.color = '#ffd700';
+      gapBadge.style.background = 'rgba(245,158,11,0.15)';
+      gapBadge.style.color = 'var(--yellow)';
     } else {
-      gapBadge.style.background = 'rgba(255,71,87,0.15)';
+      gapBadge.style.background = 'rgba(239,68,68,0.15)';
       gapBadge.style.color = 'var(--red)';
     }
   }
 
   if (adviceBox) {
     if (gapPct <= 3.0) {
-      adviceBox.innerHTML = `🟢 <strong>Ideal Entry (0–3% Gap):</strong> Optimal risk-reward. Stop Loss is calibrated at -7% from ₹${entry.toFixed(2)}.`;
+      adviceBox.innerHTML = `🟢 <strong>Ideal Entry (0–3% Gap):</strong> Optimal institutional risk-reward. Stop Loss calibrated from ₹${entry.toFixed(2)}.`;
       adviceBox.style.color = 'var(--accent)';
     } else if (gapPct <= 5.0) {
       adviceBox.innerHTML = `🟡 <strong>Extended Gap (+3% to +5%):</strong> Chasing increases pullback risk. Consider scaling in with 50% shares.`;
-      adviceBox.style.color = '#ffd700';
+      adviceBox.style.color = 'var(--yellow)';
     } else {
-      adviceBox.innerHTML = `🔴 <strong>Over-Extended Gap (>+5% / Circuit):</strong> DO NOT CHASE! High risk of reversal. Switch to <strong>Alternate #1</strong>.`;
+      adviceBox.innerHTML = `🔴 <strong>Over-Extended Gap (>+5% / Circuit):</strong> DO NOT CHASE! High risk of intraday reversal. Switch to <strong>Alternate #1</strong>.`;
       adviceBox.style.color = 'var(--red)';
     }
   }
@@ -511,20 +652,20 @@ function recalculateFromEntry(entry) {
     basisBadge.textContent = `Entry: ₹${entry.toFixed(2)}`;
   }
 
-  // 2. Recalculate GTT levels based on entry
-  const stopPct = 0.07;
-  const initStop = Math.max(Math.round((entry * (1 - stopPct)) * 100) / 100, Math.round((entry - 2 * atr) * 100) / 100);
+  // 2. Recalculate GTT levels based on entry & ATR & Regime
+  const atrStopPct = isDefensive ? 0.04 : Math.min(0.07, Math.max(0.05, (2.0 * atr) / entry));
+  const initStop = Math.round((entry * (1.0 - atrStopPct)) * 100) / 100;
   const m1Target = Math.round((entry * 1.15) * 100) / 100;
-  const m1Stop   = Math.round((entry * 1.025) * 100) / 100;
-  const m2Target = Math.round((entry * 1.30) * 100) / 100;
-  const m2Stop   = Math.round((entry * 1.15) * 100) / 100;
-  const m3Target = Math.round((entry * 1.50) * 100) / 100;
+  const m1Stop   = Math.round((entry * 1.015) * 100) / 100; // +1.5% Breakeven floor
+  const m2Target = Math.round((entry * 1.22) * 100) / 100; // Bank 40% partial profit (≥3R)
+  const m2Stop   = Math.round((entry * 1.10) * 100) / 100; // +10% Profit lock floor on 60% runner
+  const m3Target = Math.round((entry * 1.50) * 100) / 100; // Reference display for +50%
 
   const levels = [
-    { cls: 'stop-row', name: 'Initial Stop', nameClass: 'level-stop', target: initStop, stop: null, chg: pctChange(entry, initStop) },
-    { cls: 'm1-row', name: 'M1', nameClass: 'level-m1', target: m1Target, stop: m1Stop, chg: pctChange(entry, m1Target) },
-    { cls: 'm2-row', name: 'M2', nameClass: 'level-m2', target: m2Target, stop: m2Stop, chg: pctChange(entry, m2Target) },
-    { cls: 'm3-row', name: 'M3', nameClass: 'level-m3', target: m3Target, stop: null, chg: pctChange(entry, m3Target) },
+    { cls: 'stop-row', name: 'Initial Stop', nameClass: 'level-stop', target: initStop, stop: null, chg: pctChange(entry, initStop), note: `${isDefensive ? '-4.0% Defensive Stop' : `-${(atrStopPct*100).toFixed(1)}% ATR Stop`}` },
+    { cls: 'm1-row', name: 'M1 (Risk-Free)', nameClass: 'level-m1', target: m1Target, stop: m1Stop, chg: pctChange(entry, m1Target), note: '+1.5% Breakeven Floor (100% position kept)' },
+    { cls: 'm2-row', name: 'M2 (Bank 40%)', nameClass: 'level-m2', target: m2Target, stop: m2Stop, chg: pctChange(entry, m2Target), note: 'Bank 40% (≥3R); Ratchet runner stop to +10%' },
+    { cls: 'm3-row', name: 'M3 (Power Runner)', nameClass: 'level-m3', target: m3Target, stop: m2Stop, chg: pctChange(entry, m3Target), note: 'Hold 60% runner: Dynamic 50 SMA / 20 EMA trail (No ceiling!)' },
   ];
 
   const body = document.getElementById('gttBody');
@@ -532,7 +673,7 @@ function recalculateFromEntry(entry) {
     body.innerHTML = levels.map(lv => {
       const pct = fmtPct(lv.chg);
       return `
-        <tr class="${lv.cls}">
+        <tr class="${lv.cls}" title="${lv.note}">
           <td><span class="level-name ${lv.nameClass}">${lv.name}</span></td>
           <td>${fmtINR(lv.target)}</td>
           <td>${lv.stop ? fmtINR(lv.stop) : '–'}</td>
@@ -542,62 +683,95 @@ function recalculateFromEntry(entry) {
     }).join('');
   }
 
-  // 3. Recalculate Shares & Capital based on entry
+  // 3. Recalculate Shares & Capital based on entry & 1% portfolio risk model
+  const riskAmount = capital * 0.01;
+  const riskPerShare = Math.max(entry - initStop, 0.01);
+  const riskModelShares = Math.max(Math.floor(riskAmount / riskPerShare), 1);
   const affordableShares = Math.max(Math.floor((capital - 26) / entry), 1);
-  const capRequired = affordableShares * entry;
+  const recommendedShares = Math.min(riskModelShares, affordableShares);
+  const capRequired = recommendedShares * entry;
 
   const pills = document.getElementById('tradePills');
   if (pills) {
-    pills.innerHTML = `
-      <div class="trade-pill">
-        <div class="pill-label">🛒 Shares</div>
-        <div class="pill-value">${affordableShares}</div>
-      </div>
-      <div class="trade-pill">
-        <div class="pill-label">💰 Capital</div>
-        <div class="pill-value">${fmtINR(capRequired)}</div>
-      </div>
-      <div class="trade-pill">
-        <div class="pill-label">🏦 Base</div>
-        <div class="pill-value">${fmtINR(capital)}</div>
-      </div>
-    `;
+    if (isDefensive) {
+      pills.innerHTML = `
+        <div class="trade-pill">
+          <div class="pill-label">🛒 Recommended Shares</div>
+          <div class="pill-value" style="color:var(--yellow)">0 (Cash Mode)</div>
+        </div>
+        <div class="trade-pill">
+          <div class="pill-label">🧪 Sim. 1% Risk Size</div>
+          <div class="pill-value">${recommendedShares} shares (${fmtINR(capRequired)})</div>
+        </div>
+        <div class="trade-pill">
+          <div class="pill-label">💰 Sizing Capital</div>
+          <div class="pill-value">${fmtINR(capital)}</div>
+        </div>
+      `;
+    } else {
+      pills.innerHTML = `
+        <div class="trade-pill">
+          <div class="pill-label">🛒 1% Risk Sizing</div>
+          <div class="pill-value">${recommendedShares} ${recommendedShares === 1 ? 'Share' : 'Shares'}</div>
+        </div>
+        <div class="trade-pill">
+          <div class="pill-label">💰 Capital Outlay</div>
+          <div class="pill-value">${fmtINR(capRequired)}</div>
+        </div>
+        <div class="trade-pill">
+          <div class="pill-label">🏦 Account Base</div>
+          <div class="pill-value">${fmtINR(capital)}</div>
+        </div>
+      `;
+    }
   }
 
-  // 4. Update Zerodha Guide
+  // 4. Update Zerodha Guide Cheat-sheet & wire broker actions
   const guideStop = document.getElementById('guideStopLoss');
   const guideTarget = document.getElementById('guideTarget');
-  if (guideStop) guideStop.textContent = `${fmtINR(initStop)} (-7.00%)`;
+  if (guideStop) guideStop.textContent = `${fmtINR(initStop)} (-${(atrStopPct*100).toFixed(1)}%)`;
   if (guideTarget) guideTarget.textContent = `${fmtINR(m1Target)} (+15.00%)`;
 
   s.ACTUAL_ENTRY = entry;
-  s.CALC_SHARES = affordableShares;
+  s.CALC_SHARES = isDefensive ? 0 : recommendedShares;
   s.CALC_STOP = initStop;
   s.CALC_M1 = m1Target;
+
+  wireZerodhaButtons(s);
 }
 
 function renderAlternates(alts) {
   const altsCard = document.getElementById('altsCard');
   const altsBody = document.getElementById('altsBody');
-  if (!alts || !alts.length) { altsCard.style.display = 'none'; return; }
+  if (!alts || !alts.length) { if (altsCard) altsCard.style.display = 'none'; return; }
 
   altsCard.style.display = 'block';
-  altsBody.innerHTML = alts.map((a, i) => `
-    <div class="alt-stock-row">
-      <div class="alt-rank">#${i + 2}</div>
-      <div class="alt-symbol">${a.SYMBOL || '–'}</div>
-      <div style="text-align:right;">
-        <div class="alt-cmp">${fmtINR(a.CMP)}</div>
-        <div class="alt-cms">CMS ${parseFloat(a.CMS_SCORE || 0).toFixed(1)}</div>
+  altsBody.innerHTML = '';
+  alts.forEach((a, i) => {
+    const item = document.createElement('div');
+    item.className = 'alt-item';
+    item.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="alt-rank badge">#${i + 2}</span>
+        <strong style="color:var(--text); font-size:13px;">${a.SYMBOL || '–'}</strong>
+        ${a.IS_PRIME ? '<span class="meta-chip cms-chip" style="font-size:9px; padding:1px 5px;">PRIME</span>' : ''}
       </div>
-    </div>
-  `).join('');
+      <div style="text-align:right;">
+        <div style="font-weight:700; color:var(--accent); font-family:var(--font-mono);">${fmtINR(a.CMP)}</div>
+        <div style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono);">CMS ${parseFloat(a.CMS_SCORE || 0).toFixed(1)}</div>
+      </div>
+    `;
+    item.onclick = () => selectStockForTrading(a, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
+    altsBody.appendChild(item);
+  });
 
   const toggle = document.getElementById('altsToggle');
-  toggle.onclick = () => {
-    toggle.classList.toggle('open');
-    altsBody.classList.toggle('open');
-  };
+  if (toggle) {
+    toggle.onclick = () => {
+      toggle.classList.toggle('open');
+      altsBody.classList.toggle('open');
+    };
+  }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -994,26 +1168,31 @@ function buildGTTClipboardText(sig) {
   const cap = shares * entry;
 
   return [
-    `═══ NSE Signal GTT Order ═══`,
+    `═══ NSE Signal GTT Order (Institutional Two-Tier) ═══`,
     `Stock   : ${sig.SYMBOL} (NSE)`,
     `Entry   : ₹${fmt(entry)}`,
     `Shares  : ${shares} shares`,
     `Capital : ₹${fmt(cap)}`,
     ``,
-    `── Initial Stop (-7%) ────────`,
-    `Trigger : ₹${fmt(stop)} (hard stop)`,
+    `── Initial Stop (-5% to -7% ATR) ────────`,
+    `Trigger : ₹${fmt(stop)} (Hard Stop)`,
     ``,
-    `── Milestone 1 (+15%) ────────`,
+    `── Milestone 1 (+15% Risk-Free) ─────────`,
     `Target  : ₹${fmt(m1)}`,
-    `→ Move stop to +2.5% Breakeven after M1 hit`,
+    `→ Ratchet Stop to ₹${fmt(entry * 1.015)} (+1.5% Breakeven buffer)`,
+    `→ 100% Position Kept Intact`,
     ``,
-    `── Milestone 2 (+30%) ────────`,
-    `Target  : ₹${fmt(sig.M2_TARGET)}`,
-    `→ Move stop to +15% after M2 hit`,
+    `── Milestone 2 (+22% Bank & Trail) ──────`,
+    `Target  : ₹${fmt(sig.M2_TARGET || (entry * 1.22))}`,
+    `→ Bank 40% Partial Profit (locks in ≥3R reward:risk)`,
+    `→ Ratchet Stop on remaining 60% runner to ₹${fmt(sig.M2_STOP || (entry * 1.10))} (+10% profit floor)`,
     ``,
-    `── Milestone 3 (+50%) ────────`,
-    `Target  : ₹${fmt(sig.M3_TARGET)}`,
-    `→ Trail via 20-DMA after M3 hit`,
+    `── Milestone 3 (Power Runner > +25%) ─────`,
+    `Target  : UNCAPPED (Let Winners Run)`,
+    `→ Dynamic Trailing Exits:`,
+    `  1. Primary Trend Exit: Daily Close < rising 50 SMA on volume (1-day grace on low vol)`,
+    `  2. Climax Mean-Reversion: Close < 20 EMA if CMP / 50 SMA > 1.35`,
+    `  3. Blow-Off Exhaustion: Close > 1.70x 200 SMA & range > 3x ATR14 with 20d peak vol`,
     ``,
     `CMS Score: ${sig.CMS_SCORE}  |  RSI: ${sig.RSI_14}`,
     `Generated: ${new Date().toLocaleString('en-IN')}`,
@@ -1235,6 +1414,94 @@ function updatePillActive(cap) {
   });
 }
 
+let currentFilter = 'all';
+let currentSearch = '';
+
+function setupWatchlistSearchAndFilters() {
+  const globalSearch = document.getElementById('globalStockSearch');
+  const screenerSearch = document.getElementById('screenerSearchInput');
+  const btnClear = document.getElementById('btnClearSearch');
+  const filterChips = document.querySelectorAll('.filter-chip');
+
+  function applySearch(query) {
+    currentSearch = (query || '').trim().toUpperCase();
+    if (screenerSearch && screenerSearch.value !== query) {
+      screenerSearch.value = query;
+    }
+    if (globalSearch && globalSearch.value !== query) {
+      globalSearch.value = query;
+    }
+    if (btnClear) {
+      btnClear.style.display = query ? 'flex' : 'none';
+    }
+    const all = (state.payload && state.payload.all_qualified) || [];
+    renderAllStocksTable(all, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
+  }
+
+  // Keyboard shortcut '/' to focus global search
+  window.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      if (globalSearch) {
+        globalSearch.focus();
+        globalSearch.select();
+      }
+    }
+  });
+
+  if (globalSearch) {
+    globalSearch.addEventListener('input', e => {
+      if (state.currentTab !== 'Signal') {
+        switchTab('Signal');
+      }
+      applySearch(e.target.value);
+    });
+    globalSearch.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const all = (state.payload && state.payload.all_qualified) || [];
+        const match = all.find(s => s.SYMBOL.toUpperCase().includes(currentSearch));
+        if (match) {
+          selectStockForTrading(match, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
+          globalSearch.blur();
+        }
+      }
+    });
+  }
+
+  if (screenerSearch) {
+    screenerSearch.addEventListener('input', e => {
+      applySearch(e.target.value);
+    });
+    screenerSearch.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const all = (state.payload && state.payload.all_qualified) || [];
+        const match = all.find(s => s.SYMBOL.toUpperCase().includes(currentSearch));
+        if (match) {
+          selectStockForTrading(match, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
+          screenerSearch.blur();
+        }
+      }
+    });
+  }
+
+  if (btnClear) {
+    btnClear.addEventListener('click', () => {
+      applySearch('');
+      if (screenerSearch) screenerSearch.focus();
+    });
+  }
+
+  filterChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      filterChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentFilter = chip.dataset.filter || 'all';
+      const all = (state.payload && state.payload.all_qualified) || [];
+      renderAllStocksTable(all, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
+    });
+  });
+}
+
 function onCapitalChange(newCapital) {
   state.userCapital = newCapital;
   store.set(LS.CURRENT_CAPITAL, newCapital);
@@ -1242,16 +1509,20 @@ function onCapitalChange(newCapital) {
 
   const allStocks = (state.payload && state.payload.all_qualified) || [];
   if (allStocks.length > 0) {
-    const affordable = allStocks.filter(s => parseFloat(s.CMP) <= (newCapital - 26));
-    if (affordable.length > 0) {
-      const winner = Object.assign({}, affordable[0]);
+    const isDefensive = (state.payload && state.payload.regime && state.payload.regime.regime === 'DEFENSIVE_CASH');
+    let target = state.activeStock ? allStocks.find(s => s.SYMBOL === state.activeStock.SYMBOL) : null;
+    if (!target) {
+      const affordable = allStocks.filter(s => parseFloat(s.CMP) <= (newCapital - 26));
+      target = affordable.length > 0 ? affordable[0] : allStocks[0];
+    }
+    if (target) {
+      const winner = Object.assign({}, target);
       const shares = Math.max(Math.floor((newCapital - 26) / parseFloat(winner.CMP)), 1);
       winner.SHARES = shares;
       winner.CAPITAL_REQUIRED = shares * parseFloat(winner.CMP);
       winner.CAPITAL_BASE = newCapital;
-      renderActiveSignal(winner, affordable.slice(1, 4));
-    } else {
-      renderCashState(null, `No stocks fit your entered budget of ₹${newCapital.toLocaleString('en-IN')}. Lowest priced leader is ₹${allStocks[allStocks.length-1].CMP}.`);
+      const alts = allStocks.filter(s => s.SYMBOL !== winner.SYMBOL).slice(0, 3);
+      renderActiveSignal(winner, alts, isDefensive);
     }
     renderAllStocksTable(allStocks, newCapital);
   }
@@ -1268,34 +1539,71 @@ function renderAllStocksTable(stocks, userCapital) {
     return;
   }
   card.style.display = 'block';
-  if (countBadge) countBadge.textContent = `${stocks.length} Leaders`;
+
+  let filtered = stocks.filter(s => {
+    if (currentSearch && !s.SYMBOL.toUpperCase().includes(currentSearch)) {
+      return false;
+    }
+    if (currentFilter === 'prime') {
+      return s.IS_PRIME === true || parseFloat(s.CMS_SCORE) >= 90;
+    }
+    if (currentFilter === 'sweet_rsi') {
+      const rsi = parseFloat(s.RSI_14);
+      return rsi >= 45 && rsi <= 75;
+    }
+    if (currentFilter === 'affordable') {
+      return parseFloat(s.CMP) <= (userCapital - 26);
+    }
+    return true;
+  });
+
+  if (countBadge) {
+    countBadge.textContent = `${filtered.length} / ${stocks.length} Leaders`;
+  }
 
   tbody.innerHTML = '';
-  stocks.forEach((s, idx) => {
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding:24px 12px; color:var(--text-dim);">
+          🔍 No leaders match "${currentSearch || currentFilter}"
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  filtered.forEach((s, idx) => {
     const cmp = parseFloat(s.CMP);
     const affordable = cmp <= (userCapital - 26);
     const shares = affordable ? Math.floor((userCapital - 26) / cmp) : 0;
     const isSelected = state.activeStock && state.activeStock.SYMBOL === s.SYMBOL;
+    const rsi = parseFloat(s.RSI_14);
+    const rsiColor = (rsi < 45) ? 'var(--red)' : (rsi <= 82 ? 'var(--accent)' : 'var(--yellow)');
+
     const tr = document.createElement('tr');
     tr.className = `stock-table-row ${isSelected ? 'selected' : ''}`;
     tr.innerHTML = `
       <td style="font-weight:700; color:var(--text-dim);">${idx + 1}</td>
       <td>
-        <strong style="color:var(--text); font-size:13px; letter-spacing:0.3px;">${s.SYMBOL}</strong>
-        ${s.IS_PRIME ? '<span class="meta-chip cms-chip" style="display:inline-block; font-size:9px; padding:1px 5px; margin-left:4px;">PRIME</span>' : ''}
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <strong style="color:var(--text); font-size:13px; letter-spacing:0.3px;">${s.SYMBOL}</strong>
+            ${s.IS_PRIME ? '<span class="meta-chip cms-chip" style="font-size:9px; padding:1px 5px;">PRIME</span>' : ''}
+            ${s.CIRCUIT_BAND ? `<span class="badge" style="font-size:9px; padding:1px 4px;">${s.CIRCUIT_BAND}%</span>` : ''}
+          </div>
+          <div style="font-size:10px; color:var(--text-dim);">
+            ${affordable ? `<span style="color:var(--accent)">✅ ${shares} ${shares === 1 ? 'Share' : 'Shares'}</span>` : `<span style="color:var(--text-dim)">Needs ₹${Math.ceil(cmp + 26)}</span>`}
+          </div>
+        </div>
       </td>
-      <td style="font-weight:700;">₹${cmp.toFixed(2)}</td>
+      <td style="font-weight:700;">${fmtINR(cmp)}</td>
       <td><span class="meta-chip cms-chip" style="padding:2px 8px; font-size:11px; font-weight:700;">${parseFloat(s.CMS_SCORE).toFixed(1)}</span></td>
-      <td style="color:${s.RSI_14 >= 70 ? '#ffd700' : (s.RSI_14 <= 45 ? '#ff4757' : '#00c896')}; font-weight:700;">${parseFloat(s.RSI_14).toFixed(1)}</td>
-      <td>
-        ${affordable 
-          ? `<span class="badge-buy">✅ ${shares} ${shares === 1 ? 'Share' : 'Shares'}</span>` 
-          : `<span class="badge-needs">Needs ₹${Math.ceil(cmp + 26)}</span>`
-        }
-      </td>
+      <td><span style="color:${rsiColor}; font-weight:700;">${rsi.toFixed(1)}</span></td>
       <td style="text-align:right;">
         <button class="btn-select-stock ${isSelected ? 'btn-active' : ''}">
-          ${isSelected ? 'Active ✨' : 'Trade 🎯'}
+          ${isSelected ? 'Active ✨' : 'Inspect 🎯'}
         </button>
       </td>
     `;
@@ -1314,11 +1622,11 @@ function selectStockForTrading(s, userCapital) {
 
   const all = (state.payload && state.payload.all_qualified) || [];
   const alts = all.filter(item => item.SYMBOL !== stock.SYMBOL).slice(0, 3);
+  const isDefensive = (state.payload && state.payload.regime && state.payload.regime.regime === 'DEFENSIVE_CASH') || (stock.STATUS === 'CASH');
 
-  renderActiveSignal(stock, alts);
-  showToast(`Selected ${stock.SYMBOL} for trading!`, 'success', '🎯');
+  renderActiveSignal(stock, alts, isDefensive);
+  showToast(`Loaded ${stock.SYMBOL} in Trade Studio`, 'success', '🎯');
 
-  // Refresh table row selection
   renderAllStocksTable(all, userCapital);
 
   const hero = document.getElementById('heroCard');
@@ -1476,5 +1784,6 @@ function wireGlossaryModal() {
   wireCapitalController();
   wireEntryPriceController();
   wireGlossaryModal();
+  setupWatchlistSearchAndFilters();
   fetchSignal(true);
 })();

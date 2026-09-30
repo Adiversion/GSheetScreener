@@ -175,6 +175,37 @@ def run_simulation(strategy_name, dfs, nifty, sim_dates, initial_capital=5000.0)
                     exit_price = day_close
                     exit_reason = "Monthly Rebalance"
 
+            elif strategy_name == "Institutional V2":
+                # State 1: Risk-Free at +15%
+                if day_high >= entry * 1.15:
+                    active_trade["active_stop"] = max(active_trade["active_stop"], entry * 1.015)
+                    active_trade["m1_hit"] = True
+
+                # State 2: Bank 40% at +22%
+                if day_high >= entry * 1.22 and not active_trade.get("m2_banked", False) and qty > 1:
+                    shares_to_bank = max(1, int(qty * 0.40))
+                    bank_proceeds = shares_to_bank * (entry * 1.22)
+                    stt = bank_proceeds * STT_RATE
+                    capital += (bank_proceeds - stt - BROKERAGE - DP_CHARGE)
+                    qty -= shares_to_bank
+                    active_trade["shares"] = qty
+                    active_trade["m2_banked"] = True
+                    active_trade["active_stop"] = max(active_trade["active_stop"], entry * 1.10)
+
+                # State 3: Power Runner (> +25%) - Dynamic Trail on 50 SMA
+                sma50 = float(df_sym.loc[curr_date, "SMA50"])
+                if active_trade.get("m2_banked", False) and day_close < sma50:
+                    exit_price = day_close
+                    exit_reason = "50-SMA Trend Exit (Runner)"
+                elif day_low <= active_trade["active_stop"]:
+                    exit_price = active_trade["active_stop"]
+                    if active_trade.get("m2_banked"):
+                        exit_reason = "Locked Profit Stop (+10%)"
+                    elif active_trade.get("m1_hit"):
+                        exit_reason = "Breakeven Stop (+1.5%)"
+                    else:
+                        exit_reason = "Initial Hard Stop (-5% to -7%)"
+
             if exit_price is not None:
                 proceeds = qty * exit_price
                 stt = proceeds * STT_RATE
@@ -276,6 +307,32 @@ def run_simulation(strategy_name, dfs, nifty, sim_dates, initial_capital=5000.0)
                     if ret_6m > 0:  # Absolute momentum
                         candidates.append({"symbol": sym, "score": ret_6m, "stop": cmp * 0.93})
 
+                elif strategy_name == "Institutional V2":
+                    sma50 = float(df_sym["SMA50"].iloc[loc])
+                    sma150 = float(df_sym["SMA150"].iloc[loc])
+                    sma200 = float(df_sym["SMA200"].iloc[loc])
+                    if not (cmp > sma50 > sma150 > sma200):
+                        continue
+                    sma200_prev = float(df_sym["SMA200"].iloc[loc - 22])
+                    if sma200 <= sma200_prev:
+                        continue
+                    h52 = float(df_sym["High52W"].iloc[loc])
+                    l52 = float(df_sym["Low52W"].iloc[loc])
+                    if (cmp - h52) / h52 < -0.25 or (cmp - l52) / l52 < 0.30:
+                        continue
+                    rsi_val = float(df_sym["RSI"].iloc[loc])
+                    if not (45.0 <= rsi_val <= 82.0):
+                        continue
+                    atr_val = float(df_sym["ATR"].iloc[loc])
+                    if (atr_val / cmp) * 100 > 6.5:
+                        continue
+                    c_60 = float(df_sym["Close"].iloc[loc - 60])
+                    roc_3m = ((cmp - c_60) / c_60) * 100
+                    prox_score = (1 - abs((cmp - h52) / h52)) * 100
+                    score = 0.60 * roc_3m + 0.40 * prox_score
+                    stop_pct = min(0.07, max(0.05, (2.0 * atr_val) / cmp))
+                    candidates.append({"symbol": sym, "score": score, "stop": cmp * (1 - stop_pct)})
+
             if candidates:
                 candidates.sort(key=lambda x: x["score"], reverse=True)
                 winner = candidates[0]
@@ -343,7 +400,8 @@ def main():
         "Baseline CMS",
         "Clenow Smooth Momentum",
         "Minervini SEPA",
-        "Dual Momentum"
+        "Dual Momentum",
+        "Institutional V2"
     ]
 
     results = []
