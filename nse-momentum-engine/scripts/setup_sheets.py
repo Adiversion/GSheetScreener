@@ -327,11 +327,11 @@ def setup_config_tab(sh: gspread.Spreadsheet, service):
         ["MAX_PRICE",       "=B2-26",       "Auto-calculated by script each Friday"],
         ["MIN_AVG_VOLUME",  500000,         "20-day volume floor"],
         ["STOP_PCT",         0.07,          "7% hard stop"],
-        ["M1_TARGET_PCT",    0.15,          "+15% Milestone 1"],
-        ["M2_TARGET_PCT",    0.30,          "+30% Milestone 2"],
-        ["M3_TARGET_PCT",    0.50,          "+50% Milestone 3"],
-        ["M1_STOP_PCT",      0.025,         "+2.5% ratchet after M1"],
-        ["M2_STOP_PCT",      0.15,          "+15% ratchet after M2"],
+        ["M1_TARGET_PCT",    0.15,          "Milestone 1 (+15%)"],
+        ["M2_TARGET_PCT",    0.30,          "Milestone 2 (+30%)"],
+        ["M3_TARGET_PCT",    0.50,          "Milestone 3 (+50%)"],
+        ["M1_STOP_PCT",      0.025,         "Ratchet stop (+2.5%) after M1"],
+        ["M2_STOP_PCT",      0.15,          "Ratchet stop (+15%) after M2"],
     ]
 
     all_data = [headers] + rows
