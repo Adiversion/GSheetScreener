@@ -174,13 +174,13 @@ document.getElementById('btnInstall').addEventListener('click', async () => {
    BOTTOM NAV / TAB SWITCHING
 ══════════════════════════════════════════════════════ */
 
-document.querySelectorAll('.nav-item').forEach(item => {
+document.querySelectorAll('.nav-item, .desktop-tab-btn').forEach(item => {
   item.addEventListener('click', () => switchTab(item.dataset.tab));
 });
 
 function switchTab(name) {
   state.currentTab = name;
-  document.querySelectorAll('.nav-item').forEach(n => {
+  document.querySelectorAll('.nav-item, .desktop-tab-btn').forEach(n => {
     n.classList.toggle('active', n.dataset.tab === name);
   });
   document.querySelectorAll('.tab-panel').forEach(p => {
@@ -557,9 +557,6 @@ function renderActiveSignal(h, alts, isDefensive = false) {
 
   // GTT Table
   renderGTT(h);
-
-  // Alternates
-  renderAlternates(alts);
 }
 
 function renderRSIGauge(rsi) {
@@ -743,36 +740,7 @@ function recalculateFromEntry(entry) {
 
 function renderAlternates(alts) {
   const altsCard = document.getElementById('altsCard');
-  const altsBody = document.getElementById('altsBody');
-  if (!alts || !alts.length) { if (altsCard) altsCard.style.display = 'none'; return; }
-
-  altsCard.style.display = 'block';
-  altsBody.innerHTML = '';
-  alts.forEach((a, i) => {
-    const item = document.createElement('div');
-    item.className = 'alt-item';
-    item.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span class="alt-rank badge">#${i + 2}</span>
-        <strong style="color:var(--text); font-size:13px;">${a.SYMBOL || '–'}</strong>
-        ${a.IS_PRIME ? '<span class="meta-chip cms-chip" style="font-size:9px; padding:1px 5px;">PRIME</span>' : ''}
-      </div>
-      <div style="text-align:right;">
-        <div style="font-weight:700; color:var(--accent); font-family:var(--font-mono);">${fmtINR(a.CMP)}</div>
-        <div style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono);">CMS ${parseFloat(a.CMS_SCORE || 0).toFixed(1)}</div>
-      </div>
-    `;
-    item.onclick = () => selectStockForTrading(a, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
-    altsBody.appendChild(item);
-  });
-
-  const toggle = document.getElementById('altsToggle');
-  if (toggle) {
-    toggle.onclick = () => {
-      toggle.classList.toggle('open');
-      altsBody.classList.toggle('open');
-    };
-  }
+  if (altsCard) altsCard.style.display = 'none';
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1018,36 +986,60 @@ function renderHistory() {
   const list    = document.getElementById('historyList');
   const history = store.get(LS.SIGNAL_HISTORY, []);
 
-  if (!history.length) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📋</div>
-        <p>No trade history yet.<br>Record exits in the Portfolio tab.</p>
-      </div>`;
-    return;
+  if (list) {
+    if (!history.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <p>No trade exits recorded yet.<br>Record closed positions via the Portfolio tab to build your verified trade log.</p>
+        </div>`;
+    } else {
+      list.innerHTML = history.map(t => {
+        const outcomeIcon = t.outcome === 'win' ? '🟢' : t.outcome === 'loss' ? '🔴' : '⚪';
+        const outcomeClass = t.outcome === 'win' ? 'win' : t.outcome === 'loss' ? 'loss' : 'skip';
+        const d = new Date(t.date);
+        const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        const pnlStr  = `${t.pnl >= 0 ? '+' : ''}${fmtINR(t.pnl)}`;
+        const pctStr  = `(${t.pct >= 0 ? '+' : ''}${t.pct.toFixed(2)}%)`;
+        return `
+          <div class="history-item">
+            <div class="hist-icon ${outcomeClass}">${outcomeIcon}</div>
+            <div class="hist-body">
+              <div class="hist-symbol">${t.symbol}</div>
+              <div class="hist-date">${dateStr} · ${t.shares} shares · Entry ${fmtINR(t.entry)}</div>
+            </div>
+            <div>
+              <div class="hist-pnl ${t.pnl >= 0 ? 'pos' : 'neg'}">${pnlStr}</div>
+              <div style="font-size:0.68rem; color:var(--text-dim); text-align:right;">${pctStr}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
   }
 
-  list.innerHTML = history.map(t => {
-    const outcomeIcon = t.outcome === 'win' ? '🟢' : t.outcome === 'loss' ? '🔴' : '⚪';
-    const outcomeClass = t.outcome === 'win' ? 'win' : t.outcome === 'loss' ? 'loss' : 'skip';
-    const d = new Date(t.date);
-    const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    const pnlStr  = `${t.pnl >= 0 ? '+' : ''}${fmtINR(t.pnl)}`;
-    const pctStr  = `(${t.pct >= 0 ? '+' : ''}${t.pct.toFixed(2)}%)`;
-    return `
-      <div class="history-item">
-        <div class="hist-icon ${outcomeClass}">${outcomeIcon}</div>
-        <div class="hist-body">
-          <div class="hist-symbol">${t.symbol}</div>
-          <div class="hist-date">${dateStr} · ${t.shares} shares · Entry ${fmtINR(t.entry)}</div>
+  // Populate Daily Bhavcopy Sessions List
+  const sessionsContainer = document.getElementById('historySessionsList');
+  if (sessionsContainer) {
+    const manifest = (state.payload && state.payload.history_manifest) || [
+      { date: '2026-09-30', display_date: '30 Sep 2026', is_today: true },
+      { date: '2026-09-29', display_date: '29 Sep 2026', is_today: false }
+    ];
+    sessionsContainer.innerHTML = manifest.map(m => {
+      const isSelected = m.date === (state.selectedDate || '2026-09-30');
+      return `
+        <div class="session-archive-item ${isSelected ? 'selected' : ''}" onclick="selectSessionDate('${m.date}'); switchTab('Signal');">
+          <div>
+            <div class="session-archive-date">${m.is_today ? '🟢' : '📅'} ${m.display_date || m.date}</div>
+            <div class="session-archive-meta">NSE EOD Confirmed Bhavcopy Snapshot</div>
+          </div>
+          <button class="btn-action inspect" style="font-size:0.75rem; padding:4px 10px;">
+            ${isSelected ? 'Active Setup' : 'Load in Terminal 🎯'}
+          </button>
         </div>
-        <div>
-          <div class="hist-pnl ${t.pnl >= 0 ? 'pos' : 'neg'}">${pnlStr}</div>
-          <div style="font-size:0.68rem; color:var(--text-dim); text-align:right;">${pctStr}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  }
 }
 
 /* ══════════════════════════════════════════════════════

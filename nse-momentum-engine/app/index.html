@@ -28,6 +28,26 @@
       </div>
     </div>
 
+    <!-- Desktop Navigation Tabs (Visible on >=768px) -->
+    <nav class="desktop-nav" role="tablist" aria-label="Terminal Navigation">
+      <button class="desktop-tab-btn active" data-tab="Signal">
+        <span class="tab-icon">📡</span>
+        <span class="tab-label">Terminal</span>
+      </button>
+      <button class="desktop-tab-btn" data-tab="Portfolio">
+        <span class="tab-icon">💼</span>
+        <span class="tab-label">Portfolio</span>
+      </button>
+      <button class="desktop-tab-btn" data-tab="History">
+        <span class="tab-icon">📋</span>
+        <span class="tab-label">History</span>
+      </button>
+      <button class="desktop-tab-btn" data-tab="Settings">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Settings</span>
+      </button>
+    </nav>
+
     <!-- Live Regime Ticker Ribbon (Center) -->
     <div class="header-regime" id="headerRegimeTicker">
       <span class="regime-dot"></span>
@@ -68,56 +88,57 @@
 
     <div id="signalContent" style="display:none">
 
-      <!-- Compact Sub-Header: Session Selector & Macro Regime Alert -->
-      <div class="terminal-subbar">
-        <!-- Trading Session Date Switcher -->
-        <div class="session-bar" id="sessionCard">
-          <span class="session-label">📅 Session:</span>
+      <!-- ════════════ UNIFIED TERMINAL CONTROL RIBBON ════════════ -->
+      <div class="terminal-ribbon" id="terminalRibbon">
+        <!-- Session Switcher Segment -->
+        <div class="ribbon-segment session-segment" id="sessionCard">
+          <span class="ribbon-label">📅 Session:</span>
           <div id="sessionPills" class="session-pills-row">
             <!-- JS populates session dates -->
           </div>
           <div id="bhavcopyPendingNotice" style="display:none" class="bhav-notice">
-            ⏳ <strong>Notice:</strong> NSE Bhavcopy compiling at exchange. Showing previous confirmed session.
+            ⏳ <strong>Compiling:</strong> Fallback to prev session
           </div>
         </div>
 
-        <!-- Macro Regime Notification Banner -->
-        <div class="regime-banner-pill" id="regimeBanner" style="display:none">
-          <div class="regime-pill-left">
+        <div class="ribbon-divider"></div>
+
+        <!-- Position Sizing & Capital Segment -->
+        <div class="ribbon-segment capital-segment" id="capitalControllerCard">
+          <div class="capital-input-group">
+            <span class="ribbon-label">💰 Sizing Capital:</span>
+            <div class="capital-input-wrapper">
+              <span class="currency-prefix">₹</span>
+              <input type="number" id="inputUserCapital" class="capital-input" value="1000" min="100" step="500" placeholder="1000" />
+            </div>
+            <button id="btnApplyCapital" class="btn-capital-apply">Set</button>
+            <span id="capitalModeBadge" class="badge badge-risk">1% Risk Sizing</span>
+          </div>
+          <div class="preset-pills-row">
+            <button class="pill-preset active" data-cap="1000">₹1K</button>
+            <button class="pill-preset" data-cap="2500">₹2.5K</button>
+            <button class="pill-preset" data-cap="5000">₹5K</button>
+            <button class="pill-preset" data-cap="10000">₹10K</button>
+            <button class="pill-preset" data-cap="25000">₹25K</button>
+            <button class="pill-preset" data-cap="50000">₹50K</button>
+          </div>
+        </div>
+
+        <div class="ribbon-divider"></div>
+
+        <!-- Macro Regime Alert Segment -->
+        <div class="ribbon-segment regime-segment" id="regimeBanner" style="display:none">
+          <div class="regime-status-chip">
+            <span class="regime-pulse-dot"></span>
             <span id="regimeBadge" class="badge">–</span>
             <strong id="regimeTitle">–</strong>
           </div>
-          <div id="regimeDesc" class="regime-desc">–</div>
+          <div id="regimeDesc" class="regime-desc-text">–</div>
         </div>
       </div>
 
-      <!-- Quick Capital Controller Strip -->
-      <div class="capital-controller-strip" id="capitalControllerCard">
-        <div class="capital-strip-left">
-          <span class="strip-label">💰 Sizing Capital:</span>
-          <div class="capital-input-wrapper">
-            <span class="currency-prefix">₹</span>
-            <input type="number" id="inputUserCapital" class="capital-input" value="1000" min="100" step="500" placeholder="1000" />
-          </div>
-          <button id="btnApplyCapital" class="btn-capital-apply">Set</button>
-          <span id="capitalModeBadge" class="badge">1% Risk Sizing</span>
-        </div>
-        <!-- Quick Preset Pills -->
-        <div class="preset-pills-row">
-          <button class="pill-preset active" data-cap="1000">₹1K</button>
-          <button class="pill-preset" data-cap="2500">₹2.5K</button>
-          <button class="pill-preset" data-cap="5000">₹5K</button>
-          <button class="pill-preset" data-cap="10000">₹10K</button>
-          <button class="pill-preset" data-cap="25000">₹25K</button>
-          <button class="pill-preset" data-cap="50000">₹50K</button>
-        </div>
-      </div>
-
-      <!-- Qualified Summary Banner (Mobile Only) -->
-      <div class="qual-banner" id="qualBanner" style="display:none">
-        <span>🔍 Stage-2 Momentum Leaders Qualified:</span>
-        <strong id="totalQualified">–</strong>
-      </div>
+      <!-- Hidden hook for totalQualified -->
+      <div id="qualBanner" style="display:none"><span id="totalQualified"></span></div>
 
       <!-- ════════════ TWO-COLUMN TERMINAL WORKSPACE ════════════ -->
       <div class="terminal-grid" id="signalHeroGrid">
@@ -284,15 +305,6 @@
             </div>
           </div>
 
-          <!-- Alternates Card (Collapsed / Secondary) -->
-          <div class="card" id="altsCard" style="display:none">
-            <div class="collapsible-header" id="altsToggle">
-              <span>🔄 Alternate Momentum Leaders (Runner Ups)</span>
-              <span class="chevron">▼</span>
-            </div>
-            <div class="collapsible-body" id="altsBody"></div>
-          </div>
-
         </div> <!-- /.studio-col -->
 
         <!-- ── RIGHT COLUMN: INSTITUTIONAL WATCHLIST & SCREENER (~40%) ── -->
@@ -365,49 +377,99 @@
   <!-- ── Portfolio Tab ── -->
   <section class="tab-panel" id="tabPortfolio">
     <div class="portfolio-container">
-      <div class="card">
-        <div class="card-title">💰 Compounding Capital Tracker</div>
-        <div class="capital-hero">
-          <div class="capital-label">Current Account Equity</div>
-          <div class="capital-value" id="capitalDisplay">₹0</div>
-          <div class="capital-base-txt" id="capitalBaseDisp">Base: –</div>
-          <div class="capital-gain" id="capitalGain" style="display:none"></div>
+      <!-- Left Column: Compounding Metrics & Growth Curve -->
+      <div class="portfolio-main-col">
+        <div class="card">
+          <div class="card-title">💰 Compounding Capital Tracker</div>
+          <div class="capital-hero">
+            <div class="capital-label">Current Account Equity</div>
+            <div class="capital-value" id="capitalDisplay">₹0</div>
+            <div class="capital-base-txt" id="capitalBaseDisp">Base: –</div>
+            <div class="capital-gain" id="capitalGain" style="display:none"></div>
+          </div>
+          <div class="stats-row" id="statsRow">
+            <div class="stat-box">
+              <div class="stat-label">Total Exits</div>
+              <div class="stat-val gold" id="statTrades">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Wins</div>
+              <div class="stat-val green" id="statWins">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Win Rate</div>
+              <div class="stat-val green" id="statWinRate">–</div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="stats-row" id="statsRow">
-        <div class="stat-box">
-          <div class="stat-label">Total Exits</div>
-          <div class="stat-val gold" id="statTrades">0</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">Wins</div>
-          <div class="stat-val green" id="statWins">0</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">Win Rate</div>
-          <div class="stat-val green" id="statWinRate">–</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">📈 Compounding Growth Curve</div>
-        <div class="chart-wrap">
-          <canvas class="chart-canvas" id="capitalChart"></canvas>
-          <div class="chart-empty" id="chartEmpty">
-            <span>📉</span>
-            <p>No trades recorded yet.<br>Record your first exit below.</p>
+        <div class="card">
+          <div class="card-title">📈 Compounding Growth Curve</div>
+          <div class="chart-wrap">
+            <canvas class="chart-canvas" id="capitalChart"></canvas>
+            <div class="chart-empty" id="chartEmpty">
+              <span>📉</span>
+              <p>No trades recorded yet.<br>Record your first exit below.</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="portfolio-actions-grid">
-        <button class="btn-primary" id="btnRecordExit">
-          <span>📝</span> Record Trade Exit
-        </button>
-        <button class="btn-secondary" id="btnResetCapital">
-          <span>🔄</span> Reset Capital to Base
-        </button>
+      <!-- Right Column: Trade Management & Lifecycle Rules -->
+      <div class="portfolio-side-col">
+        <!-- Actions & Exit Logger -->
+        <div class="card">
+          <div class="card-title">⚡ Portfolio Operations</div>
+          <div class="portfolio-actions-grid">
+            <button class="btn-primary" id="btnRecordExit">
+              <span>📝</span> Record Trade Exit
+            </button>
+            <button class="btn-secondary" id="btnResetCapital">
+              <span>🔄</span> Reset Capital to Base
+            </button>
+          </div>
+          <div class="portfolio-guide-hint">
+            💡 <strong>Compounding Math:</strong> Exits automatically update your account equity and scale up position sizing for subsequent Stage-2 leaders.
+          </div>
+        </div>
+
+        <!-- 4-State Trade Lifecycle Rules Card -->
+        <div class="card lifecycle-guide-card">
+          <div class="card-title">
+            <span>🛡️ Institutional Trade Lifecycle</span>
+            <span class="badge badge-accent">V2 Engine</span>
+          </div>
+          <div class="lifecycle-steps">
+            <div class="step-item">
+              <div class="step-badge s0">State 0</div>
+              <div class="step-info">
+                <strong>OPEN (1% Risk Sizing)</strong>
+                <p>Initial entry with ATR-based stop (-5% to -7%). Risk strictly limited to 1% of account equity.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-badge s1">State 1</div>
+              <div class="step-info">
+                <strong>RISK-FREE (+14% Gain)</strong>
+                <p>Stop automatically ratchets to Break-Even + 1.5% buffer. Trade cannot result in a loss.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-badge s2">State 2</div>
+              <div class="step-info">
+                <strong>BANK & TRAIL (+22% Gain)</strong>
+                <p>Bank 40% position into locked cash profits. Ratchet remaining 60% runner stop to +10% gain.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-badge s3">State 3</div>
+              <div class="step-info">
+                <strong>POWER RUNNER (+30%+ Multibagger)</strong>
+                <p>Profit targets completely removed! Dynamic trailing below 50 SMA / 20 EMA for massive asymmetric trends.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -415,8 +477,32 @@
   <!-- ── History Tab ── -->
   <section class="tab-panel" id="tabHistory">
     <div class="history-container">
-      <div class="card-title" style="padding:0 0 10px;">📋 Historical Daily Signal Archives</div>
-      <div id="historyList"></div>
+      <div class="history-grid">
+        <!-- Col 1: NSE Daily Bhavcopy Archives -->
+        <div class="card history-archives-card">
+          <div class="card-title">
+            <span>📅 Trading Session Bhavcopy Archives</span>
+            <span class="badge badge-accent">Daily Snapshots</span>
+          </div>
+          <p class="history-intro-txt">
+            Browse and inspect confirmed end-of-day momentum screening runs computed directly from official NSE bhavcopy files.
+          </p>
+          <div class="history-sessions-list" id="historySessionsList">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Col 2: Closed Trades & P&L Log -->
+        <div class="card history-ledger-card">
+          <div class="card-title">
+            <span>📋 Closed Trade Audit Log</span>
+            <span class="badge">Realized P&L</span>
+          </div>
+          <div id="historyList">
+            <!-- Populated by renderHistory() -->
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -444,19 +530,18 @@
         <button class="btn-primary" id="btnSaveSettings">
           <span>💾</span> Save Default Settings
         </button>
+
+        <div class="card-title" style="margin-top:24px;">🗑️ Cache & Storage Management</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-secondary" id="btnClearHistory" style="flex:1;">
+            <span>🗑️</span> Clear Signals Cache
+          </button>
+          <button class="btn-secondary" id="btnClearCapital" style="flex:1;">
+            <span>📉</span> Reset Capital History
+          </button>
+        </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">📱 App Installation</div>
-        <button class="btn-install" id="btnInstall" disabled>
-          <span>⬇️</span> Install NSE Signal PWA
-        </button>
-        <p class="version-note">
-          Install on desktop or mobile home screen for fast native launch and offline caching.
-        </p>
-      </div>
-
-      <!-- Zerodha Kite Connect Settings -->
       <div class="card">
         <div class="card-title">
           <span style="color:#387ED1; font-weight:800;">Z</span> Zerodha Kite Connect API
@@ -482,24 +567,20 @@
           💾 Save Kite Token
         </button>
         <div id="kiteStatus" style="margin-top:8px; font-size:0.77rem; color:var(--text-muted);"></div>
-      </div>
 
-      <div class="card">
-        <div class="card-title">🗑️ Cache & Storage Management</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn-secondary" id="btnClearHistory" style="flex:1;">
-            <span>🗑️</span> Clear Signals Cache
-          </button>
-          <button class="btn-secondary" id="btnClearCapital" style="flex:1;">
-            <span>📉</span> Reset Capital History
-          </button>
-        </div>
+        <div class="card-title" style="margin-top:24px;">📱 App Installation</div>
+        <button class="btn-install" id="btnInstall" disabled>
+          <span>⬇️</span> Install NSE Signal PWA
+        </button>
+        <p class="version-note">
+          Install on desktop or mobile home screen for fast native launch and offline caching.
+        </p>
       </div>
+    </div>
 
-      <div class="version-note" style="margin-top:16px; padding:8px; text-align:center;">
-        NSE Momentum Quant Engine V2 · Institutional Architecture<br>
-        Two-Tier Asymmetric Profit Booking · Uncapped Multibagger Trailing
-      </div>
+    <div class="version-note" style="margin-top:20px; padding:8px; text-align:center;">
+      NSE Momentum Quant Engine V2 · Institutional Architecture<br>
+      Two-Tier Asymmetric Profit Booking · Uncapped Multibagger Trailing
     </div>
   </section>
 
