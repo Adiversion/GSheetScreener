@@ -349,7 +349,7 @@ function renderSignal(rows, overrideReason = null) {
 
 function renderCashState(hero, overrideMsg = null) {
   const heroCard = document.getElementById('heroCard');
-  heroCard.className = 'card signal-hero';
+  heroCard.className = 'card signal-hero cash-hero';
   heroCard.innerHTML = `
     <div class="status-badge cash">🛡️ 100% CASH</div>
     <div class="cash-state">
@@ -1275,23 +1275,27 @@ function renderAllStocksTable(stocks, userCapital) {
     const cmp = parseFloat(s.CMP);
     const affordable = cmp <= (userCapital - 26);
     const shares = affordable ? Math.floor((userCapital - 26) / cmp) : 0;
+    const isSelected = state.activeStock && state.activeStock.SYMBOL === s.SYMBOL;
     const tr = document.createElement('tr');
-    tr.className = 'stock-table-row';
+    tr.className = `stock-table-row ${isSelected ? 'selected' : ''}`;
     tr.innerHTML = `
-      <td style="font-weight:700; color:var(--text-muted);">${idx + 1}</td>
-      <td style="font-weight:800; color:var(--accent); font-size:13px;">${s.SYMBOL}</td>
+      <td style="font-weight:700; color:var(--text-dim);">${idx + 1}</td>
+      <td>
+        <strong style="color:var(--text); font-size:13px; letter-spacing:0.3px;">${s.SYMBOL}</strong>
+        ${s.IS_PRIME ? '<span class="meta-chip cms-chip" style="display:inline-block; font-size:9px; padding:1px 5px; margin-left:4px;">PRIME</span>' : ''}
+      </td>
       <td style="font-weight:700;">₹${cmp.toFixed(2)}</td>
-      <td><span class="meta-chip cms-chip" style="padding:1px 6px; font-size:10px;">${parseFloat(s.CMS_SCORE).toFixed(1)}</span></td>
+      <td><span class="meta-chip cms-chip" style="padding:2px 8px; font-size:11px; font-weight:700;">${parseFloat(s.CMS_SCORE).toFixed(1)}</span></td>
       <td style="color:${s.RSI_14 >= 70 ? '#ffd700' : (s.RSI_14 <= 45 ? '#ff4757' : '#00c896')}; font-weight:700;">${parseFloat(s.RSI_14).toFixed(1)}</td>
       <td>
         ${affordable 
-          ? `<span class="badge" style="background:rgba(0,200,150,0.15); color:var(--accent); font-size:10px; padding:2px 6px; border-radius:6px;">✅ Buy ${shares}</span>` 
-          : `<span class="badge" style="background:rgba(255,71,87,0.12); color:var(--red); font-size:10px; padding:2px 6px; border-radius:6px;">Needs ₹${Math.ceil(cmp + 26)}</span>`
+          ? `<span class="badge-buy">✅ ${shares} ${shares === 1 ? 'Share' : 'Shares'}</span>` 
+          : `<span class="badge-needs">Needs ₹${Math.ceil(cmp + 26)}</span>`
         }
       </td>
-      <td>
-        <button class="btn-select-stock" style="background:transparent; border:1px solid var(--accent); color:var(--accent); border-radius:6px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer;">
-          Trade 🎯
+      <td style="text-align:right;">
+        <button class="btn-select-stock ${isSelected ? 'btn-active' : ''}">
+          ${isSelected ? 'Active ✨' : 'Trade 🎯'}
         </button>
       </td>
     `;
@@ -1308,8 +1312,14 @@ function selectStockForTrading(s, userCapital) {
   stock.CAPITAL_REQUIRED = shares * cmp;
   stock.CAPITAL_BASE = userCapital;
 
-  renderActiveSignal(stock, []);
+  const all = (state.payload && state.payload.all_qualified) || [];
+  const alts = all.filter(item => item.SYMBOL !== stock.SYMBOL).slice(0, 3);
+
+  renderActiveSignal(stock, alts);
   showToast(`Selected ${stock.SYMBOL} for trading!`, 'success', '🎯');
+
+  // Refresh table row selection
+  renderAllStocksTable(all, userCapital);
 
   const hero = document.getElementById('heroCard');
   if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1453,11 +1463,11 @@ function wireGlossaryModal() {
 ══════════════════════════════════════════════════════ */
 
 (function init() {
-  // Purge legacy caches and legacy Google Sheet setting
+  // Purge legacy caches, legacy Google Sheet setting, and stale 0-stock caches
   try {
     localStorage.removeItem(LS.SHEET_URL);
     const cached = store.get(LS.LAST_SIGNAL, null);
-    if (cached && (!cached.rows || cached.rows.length === 0 || cached.rows[0].STATUS === 'CASH')) {
+    if (cached && (!cached.rows || cached.rows.length === 0 || cached.rows[0].STATUS === 'CASH' || (cached.payload && cached.payload.total_qualified === 0))) {
       localStorage.removeItem(LS.LAST_SIGNAL);
     }
   } catch (_) {}

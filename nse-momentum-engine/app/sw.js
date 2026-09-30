@@ -4,8 +4,8 @@
    Cache-first for static assets, Network-first for static JSON
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'nse-signal-v4';
-const DATA_CACHE = 'nse-signal-data-v4';
+const CACHE_NAME = 'nse-signal-v5';
+const DATA_CACHE = 'nse-signal-data-v5';
 
 const STATIC_ASSETS = [
   './',
@@ -50,9 +50,31 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-first for all other static assets (HTML/CSS/JS)
+  // Network-first for navigation requests (HTML) to ensure instant UI updates
+  if (event.request.mode === 'navigate') {
+    event.respondWith(networkFirstNavigationStrategy(event.request));
+    return;
+  }
+
+  // Cache-first for static CSS/JS/icons
   event.respondWith(cacheFirstStrategy(event.request));
 });
+
+/** Network-first navigation strategy: fetches fresh HTML, falls back to cache */
+async function networkFirstNavigationStrategy(request) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (_) {
+    const cached = await caches.match('./index.html');
+    if (cached) return cached;
+    return caches.match(request);
+  }
+}
 
 /** Network-first: try network, fall back to data cache */
 async function networkFirstDataStrategy(request) {
@@ -86,7 +108,6 @@ async function cacheFirstStrategy(request) {
     }
     return networkResponse;
   } catch (err) {
-    // If navigation request fails, return cached index.html
     if (request.mode === 'navigate') {
       const fallback = await caches.match('./index.html');
       if (fallback) return fallback;

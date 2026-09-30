@@ -18,20 +18,22 @@
 
 <!-- ════════════ HEADER ════════════ -->
 <header class="app-header">
-  <div class="header-logo">
-    <div class="logo-icon">📈</div>
-    <div>
-      <span class="logo-text">NSE Signal</span>
-      <span class="logo-sub">MOMENTUM ENGINE</span>
+  <div class="header-inner">
+    <div class="header-logo">
+      <div class="logo-icon">📈</div>
+      <div>
+        <span class="logo-text">NSE Signal</span>
+        <span class="logo-sub">MOMENTUM ENGINE</span>
+      </div>
     </div>
-  </div>
-  <div class="header-right">
-    <div class="offline-badge" id="offlineBadge">
-      <span class="dot"></span>
-      <span id="offlineText">Online</span>
+    <div class="header-right">
+      <div class="offline-badge" id="offlineBadge">
+        <span class="dot"></span>
+        <span id="offlineText">Online</span>
+      </div>
+      <button class="btn-guide" id="btnOpenGlossary" title="Strategy Guide & Dictionary">📖 Guide</button>
+      <button class="btn-refresh" id="btnRefresh" title="Refresh data" aria-label="Refresh">🔄</button>
     </div>
-    <button class="btn-guide" id="btnOpenGlossary" title="Strategy Guide & Dictionary">📖 Guide</button>
-    <button class="btn-refresh" id="btnRefresh" title="Refresh data" aria-label="Refresh">🔄</button>
   </div>
 </header>
 
@@ -84,20 +86,23 @@
       </div>
 
       <!-- Interactive Capital Controller Card -->
-      <div class="card capital-card" id="capitalControllerCard" style="margin-bottom:14px; padding:14px 16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px;">💰 Investment Capital</span>
-          <span id="capitalModeBadge" class="badge" style="background:rgba(0,200,150,0.15); color:var(--accent); font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;">Dynamic Sizing</span>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <div style="position:relative; flex:1;">
-            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:700; color:var(--text-muted); font-size:15px;">₹</span>
-            <input type="number" id="inputUserCapital" value="1000" min="100" step="500" style="width:100%; padding:9px 12px 9px 28px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:15px; font-weight:700;">
+      <div class="card capital-card" id="capitalControllerCard">
+        <div class="capital-card-header">
+          <div class="capital-card-title">
+            <span class="icon">💰</span>
+            <span>Investment Capital</span>
           </div>
-          <button id="btnApplyCapital" class="btn-primary" style="padding:9px 16px; font-size:13px; font-weight:700; border-radius:8px; white-space:nowrap;">Set Budget</button>
+          <span id="capitalModeBadge" class="badge">Dynamic Sizing</span>
+        </div>
+        <div class="capital-input-group">
+          <div class="capital-input-wrapper">
+            <span class="currency-prefix">₹</span>
+            <input type="number" id="inputUserCapital" class="capital-input" value="1000" min="100" step="500" placeholder="1000" />
+          </div>
+          <button id="btnApplyCapital" class="btn-capital-apply">Set Budget</button>
         </div>
         <!-- Quick Preset Pills -->
-        <div class="preset-pills-row" style="display:flex; gap:6px; margin-top:10px; overflow-x:auto; padding-bottom:2px;">
+        <div class="preset-pills-row">
           <button class="pill-preset active" data-cap="1000">₹1,000</button>
           <button class="pill-preset" data-cap="2500">₹2,500</button>
           <button class="pill-preset" data-cap="5000">₹5,000</button>
@@ -107,44 +112,47 @@
         </div>
       </div>
 
-      <!-- Hero Signal Card -->
-      <div class="card signal-hero" id="heroCard">
-        <!-- Populated by JS -->
-      </div>
+      <!-- Hero Signal + Momentum Indicators Grid -->
+      <div class="signal-hero-grid" id="signalHeroGrid">
+        <!-- Hero Signal Card -->
+        <div class="card signal-hero" id="heroCard">
+          <!-- Populated by JS -->
+        </div>
 
-      <!-- RSI + Momentum Card -->
-      <div class="card" id="rsiCard" style="display:none">
-        <div class="card-title">📊 Momentum Indicators</div>
-        <div style="display:flex; gap:14px; align-items:flex-start;">
-          <div class="rsi-gauge-wrap" style="flex:0 0 auto; width:160px;">
-            <svg class="rsi-gauge-svg" viewBox="0 0 160 90" width="160" height="90">
-              <!-- Track -->
-              <path d="M 20,80 A 60,60 0 0,1 140,80" fill="none" stroke="#1E3A5F" stroke-width="14" stroke-linecap="round"/>
-              <!-- Zone: oversold 0-40 -->
-              <path d="M 20,80 A 60,60 0 0,1 60,27" fill="none" stroke="#FF4757" stroke-width="14" stroke-linecap="round" stroke-dasharray="94 300" opacity="0.35"/>
-              <!-- Zone: sweet 40-70 -->
-              <path d="M 20,80 A 60,60 0 0,1 140,80" fill="none" stroke="#00C896" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 94 94 300" opacity="0.18"/>
-              <!-- Zone: overbought 70-100 -->
-              <path d="M 105,27 A 60,60 0 0,1 140,80" fill="none" stroke="#FFD700" stroke-width="14" stroke-linecap="round" stroke-dasharray="47 300" opacity="0.35"/>
-              <!-- Needle -->
-              <line id="rsiNeedle" x1="80" y1="80" x2="80" y2="26" stroke="#E8F0FE" stroke-width="2.5" stroke-linecap="round"
-                transform-origin="80 80"/>
-              <!-- Center dot -->
-              <circle cx="80" cy="80" r="5" fill="#0D1B2A" stroke="#E8F0FE" stroke-width="2"/>
-            </svg>
-            <div class="rsi-label" id="rsiValueLabel">–</div>
-            <div class="rsi-sublabel">RSI(14)</div>
-            <div class="rsi-zones">
-              <span style="color:#FF4757">OS</span>
-              <span style="color:#00C896">SWEET ZONE</span>
-              <span style="color:#FFD700">OB</span>
+        <!-- RSI + Momentum Card -->
+        <div class="card" id="rsiCard" style="display:none">
+          <div class="card-title">📊 Momentum Indicators</div>
+          <div style="display:flex; gap:14px; align-items:flex-start;">
+            <div class="rsi-gauge-wrap" style="flex:0 0 auto; width:160px;">
+              <svg class="rsi-gauge-svg" viewBox="0 0 160 90" width="160" height="90">
+                <!-- Track -->
+                <path d="M 20,80 A 60,60 0 0,1 140,80" fill="none" stroke="#1E3A5F" stroke-width="14" stroke-linecap="round"/>
+                <!-- Zone: oversold 0-40 -->
+                <path d="M 20,80 A 60,60 0 0,1 60,27" fill="none" stroke="#FF4757" stroke-width="14" stroke-linecap="round" stroke-dasharray="94 300" opacity="0.35"/>
+                <!-- Zone: sweet 40-70 -->
+                <path d="M 20,80 A 60,60 0 0,1 140,80" fill="none" stroke="#00C896" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 94 94 300" opacity="0.18"/>
+                <!-- Zone: overbought 70-100 -->
+                <path d="M 105,27 A 60,60 0 0,1 140,80" fill="none" stroke="#FFD700" stroke-width="14" stroke-linecap="round" stroke-dasharray="47 300" opacity="0.35"/>
+                <!-- Needle -->
+                <line id="rsiNeedle" x1="80" y1="80" x2="80" y2="26" stroke="#E8F0FE" stroke-width="2.5" stroke-linecap="round"
+                  transform-origin="80 80"/>
+                <!-- Center dot -->
+                <circle cx="80" cy="80" r="5" fill="#0D1B2A" stroke="#E8F0FE" stroke-width="2"/>
+              </svg>
+              <div class="rsi-label" id="rsiValueLabel">–</div>
+              <div class="rsi-sublabel">RSI(14)</div>
+              <div class="rsi-zones">
+                <span style="color:#FF4757">OS</span>
+                <span style="color:#00C896">SWEET ZONE</span>
+                <span style="color:#FFD700">OB</span>
+              </div>
             </div>
-          </div>
-          <div style="flex:1">
-            <div class="card-title" style="margin-bottom:8px;">Rate of Change</div>
-            <div class="roc-row" id="rocRow"></div>
-            <div style="margin-top:12px;" class="card-title">Moving Averages</div>
-            <div class="sma-row" id="smaRow"></div>
+            <div style="flex:1">
+              <div class="card-title" style="margin-bottom:8px;">Rate of Change</div>
+              <div class="roc-row" id="rocRow"></div>
+              <div style="margin-top:12px;" class="card-title">Moving Averages</div>
+              <div class="sma-row" id="smaRow"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -251,22 +259,22 @@
       <div class="card" id="allStocksCard" style="margin-top:14px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <div class="card-title" style="margin-bottom:0;">🏆 All Stage-2 Leaders (Entire NSE)</div>
-          <span id="allStocksCountBadge" class="badge" style="background:var(--border); color:var(--text-muted); font-size:11px; padding:2px 8px; border-radius:10px;">0 Stocks</span>
+          <span id="allStocksCountBadge" class="badge badge-accent">0 Stocks</span>
         </div>
-        <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">
-          💡 Tap any stock row to select it and generate its 1-Tap GTT form.
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">
+          💡 Tap any stock row or click <strong>Trade 🎯</strong> to load its levels into the 1-Tap GTT order guide.
         </div>
-        <div style="overflow-x:auto;">
-          <table class="gtt-table" style="width:100%; font-size:12px;">
+        <div class="table-scroll-container">
+          <table class="leader-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th style="width:40px;">#</th>
                 <th>Stock</th>
-                <th>CMP ₹</th>
-                <th>CMS</th>
-                <th>RSI</th>
-                <th>Budget</th>
-                <th>Select</th>
+                <th>CMP (₹)</th>
+                <th>CMS Score</th>
+                <th>RSI (14)</th>
+                <th>Budget Match</th>
+                <th style="text-align:right;">Action</th>
               </tr>
             </thead>
             <tbody id="allStocksBody">
@@ -346,7 +354,6 @@
 
     <div class="card">
       <div class="card-title">⚙️ Data Source</div>
-      <div class="form-group">
       <div class="form-group">
         <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
           <span>⚡ High-Speed Quant Feed</span>
@@ -444,21 +451,23 @@
 
 <!-- ════════════ BOTTOM NAV ════════════ -->
 <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
-  <div class="nav-item active" data-tab="Signal">
-    <span class="nav-icon">📡</span>
-    <span class="nav-label">Signal</span>
-  </div>
-  <div class="nav-item" data-tab="Portfolio">
-    <span class="nav-icon">💼</span>
-    <span class="nav-label">Portfolio</span>
-  </div>
-  <div class="nav-item" data-tab="History">
-    <span class="nav-icon">📋</span>
-    <span class="nav-label">History</span>
-  </div>
-  <div class="nav-item" data-tab="Settings">
-    <span class="nav-icon">⚙️</span>
-    <span class="nav-label">Settings</span>
+  <div class="nav-inner">
+    <div class="nav-item active" data-tab="Signal">
+      <span class="nav-icon">📡</span>
+      <span class="nav-label">Signal</span>
+    </div>
+    <div class="nav-item" data-tab="Portfolio">
+      <span class="nav-icon">💼</span>
+      <span class="nav-label">Portfolio</span>
+    </div>
+    <div class="nav-item" data-tab="History">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">History</span>
+    </div>
+    <div class="nav-item" data-tab="Settings">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">Settings</span>
+    </div>
   </div>
 </nav>
 
