@@ -1716,6 +1716,9 @@ canvas { display: block; }
 }
 
 @media (min-width: 768px) {
+  body {
+    padding-bottom: 0 !important;
+  }
   .bottom-nav {
     display: none !important;
   }
@@ -2124,6 +2127,7 @@ body.modal-open {
   padding: 20px 20px calc(20px + var(--sab)) 20px;
   box-shadow: var(--shadow-lg);
   max-height: 85vh;
+  max-height: 85dvh;
   overflow-y: auto;
   transform: translateY(100%);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
