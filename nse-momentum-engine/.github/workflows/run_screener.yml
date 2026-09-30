@@ -2,8 +2,8 @@ name: Weekly NSE Momentum Screener
 
 on:
   schedule:
-    # Every Friday at 10:30 AM UTC = 4:00 PM IST (post NSE market close)
-    - cron: '30 10 * * 5'
+    # Every Friday at 12:00 PM UTC = 5:30 PM IST (post NSE settlement & Bhavcopy publication)
+    - cron: '0 12 * * 5'
   workflow_dispatch:  # Manual trigger from GitHub mobile app or browser
 
 permissions:

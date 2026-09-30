@@ -125,73 +125,95 @@ def _clean_bhavcopy_df(df: pd.DataFrame, date_str: str) -> pd.DataFrame:
     return df[CANONICAL_COLUMNS].copy()
 
 
-def download_bhavcopy(date_str: str) -> pd.DataFrame:
+def download_bhavcopy(target_date_str: str = None) -> tuple[pd.DataFrame, str]:
     """
-    Downloads full NSE equity data with automatic multi-tier fallback:
-      Tier 1: NSE UDiFF Common Bhavcopy (.csv.zip) [Official modern standard]
-      Tier 2: NSE Legacy sec_bhavdata_full (.csv)
-      Tier 3: NSE Historical Archives (.csv.zip)
-      Tier 4: Emergency Yahoo Finance / Nifty 500 fallback (if NSE server maintenance)
+    Downloads full NSE equity data with automatic holiday detection and multi-tier fallback:
+      - Automatically tests candidate dates backwards (Friday -> Thursday -> Wednesday...)
+        to handle NSE market holidays (e.g. Good Friday, Gandhi Jayanti, Diwali) or delayed publication.
+      - Tier 1: NSE UDiFF Common Bhavcopy (.csv.zip) [Official modern standard]
+      - Tier 2: NSE Legacy sec_bhavdata_full (.csv)
+      - Tier 3: NSE Historical Archives (.csv.zip)
+      - Tier 4: Emergency Yahoo Finance / Nifty 500 fallback (if NSE server maintenance)
+    Returns:
+      (DataFrame, actual_trading_date_ddmmyyyy)
     """
-    ddmmyyyy, yyyymmdd, date_obj = get_last_friday()
+    if target_date_str:
+        start_dt = datetime.strptime(target_date_str, "%d%m%Y").replace(tzinfo=IST)
+    else:
+        target_date_str, _, start_dt = get_last_friday()
+
+    # Generate candidate trading days (skipping weekends: Saturday/Sunday)
+    candidate_dates = [start_dt - timedelta(days=i) for i in range(5)]
+    candidate_dates = [d for d in candidate_dates if d.weekday() < 5]
+
     session = _create_nse_session()
 
-    # ── Tier 1: NSE UDiFF Common Bhavcopy (Newest official standard) ─────
-    url_udiff = f"https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{yyyymmdd}_F_0000.csv.zip"
-    try:
-        print(f"[INFO] Tier 1: Fetching NSE UDiFF Bhavcopy: {url_udiff}")
-        resp = session.get(url_udiff, headers={"Referer": "https://www.nseindia.com/all-reports"}, timeout=25)
-        if resp.status_code == 200 and len(resp.content) > 5000:
-            with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
-                csv_files = [f for f in zf.namelist() if f.endswith(".csv")]
-                if csv_files:
-                    with zf.open(csv_files[0]) as f:
-                        df = pd.read_csv(f)
-                        df_clean = _clean_bhavcopy_df(df, date_str)
-                        if len(df_clean) > 500:
-                            print(f"[INFO] Tier 1 SUCCESS: {len(df_clean)} EQ stocks loaded via UDiFF")
-                            return df_clean
-    except Exception as e:
-        print(f"[WARN] Tier 1 failed ({e}). Proceeding to Tier 2...")
+    for candidate_dt in candidate_dates:
+        curr_ddmmyyyy = candidate_dt.strftime("%d%m%Y")
+        curr_yyyymmdd = candidate_dt.strftime("%Y%m%d")
+        day_name = candidate_dt.strftime("%A")
 
-    # ── Tier 2: NSE Legacy Bhavdata ──────────────────────────────────────
-    url_legacy = f"https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{date_str}.csv"
-    try:
-        print(f"[INFO] Tier 2: Fetching NSE Legacy Bhavcopy: {url_legacy}")
-        resp = session.get(url_legacy, headers={"Referer": "https://www.nseindia.com/"}, timeout=25)
-        if resp.status_code == 200 and len(resp.content) > 5000:
-            df = pd.read_csv(io.StringIO(resp.text))
-            df_clean = _clean_bhavcopy_df(df, date_str)
-            if len(df_clean) > 500:
-                print(f"[INFO] Tier 2 SUCCESS: {len(df_clean)} EQ stocks loaded via Legacy Bhavcopy")
-                return df_clean
-    except Exception as e:
-        print(f"[WARN] Tier 2 failed ({e}). Proceeding to Tier 3...")
+        # ── Tier 1: NSE UDiFF Common Bhavcopy (Newest official standard) ─────
+        url_udiff = f"https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{curr_yyyymmdd}_F_0000.csv.zip"
+        try:
+            print(f"[INFO] Checking {day_name} {curr_ddmmyyyy} (Tier 1 UDiFF)...")
+            resp = session.get(url_udiff, headers={"Referer": "https://www.nseindia.com/all-reports"}, timeout=20)
+            if resp.status_code == 200 and len(resp.content) > 5000:
+                with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+                    csv_files = [f for f in zf.namelist() if f.endswith(".csv")]
+                    if csv_files:
+                        with zf.open(csv_files[0]) as f:
+                            df = pd.read_csv(f)
+                            df_clean = _clean_bhavcopy_df(df, curr_ddmmyyyy)
+                            if len(df_clean) > 500:
+                                print(f"[INFO] SUCCESS: {len(df_clean)} EQ stocks loaded via UDiFF for {day_name} ({curr_ddmmyyyy})")
+                                if curr_ddmmyyyy != target_date_str:
+                                    print(f"[INFO] Note: Target date was a market holiday or unpublished. Successfully used session: {curr_ddmmyyyy}")
+                                return df_clean, curr_ddmmyyyy
+        except Exception as e:
+            print(f"[WARN] Tier 1 failed for {curr_ddmmyyyy} ({e}).")
 
-    # ── Tier 3: NSE Historical Archive URL ───────────────────────────────
-    mon = date_obj.strftime("%b").upper()
-    url_hist = f"https://archives.nseindia.com/content/historical/EQUITIES/{date_obj.year}/{mon}/cm{date_str[:2]}{mon}{date_obj.year}bhav.csv.zip"
-    try:
-        print(f"[INFO] Tier 3: Fetching NSE Historical Archives: {url_hist}")
-        resp = session.get(url_hist, headers={"Referer": "https://www.nseindia.com/"}, timeout=25)
-        if resp.status_code == 200 and len(resp.content) > 5000:
-            with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
-                csv_files = [f for f in zf.namelist() if f.endswith(".csv")]
-                if csv_files:
-                    with zf.open(csv_files[0]) as f:
-                        df = pd.read_csv(f)
-                        df_clean = _clean_bhavcopy_df(df, date_str)
-                        if len(df_clean) > 500:
-                            print(f"[INFO] Tier 3 SUCCESS: {len(df_clean)} EQ stocks loaded via Historical Archive")
-                            return df_clean
-    except Exception as e:
-        print(f"[WARN] Tier 3 failed ({e}). Proceeding to Tier 4 Emergency Fallback...")
+        # ── Tier 2: NSE Legacy Bhavdata ──────────────────────────────────────
+        url_legacy = f"https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{curr_ddmmyyyy}.csv"
+        try:
+            print(f"[INFO] Checking {day_name} {curr_ddmmyyyy} (Tier 2 Legacy)...")
+            resp = session.get(url_legacy, headers={"Referer": "https://www.nseindia.com/"}, timeout=20)
+            if resp.status_code == 200 and len(resp.content) > 5000:
+                df = pd.read_csv(io.StringIO(resp.text))
+                df_clean = _clean_bhavcopy_df(df, curr_ddmmyyyy)
+                if len(df_clean) > 500:
+                    print(f"[INFO] SUCCESS: {len(df_clean)} EQ stocks loaded via Legacy Bhavcopy for {day_name} ({curr_ddmmyyyy})")
+                    if curr_ddmmyyyy != target_date_str:
+                        print(f"[INFO] Note: Target date was a market holiday or unpublished. Successfully used session: {curr_ddmmyyyy}")
+                    return df_clean, curr_ddmmyyyy
+        except Exception as e:
+            print(f"[WARN] Tier 2 failed for {curr_ddmmyyyy} ({e}).")
+
+        # ── Tier 3: NSE Historical Archive URL ───────────────────────────────
+        mon = candidate_dt.strftime("%b").upper()
+        url_hist = f"https://archives.nseindia.com/content/historical/EQUITIES/{candidate_dt.year}/{mon}/cm{curr_ddmmyyyy[:2]}{mon}{candidate_dt.year}bhav.csv.zip"
+        try:
+            print(f"[INFO] Checking {day_name} {curr_ddmmyyyy} (Tier 3 Historical)...")
+            resp = session.get(url_hist, headers={"Referer": "https://www.nseindia.com/"}, timeout=20)
+            if resp.status_code == 200 and len(resp.content) > 5000:
+                with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+                    csv_files = [f for f in zf.namelist() if f.endswith(".csv")]
+                    if csv_files:
+                        with zf.open(csv_files[0]) as f:
+                            df = pd.read_csv(f)
+                            df_clean = _clean_bhavcopy_df(df, curr_ddmmyyyy)
+                            if len(df_clean) > 500:
+                                print(f"[INFO] SUCCESS: {len(df_clean)} EQ stocks loaded via Historical Archive for {day_name} ({curr_ddmmyyyy})")
+                                if curr_ddmmyyyy != target_date_str:
+                                    print(f"[INFO] Note: Target date was a market holiday or unpublished. Successfully used session: {curr_ddmmyyyy}")
+                                return df_clean, curr_ddmmyyyy
+        except Exception as e:
+            print(f"[WARN] Tier 3 failed for {curr_ddmmyyyy} ({e}).")
 
     # ── Tier 4: Emergency Fallback via yfinance ───────────────────────────
     try:
         print("[INFO] Tier 4: Fetching live prices via yfinance emergency fallback...")
         import yfinance as yf
-        # Curated highly liquid broad universe
         broad_symbols = [
             "BEL.NS", "TATAPOWER.NS", "BHEL.NS", "ASHOKLEY.NS", "FEDERALBNK.NS",
             "NMDC.NS", "SAIL.NS", "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS",
@@ -216,21 +238,21 @@ def download_bhavcopy(date_str: str) -> pd.DataFrame:
                         "PREVCLOSE": float(sdf.iloc[-2].get("Close", 0)) if len(sdf) > 1 else float(last_row.get("Close", 0)),
                         "TOTTRDQTY": int(last_row.get("Volume", 0)),
                         "TOTTRDVAL": 0,
-                        "TIMESTAMP": date_str,
+                        "TIMESTAMP": target_date_str,
                         "TOTALTRADES": 0,
                         "ISIN": "",
-                        "FETCH_DATE": date_str
+                        "FETCH_DATE": target_date_str
                     })
             except Exception:
                 continue
 
         if rows:
             print(f"[INFO] Tier 4 SUCCESS: {len(rows)} stocks loaded via emergency fallback")
-            return pd.DataFrame(rows)[CANONICAL_COLUMNS]
+            return pd.DataFrame(rows)[CANONICAL_COLUMNS], target_date_str
     except Exception as e:
         print(f"[ERROR] Tier 4 emergency fallback failed: {e}")
 
-    raise RuntimeError(f"All 4 data download tiers failed for {date_str}. Check NSE connectivity or market holidays.")
+    raise RuntimeError(f"All data download tiers and candidate trading dates failed for {target_date_str}.")
 
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -511,14 +533,14 @@ def main():
     print(f"NSE Momentum Engine — {date_str}")
     print(f"{'='*60}")
 
-    # Download today's data
-    today_df = download_bhavcopy(date_str)
+    # Download today's data (with automated holiday detection)
+    today_df, actual_trading_date = download_bhavcopy(date_str)
 
     # Connect to Google Sheets
     sh = connect_sheets()
 
     # Append to history
-    append_to_rawdata(sh, today_df, date_str)
+    append_to_rawdata(sh, today_df, actual_trading_date)
 
     # Read config (capital, price limits)
     config = read_config(sh)
