@@ -24,7 +24,7 @@ from datetime import datetime, timezone, timedelta
 # ─────────────────────────────────────────────────────────────────────────
 # CONFIG  (all read from env / GitHub Secrets)
 # ─────────────────────────────────────────────────────────────────────────
-GOOGLE_CREDENTIALS_JSON = os.environ["GOOGLE_CREDENTIALS_JSON"]
+GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS_JSON", "")
 SHEET_NAME              = os.environ.get("SHEET_NAME", "NSE Momentum Engine")
 IST                     = timezone(timedelta(hours=5, minutes=30))
 
@@ -57,21 +57,41 @@ BROWSER_HEADERS = {
 
 
 # ─────────────────────────────────────────────────────────────────────────
-# STEP 1 — Get last Friday's date in multiple formats
+# STEP 1 — Get latest trading day's date in multiple formats (Daily / Weekly)
 # ─────────────────────────────────────────────────────────────────────────
 
+def get_target_trading_date() -> tuple[str, str, datetime]:
+    """
+    Returns (ddmmyyyy, yyyymmdd, datetime_obj) for the most recent trading session:
+      - If today is Mon-Fri and time >= 16:30 IST: starts with today.
+      - If today is Mon-Fri and time < 16:30 IST: starts with yesterday (or Friday if Monday morning).
+      - If today is Saturday or Sunday: starts with Friday.
+    """
+    now = datetime.now(IST)
+    if now.weekday() == 5:      # Saturday -> Friday
+        target = now - timedelta(days=1)
+    elif now.weekday() == 6:    # Sunday -> Friday
+        target = now - timedelta(days=2)
+    elif now.hour < 16 or (now.hour == 16 and now.minute < 30):
+        # Bhavcopy not published yet today -> use previous trading day
+        if now.weekday() == 0:  # Monday morning -> use Friday
+            target = now - timedelta(days=3)
+        else:
+            target = now - timedelta(days=1)
+    else:
+        # Weekday after 16:30 IST -> use today!
+        target = now
+
+    return target.strftime("%d%m%Y"), target.strftime("%Y%m%d"), target
+
+
 def get_last_friday() -> tuple[str, str, datetime]:
-    """
-    Returns (ddmmyyyy, yyyymmdd, datetime_obj) for the most recent Friday (IST).
-    """
-    today     = datetime.now(IST)
-    days_back = (today.weekday() - 4) % 7  # 4 = Friday
-    friday    = today - timedelta(days=days_back)
-    return friday.strftime("%d%m%Y"), friday.strftime("%Y%m%d"), friday
+    """Alias for backwards compatibility."""
+    return get_target_trading_date()
 
 
 def get_last_friday_ddmmyyyy() -> str:
-    ddmmyyyy, _, _ = get_last_friday()
+    ddmmyyyy, _, _ = get_target_trading_date()
     return ddmmyyyy
 
 
@@ -260,6 +280,8 @@ def download_bhavcopy(target_date_str: str = None) -> tuple[pd.DataFrame, str]:
 # ─────────────────────────────────────────────────────────────────────────
 
 def connect_sheets() -> gspread.Spreadsheet:
+    if not GOOGLE_CREDENTIALS_JSON:
+        raise ValueError("Missing GOOGLE_CREDENTIALS_JSON environment variable or GitHub Secret.")
     creds_info = json.loads(GOOGLE_CREDENTIALS_JSON)
     scopes     = [
         "https://www.googleapis.com/auth/spreadsheets",
