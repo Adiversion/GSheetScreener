@@ -570,11 +570,11 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
                 "FIP_STATUS": row["FIP_STATUS"],
                 "INSTITUTIONAL_WARNINGS": row["INSTITUTIONAL_WARNINGS"],
                 "IS_INSTITUTIONAL": row["IS_INSTITUTIONAL"],
-                "FTF_STATE": row["FTF_STATE"],
-                "FTF_TRIGGER": row["FTF_TRIGGER"],
-                "FTF_DIAGNOSTIC": row["FTF_DIAGNOSTIC"],
-                "PIVOT_RESISTANCE": row["PIVOT_RESISTANCE"],
-                "DOWNSIDE_FLOOR": row["DOWNSIDE_FLOOR"],
+                "FTF_STATE": str(row["FTF_STATE"]) if pd.notna(row["FTF_STATE"]) else "NORMAL_TREND",
+                "FTF_TRIGGER": str(row["FTF_TRIGGER"]) if pd.notna(row["FTF_TRIGGER"]) else None,
+                "FTF_DIAGNOSTIC": str(row["FTF_DIAGNOSTIC"]) if pd.notna(row["FTF_DIAGNOSTIC"]) else None,
+                "PIVOT_RESISTANCE": float(row["PIVOT_RESISTANCE"]) if pd.notna(row["PIVOT_RESISTANCE"]) else None,
+                "DOWNSIDE_FLOOR": float(row["DOWNSIDE_FLOOR"]) if pd.notna(row["DOWNSIDE_FLOOR"]) else None,
             })
 
     # Sort: Anti-Trap Vetoes suppressed, then AQS Grade, then AQS Score, then CMS

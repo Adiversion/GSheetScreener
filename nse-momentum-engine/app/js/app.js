@@ -2058,11 +2058,23 @@ function renderAQSDiagnostics(h) {
             <div style="font-size:0.68rem;font-weight:normal;color:var(--text-dim)">${h.VDU_STATUS || 'Base supply'}</div>
           </td>
         </tr>` : ''}
+        ${h.FTF_STATE && h.FTF_STATE !== 'NORMAL_TREND' ? `
+        <tr>
+          <td>
+            <strong>Multi-Day State (FTF)</strong><br>
+            <span class="muted" style="font-size:0.7rem;">Failure-to-Fail Engine</span>
+          </td>
+          <td class="stat-val" style="color:${h.FTF_STATE === 'CONFIRMED_BREAKOUT' ? 'var(--accent)' : h.FTF_STATE === 'FTF_COILING' ? '#eab308' : 'var(--yellow)'}">
+            ${h.FTF_STATE}
+            <div style="font-size:0.68rem;font-weight:normal;color:var(--text-dim)">Pivot: ${h.PIVOT_RESISTANCE ? '₹' + h.PIVOT_RESISTANCE : '—'} · Floor: ${h.DOWNSIDE_FLOOR ? '₹' + h.DOWNSIDE_FLOOR : '—'}</div>
+          </td>
+        </tr>` : ''}
       </tbody>
     </table>
     <div class="aqs-formula-box">
       <strong>Chart Verification:</strong><br>
       Verify on TradingView / NSE: ${h.SYMBOL} (CMP ₹${cmp.toFixed(2)}).
+      ${h.FTF_TRIGGER ? `<br>• <strong style="color:var(--accent)">🎯 Actionable Trigger:</strong> ${h.FTF_TRIGGER}` : ''}
       ${!isNaN(cr) && cr < 0.5 ? `<br>• Daily candle closed at ${(cr*100).toFixed(0)}% of range (lower half). Long upper wick shows intraday rejection.` : ''}
       ${volSurge < 1.0 ? `<br>• Volume was only ${(volSurge*100).toFixed(0)}% of 20-day SMA. Sub-average volume on breakouts indicates high fakeout risk.` : ''}
     </div>
