@@ -119,6 +119,9 @@
     </span>
     <span class="regime-bar__decision" id="regimeDecision">—</span>
     <span class="regime-bar__bench" id="regimeBench"></span>
+    <button type="button" class="regime-bar__dismiss" id="btnDismissRegime" aria-label="Dismiss banner" title="Dismiss banner">
+      <svg class="ic ic--xs" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
   </div>
 
   <!-- ════════════════════ MARKET SESSION & BHAVCOPY SYNC STATUS BAR ════════════════════ -->
@@ -225,6 +228,7 @@
                     <th class="col-sec" scope="col" data-sort="symbol"><button class="sort-btn">Security<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num" scope="col" data-sort="cmp"><button class="sort-btn">CMP<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num col-cms" scope="col" data-sort="cms"><button class="sort-btn">CMS<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-aqs" scope="col" data-sort="aqs"><button class="sort-btn" title="Accumulation Quality Score (0–100)">AQS<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num col-vol" scope="col" data-sort="vol"><button class="sort-btn" title="Minervini volume surge ratio (vs 20-day avg)">Vol<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num col-rsi" scope="col" data-sort="rsi"><button class="sort-btn">RSI<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num col-roc col-roc1" scope="col" data-sort="roc1"><button class="sort-btn">1M<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
@@ -310,6 +314,17 @@
                       <div class="spec"><dt>Closing Range</dt><dd id="specCR">–</dd></div>
                     </dl>
                   </div>
+                </div>
+              </div>
+
+              <!-- AQS & Anti-Trap Diagnostic Verification Card -->
+              <div class="card aqs-card" id="aqsCard" hidden>
+                <div class="card__head">
+                  <h3>AQS &amp; Anti-Trap Check</h3>
+                  <span class="badge" id="aqsGradeBadge">AQS Diagnostic</span>
+                </div>
+                <div class="aqs-diagnostic" id="aqsDiagnostic">
+                  <!-- Populated dynamically by JS -->
                 </div>
               </div>
 
@@ -495,25 +510,36 @@
               <h3>Stage-2 Research &amp; Backtest Lab</h3>
               <span class="badge badge--brand">⚡ Live 365d Engine</span>
             </div>
-            <span class="badge badge--muted">1-Year Window</span>
+            <span class="badge badge--bull">⚡ Cloudflare Proxy Active</span>
           </div>
-          <p class="muted" style="margin-bottom:14px;">Type any NSE ticker to run a live forward-outcome backtest on the past 365 days of price action directly in your browser (no server, ₹0 cost), or pick a pre-analyzed leader from the archive.</p>
+          <p class="muted" style="margin-bottom:14px;">Type any NSE ticker to run a live forward-outcome backtest on the past 365 days of price action directly in your browser.</p>
 
-          <!-- Live on-demand ticker input -->
-          <div class="research-input-row" style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:220px;">
-              <input type="text" id="researchCustomTicker" class="num-input" placeholder="Enter ANY NSE ticker (e.g. INFY, ZOMATO, CUPID)" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;width:100%;font-weight:600;" />
+          <!-- Search Leaders-styled input bar -->
+          <div class="research-search-row" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+            <div class="global-search" style="display:flex;flex:1 1 280px;min-width:240px;max-width:none;margin-left:0;padding:9px 12px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);">
+              <svg class="ic" aria-hidden="true" style="color:var(--text-dim);"><use href="#i-search"/></svg>
+              <input type="search" id="researchCustomTicker" class="global-search__input"
+                     placeholder="Search leaders (CUPID, INFY, TATAMOTORS, ZOMATO…)"
+                     autocomplete="off" autocapitalize="characters"
+                     style="text-transform:uppercase;font-weight:600;font-size:0.9rem;"
+                     aria-label="Search ticker for 365-day backtest" />
+              <kbd class="kbd" id="kbdRunBacktest" style="cursor:pointer;" title="Press Enter to run">Enter ↵</kbd>
             </div>
-            <button class="btn btn--primary" id="btnRunLiveBacktest">
+            <button class="btn btn--primary" id="btnRunLiveBacktest" style="height:38px;padding:0 16px;">
               <svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg> Run 365-Day Backtest
             </button>
           </div>
 
-          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:12px;">
-            <label for="researchStockSelect" style="font-weight:600;font-size:0.85rem;color:var(--text-muted);">Or pick from screener archive:</label>
-            <select id="researchStockSelect" class="field-select" style="min-width:240px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text);border:1px solid var(--border);">
-              <option value="">Select a security…</option>
-            </select>
+          <!-- Quick leader suggestion chips -->
+          <div class="research-quick-chips" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:0.75rem;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Quick leaders:</span>
+            <button class="chip chip--sm chip-leader-suggest" data-sym="CUPID">CUPID</button>
+            <button class="chip chip--sm chip-leader-suggest" data-sym="DIVISLAB">DIVISLAB</button>
+            <button class="chip chip--sm chip-leader-suggest" data-sym="INFY">INFY</button>
+            <button class="chip chip--sm chip-leader-suggest" data-sym="ZOMATO">ZOMATO</button>
+            <button class="chip chip--sm chip-leader-suggest" data-sym="TATAMOTORS">TATAMOTORS</button>
+            <button class="chip chip--sm chip-leader-suggest" data-sym="RELIANCE">RELIANCE</button>
+            <button class="chip chip--sm chip-leader-suggest" data-sym="KMEW">KMEW</button>
           </div>
         </div>
 

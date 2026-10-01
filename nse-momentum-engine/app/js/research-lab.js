@@ -11,12 +11,14 @@
   else root.ResearchLab = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
 
+  const DEFAULT_PROXY = 'https://nse-quote.audittool-api.workers.dev';
+
   function getProxyUrl() {
     try {
-      return (typeof store !== 'undefined' && store.get ? store.get('nse_live_proxy', '') : localStorage.getItem('nse_live_proxy') || '').replace(/\/+$/, '');
-    } catch (_) {
-      return '';
-    }
+      const userProxy = (typeof store !== 'undefined' && store.get ? store.get('nse_live_proxy', '') : localStorage.getItem('nse_live_proxy') || '');
+      if (userProxy && userProxy.trim()) return userProxy.trim().replace(/\/+$/, '');
+    } catch (_) {}
+    return DEFAULT_PROXY;
   }
 
   async function fetchCandles(sym) {
@@ -24,7 +26,7 @@
     const symNs = symbol.includes('.') ? symbol : `${symbol}.NS`;
     const proxy = getProxyUrl();
 
-    // 1. Try configured Cloudflare Worker proxy (keyless, free)
+    // 1. Try Cloudflare Worker proxy (keyless, free)
     if (proxy) {
       try {
         const url = `${proxy}/?symbol=${encodeURIComponent(symNs)}&range=1y&interval=1d`;
@@ -38,7 +40,7 @@
       } catch (_) {}
     }
 
-    // 2. Direct Yahoo Finance endpoint (works in local dev / non-CORS contexts)
+    // 2. Direct Yahoo Finance endpoint (fallback in non-CORS contexts)
     try {
       const directUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symNs)}?range=1y&interval=1d`;
       const res = await fetch(directUrl, { cache: 'no-store' });
@@ -91,7 +93,7 @@
             ⚡ Run Live 365-Day Backtest for ${symbol}
           </button>
         </div>`;
-      if (foot) foot.textContent = `Tip: Configure your free Cloudflare Worker proxy in Portfolio settings to enable instant on-demand live backtests.`;
+      if (foot) foot.textContent = `Connected proxy: ${getProxyUrl()}`;
       const btnInline = document.getElementById('btnRunLiveInline');
       if (btnInline) btnInline.addEventListener('click', () => runLiveBacktest(symbol));
       return;
@@ -125,6 +127,9 @@
     const symbol = String(sym || '').trim().toUpperCase().replace(/\.NS$/, '');
     if (!symbol) return;
 
+    const input = document.getElementById('researchCustomTicker');
+    if (input) input.value = symbol;
+
     const grid = document.getElementById('researchGrid');
     const title = document.getElementById('researchSymbolTitle');
     const verdict = document.getElementById('researchVerdict');
@@ -135,7 +140,7 @@
     if (grid) {
       grid.innerHTML = `<div class="cred-item" style="grid-column: 1 / -1; padding: 24px; text-align: center;">
         <span class="status-pulse-dot live" style="display:inline-block; margin-right:8px;"></span>
-        <span>Fetching 365-day candles for <strong>${symbol}</strong> and computing Stage-2 forward outcomes…</span>
+        <span>Fetching 365-day candles for <strong>${symbol}</strong> via Cloudflare Proxy and computing Stage-2 forward outcomes…</span>
       </div>`;
     }
 
@@ -149,7 +154,7 @@
           paintReport(symbol, report, false);
           return;
         }
-        throw new Error('Unable to retrieve 365-day candles. Please verify your Cloudflare Worker URL in Portfolio settings.');
+        throw new Error(`Unable to retrieve 365-day candles for ${symbol}. Please check internet connection or worker proxy.`);
       }
 
       if (typeof ResearchEngine === 'undefined') throw new Error('ResearchEngine module not loaded.');
@@ -169,43 +174,50 @@
         </div>`;
       }
       if (verdict) { verdict.className = 'badge badge--defensive'; verdict.textContent = 'Fetch error'; }
-      if (foot) foot.textContent = 'Set your keyless Cloudflare Worker proxy in Portfolio → Live quote settings to enable on-demand fetches for any ticker.';
+      if (foot) foot.textContent = `Connected proxy: ${getProxyUrl()}`;
     }
   }
 
   function initUI() {
     const input = document.getElementById('researchCustomTicker');
     const btnRun = document.getElementById('btnRunLiveBacktest');
-    const sel = document.getElementById('researchStockSelect');
+    const kbd = document.getElementById('kbdRunBacktest');
 
-    if (btnRun && input) {
-      btnRun.onclick = () => {
-        const val = input.value.trim();
-        if (val) runLiveBacktest(val);
-      };
+    const execute = () => {
+      const val = input ? input.value.trim() : '';
+      if (val) runLiveBacktest(val);
+    };
+
+    if (btnRun) btnRun.onclick = execute;
+    if (kbd) kbd.onclick = execute;
+    if (input) {
       input.onkeydown = (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          const val = input.value.trim();
-          if (val) runLiveBacktest(val);
+          execute();
         }
       };
     }
 
-    if (sel) {
-      sel.onchange = () => {
-        const val = sel.value;
-        if (val) {
-          if (typeof state !== 'undefined' && state.backtests && state.backtests[val]) {
-            paintReport(val, state.backtests[val], false);
-          } else {
-            fetch(`data/backtests/${encodeURIComponent(val)}.json?_t=` + Date.now(), { cache: 'no-store' })
-              .then(res => res.ok ? res.json() : null)
-              .then(json => paintReport(val, json, false))
-              .catch(() => paintReport(val, null, false));
-          }
+    // Quick leader chips
+    document.querySelectorAll('.chip-leader-suggest').forEach(chip => {
+      chip.onclick = () => {
+        const sym = chip.dataset.sym;
+        if (sym) {
+          if (input) input.value = sym;
+          runLiveBacktest(sym);
         }
       };
+    });
+
+    // Auto-load initial stock if grid is empty
+    const currentTitle = document.getElementById('researchSymbolTitle');
+    if (currentTitle && (!currentTitle.textContent || currentTitle.textContent === 'Statistical Study')) {
+      const initialSym = (typeof state !== 'undefined' && state.activeStock && state.activeStock.SYMBOL)
+        || (typeof state !== 'undefined' && state.signalData && state.signalData[0] && state.signalData[0].SYMBOL)
+        || 'CUPID';
+      if (input) input.value = initialSym;
+      runLiveBacktest(initialSym);
     }
   }
 

@@ -1699,10 +1699,14 @@ function wireGlossaryModal() {
    untouched.
 ══════════════════════════════════════════════════════ */
 
-/** Show the inspector as a bottom sheet / drawer under 1024px. */
+/** Show the inspector as a bottom sheet / drawer under 1024px, or expand on desktop. */
 function openInspector() {
   const pane = document.getElementById('inspectorPane');
   if (!pane) return;
+  pane.classList.remove('is-collapsed');
+  const grid = document.querySelector('.workspace__grid');
+  if (grid) grid.classList.remove('inspector-collapsed');
+
   if (window.matchMedia('(min-width: 1024px)').matches) return;
   pane.classList.add('open');
   let scrim = document.getElementById('inspectorScrim');
@@ -1719,13 +1723,28 @@ function openInspector() {
 function closeInspector() {
   const pane = document.getElementById('inspectorPane');
   const scrim = document.getElementById('inspectorScrim');
-  if (pane) pane.classList.remove('open');
+  if (pane) {
+    pane.classList.remove('open');
+    pane.classList.add('is-collapsed');
+  }
+  const grid = document.querySelector('.workspace__grid');
+  if (grid) grid.classList.add('inspector-collapsed');
   if (scrim) scrim.classList.remove('show');
+  state.activeStock = null;
+  document.querySelectorAll('.stock-table-row.selected').forEach(el => el.classList.remove('selected'));
 }
 
 function closeInspectorBtn() {
   const btn = document.getElementById('btnCloseInspector');
   if (btn) btn.addEventListener('click', closeInspector);
+
+  const btnDismissRegime = document.getElementById('btnDismissRegime');
+  if (btnDismissRegime) {
+    btnDismissRegime.addEventListener('click', () => {
+      const banner = document.getElementById('regimeBanner');
+      if (banner) banner.style.display = 'none';
+    });
+  }
 }
 
 function renderCashState(hero, overrideMsg = null) {
@@ -1742,9 +1761,11 @@ function renderCashState(hero, overrideMsg = null) {
   }
   const rsiCard = document.getElementById('rsiCard');
   const gttCard = document.getElementById('gttCard');
+  const aqsCard = document.getElementById('aqsCard');
   const dbox = document.getElementById('decisionBox');
   if (rsiCard) rsiCard.hidden = true;
   if (gttCard) gttCard.hidden = true;
+  if (aqsCard) aqsCard.hidden = true;
   if (dbox) dbox.hidden = true;
   const credCard = document.getElementById('credCard');
   if (credCard) credCard.hidden = true;
@@ -1913,7 +1934,124 @@ function renderActiveSignal(h, alts, isDefensive = false) {
   if (specAQS) specAQS.textContent = h.AQS_SCORE != null ? `${h.AQS_SCORE} (${h.AQS_GRADE || 'AQS'})` : (h.INSTITUTIONAL_SCORE ? `${h.INSTITUTIONAL_SCORE}` : '—');
   if (specCR) specCR.textContent = h.CLOSING_RANGE != null ? `${h.CLOSING_RANGE} (${h.CR_STATUS || ''})` : '—';
 
+  renderAQSDiagnostics(h);
   renderGTT(h);
+}
+
+function renderAQSDiagnostics(h) {
+  const card = document.getElementById('aqsCard');
+  const badge = document.getElementById('aqsGradeBadge');
+  const container = document.getElementById('aqsDiagnostic');
+  if (!card || !container) return;
+
+  const score = h.AQS_SCORE != null ? Math.round(parseFloat(h.AQS_SCORE)) : (h.INSTITUTIONAL_SCORE ? Math.round(parseFloat(h.INSTITUTIONAL_SCORE)) : null);
+  const grade = h.AQS_GRADE || h.INSTITUTIONAL_GRADE || 'NEUTRAL';
+  const isTrap = h.IS_TRAP_VETO === true || grade === 'RETAIL_TRAP' || grade === 'TRAP_VETO' || h.CR_STATUS === 'UPTHRUST_TRAP';
+  const isPrime = grade === 'PRIME_ACCUMULATION' || (score >= 75 && !isTrap);
+  const cr = parseFloat(h.CLOSING_RANGE);
+  const crStatus = h.CR_STATUS || (cr >= 0.7 ? 'STRONG_BULL_CLOSE' : cr < 0.5 ? 'UPTHRUST_TRAP' : 'NEUTRAL_CLOSE');
+  const volSurge = parseFloat(h.VOL_SURGE_RATIO) || parseFloat(h.VOL_RATIO) || 1.0;
+  const udVol = parseFloat(h.UP_DOWN_VOL);
+  const vdu = parseFloat(h.VDU_RATIO);
+  const warnings = h.INSTITUTIONAL_WARNINGS || [];
+
+  if (badge) {
+    badge.textContent = `${score != null ? score + '/100 ' : ''}${grade}`;
+    badge.className = 'badge ' + (isTrap ? 'badge--defensive' : isPrime ? 'badge--bull' : 'badge--caution');
+  }
+
+  let bannerHtml = '';
+  if (isTrap) {
+    bannerHtml = `<div class="aqs-banner aqs-banner--trap">
+      <svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+      <div><strong>⚠️ TRAP VETO / RETAIL TRAP DETECTED</strong>
+      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">Price action indicates speculative retail chasing or selling into highs, not orderly institutional accumulation.</p></div>
+    </div>`;
+  } else if (isPrime) {
+    bannerHtml = `<div class="aqs-banner aqs-banner--prime">
+      <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>
+      <div><strong>★ PRIME ACCUMULATION VALIDATED</strong>
+      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">Strong persistent demand: High closing range with confirmed volume surge and tight pullback supply.</p></div>
+    </div>`;
+  } else {
+    bannerHtml = `<div class="aqs-banner aqs-banner--neutral">
+      <svg class="ic" aria-hidden="true"><use href="#i-target"/></svg>
+      <div><strong>⚖️ NEUTRAL DEMAND QUALITY (Score: ${score || '50'})</strong>
+      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">Stock meets baseline Stage-2 trend criteria, but volume or close requires careful stop discipline.</p></div>
+    </div>`;
+  }
+
+  let warningsHtml = '';
+  if (warnings.length > 0) {
+    warningsHtml = `<div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);padding:8px 10px;border-radius:var(--radius-sm)">
+      <strong style="color:var(--red);font-size:0.74rem;">Triggered Anti-Trap Warnings:</strong>
+      <ul style="margin:4px 0 0 16px;padding:0;font-size:0.73rem;color:var(--text)">
+        ${warnings.map(w => `<li>${w}</li>`).join('')}
+      </ul>
+    </div>`;
+  }
+
+  const cmp = parseFloat(h.CMP) || 0;
+  const hi = parseFloat(h.HIGH_52W) || cmp;
+  const lo = parseFloat(h.LOW_52W) || cmp;
+
+  container.innerHTML = `
+    ${bannerHtml}
+    ${warningsHtml}
+    <table class="aqs-stat-table">
+      <tbody>
+        <tr>
+          <td>
+            <strong>Wyckoff Closing Range (CR)</strong><br>
+            <span class="muted" style="font-size:0.7rem;">(Close - Low) / (High - Low)</span>
+          </td>
+          <td class="stat-val" style="color:${cr < 0.5 ? 'var(--red)' : cr >= 0.7 ? 'var(--accent)' : 'var(--text)'}">
+            ${!isNaN(cr) ? (cr * 100).toFixed(0) + '%' : '—'}
+            <div style="font-size:0.68rem;font-weight:normal;color:var(--text-dim)">${crStatus}</div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Breakout Volume Ratio</strong><br>
+            <span class="muted" style="font-size:0.7rem;">Session Vol / 20d Volume Avg</span>
+          </td>
+          <td class="stat-val" style="color:${volSurge < 1.0 ? 'var(--red)' : 'var(--accent)'}">
+            ${volSurge.toFixed(2)}x
+            <div style="font-size:0.68rem;font-weight:normal;color:var(--text-dim)">${volSurge < 1.0 ? 'Sub-average (<1.0x)' : 'Surge confirmed'}</div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>50-day Up/Down Volume</strong><br>
+            <span class="muted" style="font-size:0.7rem;">Sum(Up Vol) / Sum(Down Vol)</span>
+          </td>
+          <td class="stat-val" style="color:${!isNaN(udVol) && udVol >= 1.25 ? 'var(--accent)' : 'var(--text)'}">
+            ${!isNaN(udVol) ? udVol.toFixed(2) : '—'}
+            <div style="font-size:0.68rem;font-weight:normal;color:var(--text-dim)">${h.UD_STATUS || '50d ratio'}</div>
+          </td>
+        </tr>
+        ${!isNaN(vdu) ? `
+        <tr>
+          <td>
+            <strong>Volume Dry-Up (VDU)</strong><br>
+            <span class="muted" style="font-size:0.7rem;">Base Vol vs 50d avg</span>
+          </td>
+          <td class="stat-val">
+            ${vdu.toFixed(2)}x
+            <div style="font-size:0.68rem;font-weight:normal;color:var(--text-dim)">${h.VDU_STATUS || 'Base supply'}</div>
+          </td>
+        </tr>` : ''}
+      </tbody>
+    </table>
+    <div class="aqs-formula-box">
+      <strong>Chart Verification:</strong><br>
+      Verify on TradingView / NSE: ${h.SYMBOL} (CMP ₹${cmp.toFixed(2)}).
+      ${!isNaN(cr) && cr < 0.5 ? `<br>• Daily candle closed at ${(cr*100).toFixed(0)}% of range (lower half). Long upper wick shows intraday rejection.` : ''}
+      ${volSurge < 1.0 ? `<br>• Volume was only ${(volSurge*100).toFixed(0)}% of 20-day SMA. Sub-average volume on breakouts indicates high fakeout risk.` : ''}
+    </div>
+  `;
+
+  card.hidden = false;
 }
 
 function renderGTT(h) {
@@ -1990,6 +2128,7 @@ function buildGridRow(s, idx, userCapital) {
     </td>
     <td class="num" data-label="CMP">${fmtINR(cmp)}</td>
     <td class="num col-cms" data-label="CMS"><span class="score-pill ${cmsClass}">${isNaN(cms) ? '–' : cms.toFixed(1)}</span></td>
+    <td class="num col-aqs" data-label="AQS"><span class="score-pill ${aqsClass}" title="${aqsTitle}">${isNaN(aqs) ? '–' : Math.round(aqs)}</span></td>
     <td class="num col-vol" data-label="Vol"><span class="score-pill ${volTone}" title="${volTitle}">${volSurge.toFixed(1)}x</span></td>
     <td class="num col-rsi" data-label="RSI"><span style="color:${rsiTone}">${isNaN(rsi) ? '–' : rsi.toFixed(1)}</span></td>
     <td class="num col-roc col-roc1" data-label="1M ROC">${pctCell(roc1)}</td>
@@ -2019,6 +2158,7 @@ function renderAllStocksTable(stocks, userCapital) {
     symbol:   (s) => s.SYMBOL,
     cmp:      (s) => parseFloat(s.CMP) || 0,
     cms:      (s) => parseFloat(s.CMS_SCORE) || 0,
+    aqs:      (s) => parseFloat(s.AQS_SCORE) || parseFloat(s.INSTITUTIONAL_SCORE) || 0,
     vol:      (s) => parseFloat(s.VOL_SURGE_RATIO) || parseFloat(s.VOL_RATIO) || 0,
     rsi:      (s) => parseFloat(s.RSI_14) || 0,
     roc1:     (s) => parseFloat(s.ROC_1M) || 0,
@@ -2070,7 +2210,7 @@ function renderAllStocksTable(stocks, userCapital) {
   tbody.innerHTML = '';
   if (!filtered.length) {
     const row = document.createElement('tr');
-    row.innerHTML = `<td colspan="14"><div class="empty-state"><svg class="ic ic--lg" aria-hidden="true"><use href="#i-search"/></svg><p>No leaders match “${currentSearch || labelMap[currentFilter] || 'this filter'}”.</p></div></td>`;
+    row.innerHTML = `<td colspan="15"><div class="empty-state"><svg class="ic ic--lg" aria-hidden="true"><use href="#i-search"/></svg><p>No leaders match “${currentSearch || labelMap[currentFilter] || 'this filter'}”.</p></div></td>`;
     tbody.appendChild(row);
     return;
   }
@@ -2329,50 +2469,13 @@ async function renderResearch() {
   if (typeof ResearchLab !== 'undefined' && ResearchLab.init) {
     ResearchLab.init();
   }
-  const sel = document.getElementById('researchStockSelect');
-  if (!sel) return;
-
-  if (!state.credIndex || !Object.keys(state.credIndex).length) {
-    try {
-      const res = await fetch('data/backtests/_index.json?_t=' + Date.now(), { cache: 'no-store' });
-      if (res.ok) {
-        const json = await res.json();
-        const entries = (json && json.entries) || [];
-        state.credIndex = {};
-        entries.forEach(e => { if (e && e.symbol) state.credIndex[String(e.symbol).toUpperCase()] = e; });
-      }
-    } catch (_) {}
-  }
-
-  const idx = state.credIndex || {};
-  const symbols = Object.keys(idx).sort();
-  if (!symbols.length) return;
-
-  if (sel.options.length <= 1) {
-    sel.innerHTML = '<option value="">Select a security to inspect…</option>' +
-      symbols.map(s => {
-        const e = idx[s];
-        const score = e && e.score != null ? `(Score: ${e.score})` : '';
-        return `<option value="${s}">${s} ${score}</option>`;
-      }).join('');
-
-    sel.addEventListener('change', () => {
-      const val = sel.value;
-      if (val) loadResearchReport(val);
-    });
-  }
-
-  const initialSym = (state.activeStock && state.activeStock.SYMBOL)
-    || (state.signalData && state.signalData[0] && state.signalData[0].SYMBOL)
-    || symbols[0];
-
-  if (!sel.value && initialSym) {
-    sel.value = initialSym;
-    loadResearchReport(initialSym);
-  }
 }
 
 function loadResearchReport(symbol) {
+  if (typeof ResearchLab !== 'undefined' && ResearchLab.runLive) {
+    ResearchLab.runLive(symbol);
+    return;
+  }
   const card = document.getElementById('researchCard');
   const title = document.getElementById('researchSymbolTitle');
   const grid = document.getElementById('researchGrid');
@@ -2767,7 +2870,7 @@ async function fetchLiveQuote(symbol) {
   }
 
   // 2) Self-hosted Cloudflare Worker proxy — keyless, no cron.
-  const proxy = store.get(LS_PROXY, '');
+  const proxy = store.get(LS_PROXY, '') || 'https://nse-quote.audittool-api.workers.dev';
   if (proxy) {
     try {
       const base = String(proxy).replace(/\/+$/, '');
