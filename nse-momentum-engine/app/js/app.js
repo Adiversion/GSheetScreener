@@ -1049,10 +1049,15 @@ function kiteHeaders() {
   };
 }
 
-/** Open Kite web with the stock pre-searched */
+/** Open Kite web with the stock pre-searched and GTT copied */
 function openInKite(symbol) {
-  const url = `${KITE.WEB_URL}/search?q=${encodeURIComponent(symbol + ':NSE')}`;
-  window.open(url, '_blank', 'noopener');
+  const stock = state.activeStock || { SYMBOL: symbol };
+  const text = buildGTTClipboardText(stock);
+  try {
+    navigator.clipboard.writeText(text);
+    showToast(`📋 Copied GTT for ${symbol}! Opening Kite…`, 'info', '⚡');
+  } catch (_) {}
+  window.open('https://kite.zerodha.com/', '_blank', 'noopener');
 }
 
 /** Format GTT details as copy-paste text */
@@ -1206,7 +1211,7 @@ function wireZerodhaButtons(sig) {
   const btnGroww = document.getElementById('btnOpenGroww');
   if (btnGroww) {
     btnGroww.onclick = () => {
-      window.open(`https://groww.in/stocks/${encodeURIComponent(sig.SYMBOL.toLowerCase())}`, '_blank', 'noopener');
+      window.open(`https://groww.in/search?q=${encodeURIComponent(sig.SYMBOL)}`, '_blank', 'noopener');
     };
   }
 
@@ -1875,6 +1880,7 @@ function renderGTT(h) {
   if (entryInput) entryInput.value = currentEntry;
   updateGapPillActive(0);
   recalculateFromEntry(currentEntry);
+  wireZerodhaButtons(h);
   if (gttCard) gttCard.hidden = false;
 }
 

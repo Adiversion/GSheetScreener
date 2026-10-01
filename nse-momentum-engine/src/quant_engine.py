@@ -322,6 +322,8 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
         if tick not in batch_data:
             continue
         df_s = batch_data[tick].dropna(subset=["Close"])
+        if trade_date:
+            df_s = df_s[df_s.index <= pd.Timestamp(trade_date)]
         if len(df_s) < 180:
             continue
 
