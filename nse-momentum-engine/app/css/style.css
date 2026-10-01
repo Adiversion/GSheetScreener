@@ -430,6 +430,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
   background: var(--yellow-soft); padding: 3px 8px; border-radius: var(--radius-xs);
   display: inline-flex; align-items: center; gap: 4px;
 }
+.bhav-pending[hidden] {
+  display: none !important;
+}
 
 .capital-ctl { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
 .capital-ctl .field { width: 120px; }

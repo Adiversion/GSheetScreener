@@ -1504,6 +1504,10 @@ function renderSessionSwitcher(manifest, currentTradeDate) {
   const isFallback = state.payload && state.payload.bhavcopy_status === 'PREVIOUS_SESSION_FALLBACK';
   if (pendingNotice) {
     pendingNotice.hidden = !isFallback;
+    pendingNotice.style.display = isFallback ? 'inline-flex' : 'none';
+    if (isFallback) {
+      pendingNotice.textContent = `⏳ Compiling · using ${state.payload.trade_date_display || 'prior session'}`;
+    }
   }
 
   const activeDate = state.selectedDate || currentTradeDate;
