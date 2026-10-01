@@ -2,7 +2,7 @@
   {
     "date": "2026-10-01",
     "display_date": "01 Oct 2026",
-    "is_today": true,
+    "is_today": false,
     "winner": "CASH",
     "cmp": 0,
     "cms": 0,
