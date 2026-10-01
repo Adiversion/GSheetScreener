@@ -1924,6 +1924,7 @@ function buildGridRow(s, idx, userCapital) {
   const shares = affordable ? Math.max(Math.floor((userCapital - 26) / cmp), 1) : 0;
   const isSelected = state.activeStock && state.activeStock.SYMBOL === s.SYMBOL;
   const rsiTone = rsi < 45 ? 'var(--red)' : rsi <= 82 ? 'var(--accent)' : 'var(--yellow)';
+  const cmsClass = cms >= 80 ? 'hi' : cms >= 60 ? 'mid' : 'lo';
   const volSurge = parseFloat(s.VOL_SURGE_RATIO) || parseFloat(s.VOL_RATIO) || 1.0;
   const volTone = volSurge >= 2.0 ? 'hi' : volSurge >= 1.5 ? 'mid' : 'lo';
   const volTitle = `Minervini volume surge: ${volSurge.toFixed(1)}x 20-day volume · VCP: ${s.VCP_RATIO || '1.0'}`;
@@ -2555,13 +2556,18 @@ function connectYahooMultiStream() {
   }
 
   try {
-    yahooWs = new WebSocket('wss://streamer.finance.yahoo.com/');
+    const ws = new WebSocket('wss://streamer.finance.yahoo.com/');
+    yahooWs = ws;
 
-    yahooWs.onopen = () => {
-      yahooWs.send(JSON.stringify({ subscribe: symbols }));
+    ws.onopen = () => {
+      try {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ subscribe: symbols }));
+        }
+      } catch (_) {}
     };
 
-    yahooWs.onmessage = (event) => {
+    ws.onmessage = (event) => {
       try {
         const tick = decodeYahooProtobuf(event.data);
         if (!tick || tick.price == null || isNaN(tick.price)) return;
@@ -2584,9 +2590,9 @@ function connectYahooMultiStream() {
       } catch (_) {}
     };
 
-    yahooWs.onerror = () => {};
-    yahooWs.onclose = () => {
-      yahooWs = null;
+    ws.onerror = () => {};
+    ws.onclose = () => {
+      if (yahooWs === ws) yahooWs = null;
       if (document.visibilityState === 'visible') {
         yahooWsReconnectTimer = setTimeout(connectYahooMultiStream, 5000);
       }
@@ -2628,9 +2634,9 @@ function handleStockTick(tickerId, livePrice) {
     }
   }
 
-  // 4. Update Portfolio Tab Watchlist
+  // 4. Update Portfolio Tab Watchlist in-place without rebuilding DOM
   if (state.currentTab === 'Portfolio') {
-    renderLiveTracker();
+    updateWatchlistCardInPlace(sym, livePrice);
   }
 }
 
@@ -2746,13 +2752,64 @@ async function fetchLiveQuote(symbol) {
     : 'Waiting for market stream or set a free Twelve Data / Worker proxy fallback');
 }
 
+function updateWatchlistCardInPlace(sym, livePrice) {
+  if (!sym || livePrice == null || isNaN(livePrice)) return;
+  const cards = document.querySelectorAll(`.watchlist-card[data-symbol="${sym.toUpperCase()}"]`);
+  if (!cards.length) return;
+
+  const isDefensive = (state.payload && state.payload.regime && state.payload.regime.regime === 'DEFENSIVE_CASH');
+  const stopPct = isDefensive ? 4 : 6;
+
+  cards.forEach(card => {
+    const entry = parseFloat(card.dataset.entry) || livePrice;
+    const targetPct = parseFloat(card.dataset.targetPct) || 15;
+    const cap = parseFloat(card.dataset.capital) || 0;
+    const { status, pnlPct, toTarget, targetPrice, stopPrice } = liveStatus(entry, livePrice, targetPct, stopPct);
+
+    const priceEl = card.querySelector('.live-price');
+    if (priceEl) priceEl.textContent = fmtINR(livePrice);
+
+    const badgeEl = card.querySelector('.badge-status');
+    if (badgeEl) {
+      const badgeCls = { hit: 'badge--bull', near: 'badge--caution', stopped: 'badge--defensive', holding: 'badge--muted' }[status];
+      const badgeTxt = { hit: '✅ TARGET HIT', near: 'Approaching', stopped: 'Stopped out', holding: 'Holding' }[status];
+      badgeEl.className = `badge badge-status ${badgeCls}`;
+      badgeEl.textContent = badgeTxt;
+    }
+
+    const shares = (cap > 0 && entry > 0) ? Math.floor(cap / entry) : 0;
+    const pnlINR = shares > 0 ? (livePrice - entry) * shares : null;
+    const curVal = shares > 0 ? livePrice * shares : null;
+    const tone = pnlPct >= 0 ? 'pos' : 'neg';
+
+    const pnlEl = card.querySelector('.live-pnl-inr');
+    if (pnlEl) {
+      pnlEl.className = `num ${tone} live-pnl-inr`;
+      pnlEl.textContent = pnlINR != null 
+        ? `${pnlINR >= 0 ? '+' : ''}${fmtINR(pnlINR)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)`
+        : `${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%`;
+    }
+
+    const toTargetEl = card.querySelector('.stat-to-target');
+    if (toTargetEl) {
+      toTargetEl.className = `rstat__v stat-to-target ${toTarget <= 0 ? 'tone-bull' : ''}`;
+      toTargetEl.textContent = `${toTarget >= 0 ? '' : '+'}${toTarget.toFixed(2)}%`;
+    }
+
+    const posValEl = card.querySelector('.stat-pos-val');
+    if (posValEl && curVal != null) {
+      posValEl.textContent = fmtINR(curVal);
+    }
+  });
+}
+
 function renderLiveTracker() {
   const body = document.getElementById('liveBody');
   const countBadge = document.getElementById('liveCountBadge');
   if (!body) return;
 
   const list = getTrackedStocks();
-  if (countBadge) countBadge.innerHTML = `${list.length} tracked <span style="margin-left:6px;color:var(--accent);font-weight:700;font-size:0.75rem;">⚡ 1s Live Stream</span>`;
+  if (countBadge) countBadge.textContent = `${list.length} tracked`;
 
   if (!list.length) {
     body.innerHTML = `
@@ -2761,6 +2818,27 @@ function renderLiveTracker() {
         <p>No stocks in watchlist yet. Enter a symbol above or tap <strong>Track this stock</strong> on any leader in the Terminal.</p>
       </div>`;
     syncAllStreams();
+    return;
+  }
+
+  const existingCards = body.querySelectorAll('.watchlist-card');
+  const existingSymbols = Array.from(existingCards).map(c => (c.dataset.symbol || '').toUpperCase()).join(',');
+  const currentSymbols = list.map(x => (x.symbol || '').toUpperCase()).join(',');
+
+  if (existingCards.length === list.length && existingSymbols === currentSymbols) {
+    list.forEach(item => {
+      const ySym = toYahooSymbol(item.symbol);
+      const cached = state.liveWsQuotes && state.liveWsQuotes[ySym];
+      let cmp = cached ? cached.price : null;
+      if (cmp == null) {
+        const all = (state.payload && state.payload.all_qualified) || [];
+        const hit = all.find(s => String(s.SYMBOL).toUpperCase() === item.symbol.toUpperCase());
+        if (hit && hit.CMP) cmp = parseFloat(hit.CMP);
+      }
+      if (cmp != null) {
+        updateWatchlistCardInPlace(item.symbol, cmp);
+      }
+    });
     return;
   }
 
@@ -2796,15 +2874,14 @@ function renderLiveTracker() {
 
     const pnlDisp = pnlINR != null 
       ? `<span class="num ${tone} live-pnl-inr">${pnlINR >= 0 ? '+' : ''}${fmtINR(pnlINR)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)</span>`
-      : `<span class="num ${tone}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>`;
+      : `<span class="num ${tone} live-pnl-inr">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>`;
 
     return `
-      <div class="watchlist-card" data-stock-id="${item.id || idx}">
+      <div class="watchlist-card" data-symbol="${item.symbol}" data-entry="${item.entry}" data-target-pct="${targetPct}" data-capital="${cap}">
         <div class="watchlist-card__head">
           <div style="display:flex;align-items:center;gap:10px;">
             <strong style="font-size:1.15rem;letter-spacing:0.02em;">${item.symbol}</strong>
-            <span class="badge ${badgeCls}">${badgeTxt}</span>
-            ${cached ? '<span class="badge badge--bull" style="font-size:0.65rem;">⚡ 1s Live</span>' : ''}
+            <span class="badge badge-status ${badgeCls}">${badgeTxt}</span>
           </div>
           <div style="display:flex;align-items:baseline;gap:8px;">
             <span class="live-price" style="font-size:1.35rem;">${fmtINR(cmp)}</span>
@@ -2814,11 +2891,11 @@ function renderLiveTracker() {
 
         <div class="rotation-grid">
           <div class="rstat"><span class="rstat__k">Target (+${targetPct}%)</span><span class="rstat__v tone-bull">${fmtINR(targetPrice)}</span></div>
-          <div class="rstat"><span class="rstat__k">To target</span><span class="rstat__v ${toTarget <= 0 ? 'tone-bull' : ''}">${toTarget >= 0 ? '' : '+'}${toTarget.toFixed(2)}%</span></div>
+          <div class="rstat"><span class="rstat__k">To target</span><span class="rstat__v stat-to-target ${toTarget <= 0 ? 'tone-bull' : ''}">${toTarget >= 0 ? '' : '+'}${toTarget.toFixed(2)}%</span></div>
           <div class="rstat"><span class="rstat__k">Stop (${isDefensive ? '−4%' : '−6%'})</span><span class="rstat__v tone-bear">${fmtINR(stopPrice)}</span></div>
           <div class="rstat"><span class="rstat__k">Entry fill</span><span class="rstat__v">${fmtINR(item.entry)}</span></div>
           ${shares > 0 ? `
-          <div class="rstat"><span class="rstat__k">Position value</span><span class="rstat__v">${fmtINR(curVal)}</span></div>
+          <div class="rstat"><span class="rstat__k">Position value</span><span class="rstat__v stat-pos-val">${fmtINR(curVal)}</span></div>
           <div class="rstat"><span class="rstat__k">Qty &amp; Capital</span><span class="rstat__v">${shares} sh (${fmtINR(cap)})</span></div>
           ` : ''}
         </div>
@@ -2826,22 +2903,39 @@ function renderLiveTracker() {
         <div class="watchlist-card__actions">
           <span class="live-meta">${source}</span>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn--primary btn--sm btn-card-exit" data-idx="${idx}">
-              <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg> Record exit
+            <button type="button" class="btn btn--primary btn--sm btn-card-exit" data-symbol="${item.symbol}">
+              <svg class="ic" aria-hidden="true" style="pointer-events:none;"><use href="#i-portfolio" style="pointer-events:none;"/></svg> Record exit
             </button>
-            <button class="btn btn--ghost btn--sm btn-card-remove" data-idx="${idx}" title="Remove from watchlist">
-              <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+            <button type="button" class="btn btn--ghost btn--sm btn-card-remove" data-symbol="${item.symbol}" title="Remove from watchlist">
+              <svg class="ic" aria-hidden="true" style="pointer-events:none;"><use href="#i-close" style="pointer-events:none;"/></svg>
             </button>
           </div>
         </div>
       </div>`;
   }).join('');
 
-  // Wire card buttons
-  body.querySelectorAll('.btn-card-exit').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.idx);
-      const item = list[idx];
+  // Wire events via delegation on body so clicks are never lost
+  body.onclick = (e) => {
+    const rmBtn = e.target.closest('.btn-card-remove');
+    if (rmBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const sym = rmBtn.dataset.symbol;
+      if (!sym) return;
+      const current = getTrackedStocks().filter(x => String(x.symbol).toUpperCase() !== sym.toUpperCase());
+      saveTrackedStocks(current);
+      showToast(`Removed ${sym} from watchlist`, 'info');
+      renderLiveTracker();
+      return;
+    }
+
+    const exitBtn = e.target.closest('.btn-card-exit');
+    if (exitBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const sym = exitBtn.dataset.symbol;
+      const current = getTrackedStocks();
+      const item = current.find(x => String(x.symbol).toUpperCase() === (sym || '').toUpperCase());
       if (!item) return;
       const ySym = toYahooSymbol(item.symbol);
       const cached = state.liveWsQuotes && state.liveWsQuotes[ySym];
@@ -2854,20 +2948,9 @@ function renderLiveTracker() {
         exit: exitPrice,
         shares: shares
       });
-    });
-  });
-
-  body.querySelectorAll('.btn-card-remove').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.idx);
-      const item = list[idx];
-      if (!item) return;
-      list.splice(idx, 1);
-      saveTrackedStocks(list);
-      showToast(`Removed ${item.symbol} from watchlist`, 'info');
-      renderLiveTracker();
-    });
-  });
+      return;
+    }
+  };
 
   syncAllStreams();
 }
@@ -3008,7 +3091,7 @@ function wireLiveTracker() {
       if (document.visibilityState === 'visible') {
         if (state.currentTab === 'Portfolio') renderLiveTracker();
       }
-    }, 1000);
+    }, 3000);
   }
 }
 
