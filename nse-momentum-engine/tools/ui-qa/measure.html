@@ -12,7 +12,7 @@ f.style.width = W + 'px';
 
 function measure() {
   const d = f.contentDocument, w = f.contentWindow;
-  if (!d || !d.querySelector('.leader-table')) { setTimeout(measure, 800); return; }
+  if (!d || !d.querySelector('#allStocksBody tr')) { setTimeout(measure, 800); return; }
   const r = { w: W };
   const vw = d.documentElement.clientWidth;
 
@@ -21,7 +21,7 @@ function measure() {
 
   // 2. every interactive control must be inside the viewport horizontally
   const offScreen = [];
-  d.querySelectorAll('.header button, .header .header-right *, .header-inner > *').forEach(el => {
+  d.querySelectorAll('.app-bar button, .app-bar .app-bar__actions *, .app-bar > *').forEach(el => {
     const b = el.getBoundingClientRect();
     if (b.width === 0 && b.height === 0) return;      // display:none -> fine
     if (b.right > vw + 1 || b.left < -1) {
@@ -44,7 +44,7 @@ function measure() {
   r.gridCols = g ? w.getComputedStyle(g).gridTemplateColumns.split(' ').length : 0;
 
   // 6. leaders table must NOT scroll inside its container
-  const wrap = d.querySelector('.watchlist-table-wrap');
+  const wrap = d.querySelector('.grid-pane .table-wrap') || d.querySelector('.table-wrap');
   if (wrap) {
     r.tblClient = wrap.clientWidth;
     r.tblScroll = wrap.scrollWidth;
@@ -59,24 +59,24 @@ function measure() {
     range.selectNodeContents(el);
     return range.getClientRects().length <= 1;
   }
-  r.rsiOneLine = oneLine(d.querySelector('.leader-table .cell-rsi'));
-  r.cmpOneLine = oneLine(d.querySelector('.leader-table .cell-cmp'));
+  r.rsiOneLine = oneLine(d.querySelector('.data-grid td[data-label="RSI"]'));
+  r.cmpOneLine = oneLine(d.querySelector('.data-grid td[data-label="CMP"]'));
 
   // 8. which optional columns survive at this width
   const vis = sel => { const el = d.querySelector(sel); return el ? w.getComputedStyle(el).display !== 'none' : null; };
-  r.cmsColVisible = vis('.leader-table .cell-cms');
-  r.actionLabelVisible = vis('.leader-table .btn-select-label');
-  r.chipsVisible = vis('.leader-table .sec-head .sec-chip');
+  r.cmsColVisible = vis('.data-grid td[data-label="CMS"]');
+  r.actionLabelVisible = vis('.data-grid .col-action .btn');
+  r.chipsVisible = vis('.data-grid .sec-tags .tag');
 
   // 8b. row action must be a comfortable touch target once it is the primary
   // control (card mode), and the stat labels must be present there.
-  const btn = d.querySelector('.leader-table .btn-select-stock');
+  const btn = d.querySelector('.data-grid .col-action .btn');
   if (btn) {
     const bb = btn.getBoundingClientRect();
     r.btnW = Math.round(bb.width);
     r.btnH = Math.round(bb.height);
   }
-  const cmsCell = d.querySelector('.leader-table .cell-cms');
+  const cmsCell = d.querySelector('.data-grid td[data-label="CMS"]');
   r.cardMode = cmsCell ? w.getComputedStyle(cmsCell).gridArea !== 'auto' : null;
 
   // 9. shell width vs viewport (4K fill / max-width behaviour)

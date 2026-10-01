@@ -1,0 +1,77 @@
+{
+  "symbol": "LENSKART",
+  "generated_at": "2026-10-01T02:32:13Z",
+  "period": {
+    "start": "2025-11-10",
+    "end": "2026-09-30",
+    "bars": 226
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 23,
+    "target_hits": 0,
+    "stop_hits": 7,
+    "timeouts": 16,
+    "target_hit_rate_pct": 0.0,
+    "stop_hit_rate_pct": 30.4,
+    "expectancy_pct": -0.65,
+    "avg_hold_to_target_days": null,
+    "avg_hold_to_stop_days": 9.1,
+    "median_return_pct": 0.3,
+    "p10_return_pct": -5.95,
+    "p90_return_pct": 3.11,
+    "avg_stop_distance_pct": 6.13,
+    "time_to_target": {
+      "target_count": 0,
+      "trading_days": null,
+      "calendar_days": null,
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 0,
+        "6-10d (\u22642 weeks)": 0,
+        "11-21d (\u22641 month)": 0,
+        "22-42d (\u22642 months)": 0,
+        ">42d (slow)": 0
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 1,
+    "final_capital": 1022.79,
+    "total_return_pct": 2.28,
+    "win_rate_pct": 100.0,
+    "profit_factor": null,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": 23.0,
+    "cagr_pct": null,
+    "target_exits": 0,
+    "stop_exits": 0,
+    "deadline_exits": 1,
+    "trades": [
+      {
+        "entry_date": "2026-08-28",
+        "exit_date": "2026-09-30",
+        "entry_price": 645.0,
+        "exit_price": 685.05,
+        "shares": 1,
+        "pnl": 22.79,
+        "pnl_pct": 3.53,
+        "hold_days": 23,
+        "reason": "deadline",
+        "capital_after": 1022.79
+      }
+    ]
+  },
+  "verdict": {
+    "credible": false,
+    "score": 0.4,
+    "summary": "Weak: stops dominate (30% stopped, 0% reached target)."
+  }
+}

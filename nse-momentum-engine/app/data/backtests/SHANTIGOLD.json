@@ -1,0 +1,165 @@
+{
+  "symbol": "SHANTIGOLD",
+  "generated_at": "2026-10-01T02:32:12Z",
+  "period": {
+    "start": "2025-08-01",
+    "end": "2026-09-30",
+    "bars": 292
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 47,
+    "target_hits": 19,
+    "stop_hits": 24,
+    "timeouts": 4,
+    "target_hit_rate_pct": 40.4,
+    "stop_hit_rate_pct": 51.1,
+    "expectancy_pct": 2.58,
+    "avg_hold_to_target_days": 8.3,
+    "avg_hold_to_stop_days": 8.9,
+    "median_return_pct": -7.0,
+    "p10_return_pct": -7.0,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 7.0,
+    "time_to_target": {
+      "target_count": 19,
+      "trading_days": {
+        "count": 19,
+        "min": 1.0,
+        "p25": 2.0,
+        "median": 4.0,
+        "p75": 14.0,
+        "p90": 17.0,
+        "max": 27.0
+      },
+      "calendar_days": {
+        "count": 19,
+        "min": 1.0,
+        "p25": 3.0,
+        "median": 6.0,
+        "p75": 20.0,
+        "p90": 23.0,
+        "max": 37.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 5,
+        "3-5d (\u22641 week)": 6,
+        "6-10d (\u22642 weeks)": 1,
+        "11-21d (\u22641 month)": 5,
+        "22-42d (\u22642 months)": 2,
+        ">42d (slow)": 0
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 7,
+    "final_capital": 907.16,
+    "total_return_pct": -9.28,
+    "win_rate_pct": 42.9,
+    "profit_factor": 0.68,
+    "max_drawdown_pct": -20.69,
+    "avg_cycle_days": 8.7,
+    "cagr_pct": -28.3,
+    "target_exits": 2,
+    "stop_exits": 4,
+    "deadline_exits": 1,
+    "trades": [
+      {
+        "entry_date": "2026-06-15",
+        "exit_date": "2026-06-22",
+        "entry_price": 231.8,
+        "exit_price": 215.57,
+        "shares": 4,
+        "pnl": -82.62,
+        "pnl_pct": -8.9,
+        "hold_days": 5,
+        "reason": "stop",
+        "capital_after": 917.38
+      },
+      {
+        "entry_date": "2026-06-24",
+        "exit_date": "2026-07-22",
+        "entry_price": 223.8,
+        "exit_price": 208.13,
+        "shares": 3,
+        "pnl": -64.22,
+        "pnl_pct": -9.56,
+        "hold_days": 20,
+        "reason": "stop",
+        "capital_after": 853.15
+      },
+      {
+        "entry_date": "2026-07-30",
+        "exit_date": "2026-08-17",
+        "entry_price": 223.04,
+        "exit_price": 256.49,
+        "shares": 3,
+        "pnl": 83.0,
+        "pnl_pct": 12.39,
+        "hold_days": 12,
+        "reason": "target",
+        "capital_after": 936.15
+      },
+      {
+        "entry_date": "2026-08-19",
+        "exit_date": "2026-08-19",
+        "entry_price": 256.65,
+        "exit_price": 238.68,
+        "shares": 3,
+        "pnl": -71.31,
+        "pnl_pct": -9.25,
+        "hold_days": 0,
+        "reason": "stop",
+        "capital_after": 864.84
+      },
+      {
+        "entry_date": "2026-08-21",
+        "exit_date": "2026-08-28",
+        "entry_price": 258.4,
+        "exit_price": 240.31,
+        "shares": 3,
+        "pnl": -71.69,
+        "pnl_pct": -9.24,
+        "hold_days": 5,
+        "reason": "stop",
+        "capital_after": 793.15
+      },
+      {
+        "entry_date": "2026-09-01",
+        "exit_date": "2026-09-23",
+        "entry_price": 246.8,
+        "exit_price": 283.82,
+        "shares": 3,
+        "pnl": 93.54,
+        "pnl_pct": 12.62,
+        "hold_days": 16,
+        "reason": "target",
+        "capital_after": 886.69
+      },
+      {
+        "entry_date": "2026-09-25",
+        "exit_date": "2026-09-30",
+        "entry_price": 289.8,
+        "exit_price": 308.6,
+        "shares": 2,
+        "pnl": 20.47,
+        "pnl_pct": 3.53,
+        "hold_days": 3,
+        "reason": "deadline",
+        "capital_after": 907.16
+      }
+    ]
+  },
+  "verdict": {
+    "credible": false,
+    "score": 31.4,
+    "summary": "Weak: stops dominate (51% stopped, 40% reached target)."
+  }
+}

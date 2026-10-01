@@ -1,0 +1,93 @@
+{
+  "symbol": "KIRLOSENG",
+  "generated_at": "2026-10-01T02:32:19Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-30",
+    "bars": 743
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 184,
+    "target_hits": 83,
+    "stop_hits": 96,
+    "timeouts": 5,
+    "target_hit_rate_pct": 45.1,
+    "stop_hit_rate_pct": 52.2,
+    "expectancy_pct": 3.3,
+    "avg_hold_to_target_days": 15.3,
+    "avg_hold_to_stop_days": 7.3,
+    "median_return_pct": -5.77,
+    "p10_return_pct": -7.0,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 6.89,
+    "time_to_target": {
+      "target_count": 83,
+      "trading_days": {
+        "count": 83,
+        "min": 1.0,
+        "p25": 5.0,
+        "median": 10.0,
+        "p75": 22.0,
+        "p90": 38.0,
+        "max": 59.0
+      },
+      "calendar_days": {
+        "count": 83,
+        "min": 1.0,
+        "p25": 7.0,
+        "median": 14.0,
+        "p75": 30.0,
+        "p90": 61.0,
+        "max": 90.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 6,
+        "3-5d (\u22641 week)": 17,
+        "6-10d (\u22642 weeks)": 23,
+        "11-21d (\u22641 month)": 15,
+        "22-42d (\u22642 months)": 14,
+        ">42d (slow)": 8
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 1,
+    "final_capital": 1031.71,
+    "total_return_pct": 3.17,
+    "win_rate_pct": 100.0,
+    "profit_factor": null,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": 60.0,
+    "cagr_pct": null,
+    "target_exits": 0,
+    "stop_exits": 0,
+    "deadline_exits": 1,
+    "trades": [
+      {
+        "entry_date": "2025-08-11",
+        "exit_date": "2025-11-10",
+        "entry_price": 905.0,
+        "exit_price": 954.5,
+        "shares": 1,
+        "pnl": 31.71,
+        "pnl_pct": 3.5,
+        "hold_days": 60,
+        "reason": "deadline",
+        "capital_after": 1031.71
+      }
+    ]
+  },
+  "verdict": {
+    "credible": false,
+    "score": 35.9,
+    "summary": "Marginal: only 45% of signals reached +15% before the stop."
+  }
+}

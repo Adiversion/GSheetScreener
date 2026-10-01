@@ -49,7 +49,7 @@ function check(d, w, vw) {
 
 function run() {
   const d = f.contentDocument, w = f.contentWindow;
-  if (!d || !d.querySelector('.leader-table tbody tr')) { setTimeout(run, 800); return; }
+  if (!d || !d.querySelector('#allStocksBody tr')) { setTimeout(run, 800); return; }
   const vw = d.documentElement.clientWidth;
   const out = { w: W, vw, tabs: {} };
   const tabs = ['Signal', 'Portfolio', 'History', 'Settings'];

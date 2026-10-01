@@ -1,0 +1,76 @@
+{
+  "symbol": "SANSERA",
+  "generated_at": "2026-10-01T02:32:10Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-29",
+    "bars": 743
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 273,
+    "target_hits": 181,
+    "stop_hits": 89,
+    "timeouts": 3,
+    "target_hit_rate_pct": 66.3,
+    "stop_hit_rate_pct": 32.6,
+    "expectancy_pct": 7.75,
+    "avg_hold_to_target_days": 20.5,
+    "avg_hold_to_stop_days": 6.8,
+    "median_return_pct": 15.0,
+    "p10_return_pct": -7.0,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 6.64,
+    "time_to_target": {
+      "target_count": 181,
+      "trading_days": {
+        "count": 181,
+        "min": 1.0,
+        "p25": 12.0,
+        "median": 21.0,
+        "p75": 28.0,
+        "p90": 33.0,
+        "max": 49.0
+      },
+      "calendar_days": {
+        "count": 181,
+        "min": 1.0,
+        "p25": 18.0,
+        "median": 29.0,
+        "p75": 40.0,
+        "p90": 48.0,
+        "max": 74.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 3,
+        "3-5d (\u22641 week)": 13,
+        "6-10d (\u22642 weeks)": 18,
+        "11-21d (\u22641 month)": 61,
+        "22-42d (\u22642 months)": 81,
+        ">42d (slow)": 5
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 0,
+    "final_capital": 1000.0,
+    "total_return_pct": 0.0,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": null,
+    "trades": []
+  },
+  "verdict": {
+    "credible": true,
+    "score": 65.4,
+    "summary": "Positive edge: +15% hit before the stop in 66% of signals."
+  }
+}

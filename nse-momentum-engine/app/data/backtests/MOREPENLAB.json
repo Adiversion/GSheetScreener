@@ -1,0 +1,285 @@
+{
+  "symbol": "MOREPENLAB",
+  "generated_at": "2026-10-01T02:32:19Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-30",
+    "bars": 744
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 113,
+    "target_hits": 39,
+    "stop_hits": 64,
+    "timeouts": 10,
+    "target_hit_rate_pct": 34.5,
+    "stop_hit_rate_pct": 56.6,
+    "expectancy_pct": 1.67,
+    "avg_hold_to_target_days": 4.3,
+    "avg_hold_to_stop_days": 5.1,
+    "median_return_pct": -7.0,
+    "p10_return_pct": -7.0,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 7.0,
+    "time_to_target": {
+      "target_count": 39,
+      "trading_days": {
+        "count": 39,
+        "min": 0.0,
+        "p25": 3.0,
+        "median": 4.0,
+        "p75": 6.0,
+        "p90": 7.0,
+        "max": 10.0
+      },
+      "calendar_days": {
+        "count": 39,
+        "min": 0.0,
+        "p25": 5.0,
+        "median": 6.0,
+        "p75": 9.0,
+        "p90": 12.0,
+        "max": 17.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 9,
+        "3-5d (\u22641 week)": 19,
+        "6-10d (\u22642 weeks)": 11,
+        "11-21d (\u22641 month)": 0,
+        "22-42d (\u22642 months)": 0,
+        ">42d (slow)": 0
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 17,
+    "final_capital": 1078.38,
+    "total_return_pct": 7.84,
+    "win_rate_pct": 47.1,
+    "profit_factor": 1.11,
+    "max_drawdown_pct": -35.15,
+    "avg_cycle_days": 6.2,
+    "cagr_pct": 3.5,
+    "target_exits": 7,
+    "stop_exits": 9,
+    "deadline_exits": 1,
+    "trades": [
+      {
+        "entry_date": "2024-07-31",
+        "exit_date": "2024-08-06",
+        "entry_price": 61.19,
+        "exit_price": 56.91,
+        "shares": 15,
+        "pnl": -81.95,
+        "pnl_pct": -8.92,
+        "hold_days": 4,
+        "reason": "stop",
+        "capital_after": 918.05
+      },
+      {
+        "entry_date": "2024-08-08",
+        "exit_date": "2024-08-14",
+        "entry_price": 60.9,
+        "exit_price": 56.64,
+        "shares": 14,
+        "pnl": -77.26,
+        "pnl_pct": -9.05,
+        "hold_days": 4,
+        "reason": "stop",
+        "capital_after": 840.79
+      },
+      {
+        "entry_date": "2024-08-19",
+        "exit_date": "2024-08-19",
+        "entry_price": 61.5,
+        "exit_price": 70.72,
+        "shares": 13,
+        "pnl": 102.28,
+        "pnl_pct": 12.78,
+        "hold_days": 0,
+        "reason": "target",
+        "capital_after": 943.07
+      },
+      {
+        "entry_date": "2024-08-21",
+        "exit_date": "2024-08-22",
+        "entry_price": 68.7,
+        "exit_price": 79.0,
+        "shares": 13,
+        "pnl": 116.11,
+        "pnl_pct": 12.99,
+        "hold_days": 1,
+        "reason": "target",
+        "capital_after": 1059.18
+      },
+      {
+        "entry_date": "2024-08-26",
+        "exit_date": "2024-09-04",
+        "entry_price": 80.87,
+        "exit_price": 93.0,
+        "shares": 12,
+        "pnl": 127.55,
+        "pnl_pct": 13.13,
+        "hold_days": 7,
+        "reason": "target",
+        "capital_after": 1186.73
+      },
+      {
+        "entry_date": "2024-09-09",
+        "exit_date": "2024-09-19",
+        "entry_price": 89.4,
+        "exit_price": 83.14,
+        "shares": 12,
+        "pnl": -93.1,
+        "pnl_pct": -8.67,
+        "hold_days": 8,
+        "reason": "stop",
+        "capital_after": 1093.64
+      },
+      {
+        "entry_date": "2024-09-23",
+        "exit_date": "2024-10-07",
+        "entry_price": 87.0,
+        "exit_price": 80.91,
+        "shares": 12,
+        "pnl": -91.02,
+        "pnl_pct": -8.71,
+        "hold_days": 9,
+        "reason": "stop",
+        "capital_after": 1002.61
+      },
+      {
+        "entry_date": "2024-10-09",
+        "exit_date": "2024-10-22",
+        "entry_price": 84.4,
+        "exit_price": 78.49,
+        "shares": 11,
+        "pnl": -82.71,
+        "pnl_pct": -8.9,
+        "hold_days": 9,
+        "reason": "stop",
+        "capital_after": 919.9
+      },
+      {
+        "entry_date": "2024-12-04",
+        "exit_date": "2024-12-20",
+        "entry_price": 86.24,
+        "exit_price": 80.2,
+        "shares": 10,
+        "pnl": -77.96,
+        "pnl_pct": -9.03,
+        "hold_days": 12,
+        "reason": "stop",
+        "capital_after": 841.94
+      },
+      {
+        "entry_date": "2026-06-17",
+        "exit_date": "2026-06-19",
+        "entry_price": 52.3,
+        "exit_price": 48.64,
+        "shares": 15,
+        "pnl": -72.36,
+        "pnl_pct": -9.21,
+        "hold_days": 2,
+        "reason": "stop",
+        "capital_after": 769.58
+      },
+      {
+        "entry_date": "2026-06-23",
+        "exit_date": "2026-06-30",
+        "entry_price": 50.34,
+        "exit_price": 57.89,
+        "shares": 14,
+        "pnl": 88.27,
+        "pnl_pct": 12.51,
+        "hold_days": 5,
+        "reason": "target",
+        "capital_after": 857.85
+      },
+      {
+        "entry_date": "2026-07-03",
+        "exit_date": "2026-07-21",
+        "entry_price": 60.4,
+        "exit_price": 56.17,
+        "shares": 13,
+        "pnl": -72.41,
+        "pnl_pct": -9.21,
+        "hold_days": 12,
+        "reason": "stop",
+        "capital_after": 785.44
+      },
+      {
+        "entry_date": "2026-07-29",
+        "exit_date": "2026-08-04",
+        "entry_price": 55.79,
+        "exit_price": 64.16,
+        "shares": 13,
+        "pnl": 91.3,
+        "pnl_pct": 12.58,
+        "hold_days": 4,
+        "reason": "target",
+        "capital_after": 876.74
+      },
+      {
+        "entry_date": "2026-08-06",
+        "exit_date": "2026-08-17",
+        "entry_price": 76.39,
+        "exit_price": 87.85,
+        "shares": 11,
+        "pnl": 108.31,
+        "pnl_pct": 12.88,
+        "hold_days": 7,
+        "reason": "target",
+        "capital_after": 985.05
+      },
+      {
+        "entry_date": "2026-08-19",
+        "exit_date": "2026-08-28",
+        "entry_price": 88.06,
+        "exit_price": 101.27,
+        "shares": 10,
+        "pnl": 114.27,
+        "pnl_pct": 12.96,
+        "hold_days": 7,
+        "reason": "target",
+        "capital_after": 1099.31
+      },
+      {
+        "entry_date": "2026-09-07",
+        "exit_date": "2026-09-15",
+        "entry_price": 115.96,
+        "exit_price": 107.84,
+        "shares": 9,
+        "pnl": -91.0,
+        "pnl_pct": -8.71,
+        "hold_days": 6,
+        "reason": "stop",
+        "capital_after": 1008.31
+      },
+      {
+        "entry_date": "2026-09-17",
+        "exit_date": "2026-09-30",
+        "entry_price": 115.0,
+        "exit_price": 125.99,
+        "shares": 8,
+        "pnl": 70.06,
+        "pnl_pct": 7.61,
+        "hold_days": 9,
+        "reason": "deadline",
+        "capital_after": 1078.38
+      }
+    ]
+  },
+  "verdict": {
+    "credible": false,
+    "score": 23.6,
+    "summary": "Weak: stops dominate (57% stopped, 34% reached target)."
+  }
+}

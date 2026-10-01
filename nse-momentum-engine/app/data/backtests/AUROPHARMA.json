@@ -1,0 +1,76 @@
+{
+  "symbol": "AUROPHARMA",
+  "generated_at": "2026-10-01T02:32:15Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-29",
+    "bars": 742
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 197,
+    "target_hits": 48,
+    "stop_hits": 72,
+    "timeouts": 77,
+    "target_hit_rate_pct": 24.4,
+    "stop_hit_rate_pct": 36.5,
+    "expectancy_pct": 3.65,
+    "avg_hold_to_target_days": 38.1,
+    "avg_hold_to_stop_days": 15.8,
+    "median_return_pct": 2.45,
+    "p10_return_pct": -5.04,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 5.27,
+    "time_to_target": {
+      "target_count": 48,
+      "trading_days": {
+        "count": 48,
+        "min": 20.0,
+        "p25": 28.0,
+        "median": 36.0,
+        "p75": 49.0,
+        "p90": 54.0,
+        "max": 58.0
+      },
+      "calendar_days": {
+        "count": 48,
+        "min": 34.0,
+        "p25": 44.0,
+        "median": 55.0,
+        "p75": 67.0,
+        "p90": 74.0,
+        "max": 82.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 0,
+        "6-10d (\u22642 weeks)": 0,
+        "11-21d (\u22641 month)": 2,
+        "22-42d (\u22642 months)": 27,
+        ">42d (slow)": 19
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 0,
+    "final_capital": 1000.0,
+    "total_return_pct": 0.0,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": null,
+    "trades": []
+  },
+  "verdict": {
+    "credible": false,
+    "score": 24.5,
+    "summary": "Weak: stops dominate (36% stopped, 24% reached target)."
+  }
+}

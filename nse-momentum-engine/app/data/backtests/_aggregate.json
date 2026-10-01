@@ -1,0 +1,263 @@
+{
+  "generated_at": "2026-10-01T02:31:23Z",
+  "symbols": 46,
+  "target_observations": 2659,
+  "trading_days": {
+    "count": 2659,
+    "min": 0.0,
+    "p25": 7.0,
+    "median": 14.0,
+    "p75": 26.0,
+    "p90": 38.0,
+    "max": 60.0
+  },
+  "calendar_days": {
+    "count": 2659,
+    "min": 0.0,
+    "p25": 11.0,
+    "median": 21.0,
+    "p75": 36.0,
+    "p90": 54.0,
+    "max": 90.0
+  },
+  "buckets_trading_days": {
+    "0-2d": 154,
+    "3-5d (\u22641 week)": 312,
+    "6-10d (\u22642 weeks)": 525,
+    "11-21d (\u22641 month)": 807,
+    "22-42d (\u22642 months)": 672,
+    ">42d (slow)": 189
+  },
+  "per_stock": {
+    "CUPID": {
+      "target_hit_rate_pct": 61.5,
+      "median_trading_days_to_target": 8.0,
+      "median_calendar_days_to_target": 12.0
+    },
+    "EMIL": {
+      "target_hit_rate_pct": 45.6,
+      "median_trading_days_to_target": 12.0,
+      "median_calendar_days_to_target": 16.0
+    },
+    "TFCILTD": {
+      "target_hit_rate_pct": 53.7,
+      "median_trading_days_to_target": 14.0,
+      "median_calendar_days_to_target": 21.0
+    },
+    "REDINGTON": {
+      "target_hit_rate_pct": 27.4,
+      "median_trading_days_to_target": 11.0,
+      "median_calendar_days_to_target": 15.0
+    },
+    "TDPOWERSYS": {
+      "target_hit_rate_pct": 28.7,
+      "median_trading_days_to_target": 10.0,
+      "median_calendar_days_to_target": 15.0
+    },
+    "SANSERA": {
+      "target_hit_rate_pct": 66.3,
+      "median_trading_days_to_target": 21.0,
+      "median_calendar_days_to_target": 29.0
+    },
+    "NAZARA": {
+      "target_hit_rate_pct": 37.4,
+      "median_trading_days_to_target": 22.0,
+      "median_calendar_days_to_target": 31.0
+    },
+    "ENGINERSIN": {
+      "target_hit_rate_pct": 23.9,
+      "median_trading_days_to_target": 14.0,
+      "median_calendar_days_to_target": 18.0
+    },
+    "LAURUSLABS": {
+      "target_hit_rate_pct": 42.8,
+      "median_trading_days_to_target": 20.0,
+      "median_calendar_days_to_target": 29.0
+    },
+    "WELCORP": {
+      "target_hit_rate_pct": 31.6,
+      "median_trading_days_to_target": 16.0,
+      "median_calendar_days_to_target": 22.0
+    },
+    "SONACOMS": {
+      "target_hit_rate_pct": 38.7,
+      "median_trading_days_to_target": 26.0,
+      "median_calendar_days_to_target": 37.0
+    },
+    "SYRMA": {
+      "target_hit_rate_pct": 41.0,
+      "median_trading_days_to_target": 10.0,
+      "median_calendar_days_to_target": 14.0
+    },
+    "FCL": {
+      "target_hit_rate_pct": 30.6,
+      "median_trading_days_to_target": 7.0,
+      "median_calendar_days_to_target": 11.0
+    },
+    "MAHSEAMLES": {
+      "target_hit_rate_pct": 6.3,
+      "median_trading_days_to_target": 13.0,
+      "median_calendar_days_to_target": 17.0
+    },
+    "JGCHEM": {
+      "target_hit_rate_pct": 41.0,
+      "median_trading_days_to_target": 9.0,
+      "median_calendar_days_to_target": 13.0
+    },
+    "EDELWEISS": {
+      "target_hit_rate_pct": 17.0,
+      "median_trading_days_to_target": 19.0,
+      "median_calendar_days_to_target": 25.0
+    },
+    "SHANTIGOLD": {
+      "target_hit_rate_pct": 40.4,
+      "median_trading_days_to_target": 4.0,
+      "median_calendar_days_to_target": 6.0
+    },
+    "LALPATHLAB": {
+      "target_hit_rate_pct": 24.7,
+      "median_trading_days_to_target": 26.0,
+      "median_calendar_days_to_target": 36.0
+    },
+    "LENSKART": {
+      "target_hit_rate_pct": 0.0,
+      "median_trading_days_to_target": null,
+      "median_calendar_days_to_target": null
+    },
+    "AVALON": {
+      "target_hit_rate_pct": 46.0,
+      "median_trading_days_to_target": 8.0,
+      "median_calendar_days_to_target": 12.0
+    },
+    "RPTECH": {
+      "target_hit_rate_pct": 53.2,
+      "median_trading_days_to_target": 15.0,
+      "median_calendar_days_to_target": 21.0
+    },
+    "GLAND": {
+      "target_hit_rate_pct": 35.3,
+      "median_trading_days_to_target": 23.0,
+      "median_calendar_days_to_target": 33.0
+    },
+    "PVRINOX": {
+      "target_hit_rate_pct": 7.5,
+      "median_trading_days_to_target": 15.0,
+      "median_calendar_days_to_target": 21.0
+    },
+    "AZAD": {
+      "target_hit_rate_pct": 24.4,
+      "median_trading_days_to_target": 16.0,
+      "median_calendar_days_to_target": 22.0
+    },
+    "MCX": {
+      "target_hit_rate_pct": 50.5,
+      "median_trading_days_to_target": 16.0,
+      "median_calendar_days_to_target": 23.0
+    },
+    "KAJARIACER": {
+      "target_hit_rate_pct": 1.0,
+      "median_trading_days_to_target": 27.0,
+      "median_calendar_days_to_target": 39.0
+    },
+    "APARINDS": {
+      "target_hit_rate_pct": 39.3,
+      "median_trading_days_to_target": 12.0,
+      "median_calendar_days_to_target": 17.0
+    },
+    "AUROPHARMA": {
+      "target_hit_rate_pct": 24.4,
+      "median_trading_days_to_target": 36.0,
+      "median_calendar_days_to_target": 55.0
+    },
+    "PFOCUS": {
+      "target_hit_rate_pct": 31.0,
+      "median_trading_days_to_target": 10.0,
+      "median_calendar_days_to_target": 14.0
+    },
+    "YATHARTH": {
+      "target_hit_rate_pct": 48.3,
+      "median_trading_days_to_target": 15.0,
+      "median_calendar_days_to_target": 21.0
+    },
+    "AJANTPHARM": {
+      "target_hit_rate_pct": 17.8,
+      "median_trading_days_to_target": 33.0,
+      "median_calendar_days_to_target": 49.0
+    },
+    "LLOYDSENGG": {
+      "target_hit_rate_pct": 19.3,
+      "median_trading_days_to_target": 11.0,
+      "median_calendar_days_to_target": 15.0
+    },
+    "MOTHERSON": {
+      "target_hit_rate_pct": 30.2,
+      "median_trading_days_to_target": 36.0,
+      "median_calendar_days_to_target": 50.0
+    },
+    "MEESHO": {
+      "target_hit_rate_pct": 0.0,
+      "median_trading_days_to_target": null,
+      "median_calendar_days_to_target": null
+    },
+    "ADANIPORTS": {
+      "target_hit_rate_pct": 1.6,
+      "median_trading_days_to_target": 19.0,
+      "median_calendar_days_to_target": 25.0
+    },
+    "RBLBANK": {
+      "target_hit_rate_pct": 42.8,
+      "median_trading_days_to_target": 31.0,
+      "median_calendar_days_to_target": 45.0
+    },
+    "MANKIND": {
+      "target_hit_rate_pct": 24.3,
+      "median_trading_days_to_target": 25.0,
+      "median_calendar_days_to_target": 35.0
+    },
+    "ZYDUSLIFE": {
+      "target_hit_rate_pct": 0.0,
+      "median_trading_days_to_target": null,
+      "median_calendar_days_to_target": null
+    },
+    "MUNJALAU": {
+      "target_hit_rate_pct": 44.5,
+      "median_trading_days_to_target": 11.0,
+      "median_calendar_days_to_target": 15.0
+    },
+    "APOLLO": {
+      "target_hit_rate_pct": 21.9,
+      "median_trading_days_to_target": 5.0,
+      "median_calendar_days_to_target": 7.0
+    },
+    "PHOENIXLTD": {
+      "target_hit_rate_pct": 35.0,
+      "median_trading_days_to_target": 28.0,
+      "median_calendar_days_to_target": 41.0
+    },
+    "KIRLOSENG": {
+      "target_hit_rate_pct": 45.1,
+      "median_trading_days_to_target": 10.0,
+      "median_calendar_days_to_target": 14.0
+    },
+    "MOREPENLAB": {
+      "target_hit_rate_pct": 34.5,
+      "median_trading_days_to_target": 4.0,
+      "median_calendar_days_to_target": 6.0
+    },
+    "RATNAVEER": {
+      "target_hit_rate_pct": 38.6,
+      "median_trading_days_to_target": 6.0,
+      "median_calendar_days_to_target": 11.0
+    },
+    "SAMBHV": {
+      "target_hit_rate_pct": 81.7,
+      "median_trading_days_to_target": 21.0,
+      "median_calendar_days_to_target": 29.0
+    },
+    "MANINDS": {
+      "target_hit_rate_pct": 22.2,
+      "median_trading_days_to_target": 6.0,
+      "median_calendar_days_to_target": 8.0
+    }
+  }
+}

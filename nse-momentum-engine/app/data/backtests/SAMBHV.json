@@ -1,0 +1,117 @@
+{
+  "symbol": "SAMBHV",
+  "generated_at": "2026-10-01T02:32:19Z",
+  "period": {
+    "start": "2025-07-02",
+    "end": "2026-09-30",
+    "bars": 313
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 60,
+    "target_hits": 49,
+    "stop_hits": 3,
+    "timeouts": 8,
+    "target_hit_rate_pct": 81.7,
+    "stop_hit_rate_pct": 5.0,
+    "expectancy_pct": 12.68,
+    "avg_hold_to_target_days": 22.7,
+    "avg_hold_to_stop_days": 5.0,
+    "median_return_pct": 15.0,
+    "p10_return_pct": 5.7,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 7.0,
+    "time_to_target": {
+      "target_count": 49,
+      "trading_days": {
+        "count": 49,
+        "min": 0.0,
+        "p25": 13.0,
+        "median": 21.0,
+        "p75": 31.0,
+        "p90": 43.0,
+        "max": 50.0
+      },
+      "calendar_days": {
+        "count": 49,
+        "min": 0.0,
+        "p25": 17.0,
+        "median": 29.0,
+        "p75": 43.0,
+        "p90": 59.0,
+        "max": 70.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 3,
+        "3-5d (\u22641 week)": 3,
+        "6-10d (\u22642 weeks)": 4,
+        "11-21d (\u22641 month)": 17,
+        "22-42d (\u22642 months)": 16,
+        ">42d (slow)": 6
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 3,
+    "final_capital": 1302.66,
+    "total_return_pct": 30.27,
+    "win_rate_pct": 100.0,
+    "profit_factor": null,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": 18.3,
+    "cagr_pct": null,
+    "target_exits": 2,
+    "stop_exits": 0,
+    "deadline_exits": 1,
+    "trades": [
+      {
+        "entry_date": "2026-07-09",
+        "exit_date": "2026-08-20",
+        "entry_price": 115.52,
+        "exit_price": 132.85,
+        "shares": 8,
+        "pnl": 120.71,
+        "pnl_pct": 13.05,
+        "hold_days": 30,
+        "reason": "target",
+        "capital_after": 1120.71
+      },
+      {
+        "entry_date": "2026-08-24",
+        "exit_date": "2026-09-18",
+        "entry_price": 129.4,
+        "exit_price": 148.81,
+        "shares": 8,
+        "pnl": 137.12,
+        "pnl_pct": 13.23,
+        "hold_days": 19,
+        "reason": "target",
+        "capital_after": 1257.83
+      },
+      {
+        "entry_date": "2026-09-22",
+        "exit_date": "2026-09-30",
+        "entry_price": 155.9,
+        "exit_price": 164.9,
+        "shares": 7,
+        "pnl": 44.82,
+        "pnl_pct": 4.1,
+        "hold_days": 6,
+        "reason": "deadline",
+        "capital_after": 1302.66
+      }
+    ]
+  },
+  "verdict": {
+    "credible": true,
+    "score": 93.4,
+    "summary": "Strong edge: reached +15% before the stop in 82% of signals."
+  }
+}

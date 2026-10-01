@@ -7,7 +7,6 @@
 
 /* ─── Constants ─── */
 const LS = {
-  SHEET_URL:       'nse_sheet_url',
   CAPITAL_BASE:    'nse_capital_base',
   CAPITAL_HISTORY: 'nse_capital_history',
   SIGNAL_HISTORY:  'nse_signal_history',
@@ -181,11 +180,15 @@ document.querySelectorAll('.nav-item, .desktop-tab-btn').forEach(item => {
 function switchTab(name) {
   state.currentTab = name;
   document.querySelectorAll('.nav-item, .desktop-tab-btn').forEach(n => {
-    n.classList.toggle('active', n.dataset.tab === name);
+    const on = n.dataset.tab === name;
+    n.classList.toggle('active', on);
+    if (n.hasAttribute('role')) n.setAttribute('aria-selected', on ? 'true' : 'false');
   });
   document.querySelectorAll('.tab-panel').forEach(p => {
     p.classList.toggle('active', p.id === 'tab' + name);
   });
+  closeInspector();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   if (name === 'Portfolio') renderPortfolio();
   if (name === 'History')   renderHistory();
   if (name === 'Settings')  populateSettings();
@@ -198,11 +201,6 @@ function switchTab(name) {
 async function fetchSignal(showLoading = true) {
   if (state.refreshing) return;
   if (showLoading) { setRefreshing(true); showSkeleton(true); }
-
-  // Purge legacy Google Sheets setting to ensure 100% native serverless pipeline
-  try {
-    localStorage.removeItem(LS.SHEET_URL);
-  } catch (_) {}
 
   try {
     let rows = null;
@@ -293,60 +291,54 @@ function updateLastUpdated(date, fromCache = false) {
 }
 
 function renderMarketRegime(regime) {
+  const bar = document.getElementById('regimeBanner');
   const ticker = document.getElementById('headerRegimeTicker');
   const tickerText = document.getElementById('headerRegimeText');
-  const banner = document.getElementById('regimeBanner');
+  const badge = document.getElementById('regimeBadge');
+  const title = document.getElementById('regimeTitle');
+  const desc = document.getElementById('regimeDesc');
+  const decision = document.getElementById('regimeDecision');
+  const bench = document.getElementById('regimeBench');
 
   if (!regime) {
-    if (banner) banner.style.display = 'none';
-    // Toggle a class, never an inline `display`: an inline value would beat the
-    // width-gated CSS rule and render the ticker off-screen on phones.
+    if (bar) bar.className = 'regime-bar';
+    if (badge) { badge.className = 'badge'; badge.textContent = '—'; }
+    if (title) title.textContent = 'Market regime unavailable';
+    if (desc) desc.textContent = 'No screening run found for this session.';
+    if (decision) decision.textContent = '—';
+    if (bench) bench.textContent = '';
     if (ticker) ticker.classList.remove('is-active');
     return;
   }
 
   const cmpStr = regime.nifty_cmp ? '₹' + Number(regime.nifty_cmp).toLocaleString('en-IN') : '–';
+  const isBull = regime.regime === 'BULL_MARKET';
+  const isCaution = regime.regime === 'CORRECTION_WATCH';
+  const stateWord = isBull ? 'bull' : isCaution ? 'caution' : 'defensive';
 
-  if (ticker && tickerText) {
-    // `is-active` is only allowed to show at >=1536px (see .header-regime).
-    ticker.className = 'header-regime is-active';
-    if (regime.regime === 'BULL_MARKET') {
-      ticker.classList.add('bull');
-      tickerText.innerHTML = `🟢 NIFTY 500: ${cmpStr} &middot; BULL REGIME`;
-    } else if (regime.regime === 'CORRECTION_WATCH') {
-      ticker.classList.add('caution');
-      tickerText.innerHTML = `🟡 NIFTY 500: ${cmpStr} &middot; CORRECTION WATCH`;
-    } else {
-      ticker.classList.add('defensive');
-      tickerText.innerHTML = `🛡️ NIFTY 500: ${cmpStr} &middot; DEFENSIVE CASH`;
-    }
+  if (bar) bar.className = 'regime-bar ' + stateWord;
+  if (badge) {
+    badge.className = 'badge badge--' + (isBull ? 'bull' : isCaution ? 'caution' : 'defensive');
+    badge.textContent = isBull ? 'Bull market' : isCaution ? 'Correction watch' : 'Defensive cash';
+  }
+  if (title) title.textContent = 'Nifty 500  ' + cmpStr;
+  if (desc) desc.textContent = regime.description || (isBull
+    ? 'Confirmed uptrend — full momentum deployment active.'
+    : isCaution ? 'Benchmark below its 50-day average — conservative entries only.'
+    : 'Benchmark below its 200-day average — 100% capital preserved in cash.');
+  if (decision) decision.textContent = isBull ? 'DEPLOY · momentum active'
+    : isCaution ? 'SELECTIVE · conservative entries'
+    : 'HOLD · 100% cash';
+  if (bench) {
+    const parts = [];
+    if (regime.sma_50)  parts.push('50SMA ₹' + Number(regime.sma_50).toLocaleString('en-IN'));
+    if (regime.sma_200) parts.push('200SMA ₹' + Number(regime.sma_200).toLocaleString('en-IN'));
+    bench.textContent = parts.join('  ·  ');
   }
 
-  if (banner) {
-    banner.style.display = 'block';
-    const title = document.getElementById('regimeTitle');
-    const badge = document.getElementById('regimeBadge');
-    const desc = document.getElementById('regimeDesc');
-
-    banner.className = 'regime-banner-pill';
-    if (badge) badge.className = 'badge';
-
-    if (regime.regime === 'BULL_MARKET') {
-      banner.classList.add('bull');
-      if (badge) { badge.classList.add('badge-bull'); badge.textContent = '🟢 BULL REGIME'; }
-      if (title) title.textContent = `Nifty 500: ${cmpStr}`;
-      if (desc) desc.textContent = regime.description || 'Confirmed uptrend. Aggressive momentum active.';
-    } else if (regime.regime === 'CORRECTION_WATCH') {
-      banner.classList.add('caution');
-      if (badge) { badge.classList.add('badge-caution'); badge.textContent = '🟡 CORRECTION WATCH'; }
-      if (title) title.textContent = `Nifty 500: ${cmpStr}`;
-      if (desc) desc.textContent = regime.description || 'Market pullback. Conservative entries only.';
-    } else {
-      banner.classList.add('defensive');
-      if (badge) { badge.classList.add('badge-defensive'); badge.textContent = '🛡️ DEFENSIVE CASH'; }
-      if (title) title.textContent = `Nifty 500: ${cmpStr}`;
-      if (desc) desc.textContent = regime.description || 'Nifty 500 below 200 SMA. 100% Capital preserved in CASH.';
-    }
+  if (ticker && tickerText) {
+    ticker.className = 'header-regime is-active ' + stateWord;
+    tickerText.textContent = `NIFTY 500 ${cmpStr} · ${isBull ? 'BULL' : isCaution ? 'CORRECTION' : 'DEFENSIVE'}`;
   }
 }
 
@@ -661,9 +653,9 @@ function recalculateFromEntry(entry) {
 
   const levels = [
     { cls: 'stop-row', name: 'Initial Stop', nameClass: 'level-stop', target: initStop, stop: null, chg: pctChange(entry, initStop), note: `${isDefensive ? '-4.0% Defensive Stop' : `-${(atrStopPct*100).toFixed(1)}% ATR Stop`}` },
-    { cls: 'm1-row', name: 'M1 (Risk-Free)', nameClass: 'level-m1', target: m1Target, stop: m1Stop, chg: pctChange(entry, m1Target), note: '+1.5% Breakeven Floor (100% position kept)' },
-    { cls: 'm2-row', name: 'M2 (Bank 40%)', nameClass: 'level-m2', target: m2Target, stop: m2Stop, chg: pctChange(entry, m2Target), note: 'Bank 40% (≥3R); Ratchet runner stop to +10%' },
-    { cls: 'm3-row', name: 'M3 (Power Runner)', nameClass: 'level-m3', target: m3Target, stop: m2Stop, chg: pctChange(entry, m3Target), note: 'Hold 60% runner: Dynamic 50 SMA / 20 EMA trail (No ceiling!)' },
+    { cls: 'm1-row', name: 'Rotate (+15%)', nameClass: 'level-m1', target: m1Target, stop: m1Stop, chg: pctChange(entry, m1Target), note: 'Sell the full position & reinvest principal + profit into the next leader' },
+    { cls: 'm2-row', name: 'Trail 1 (+22%)', nameClass: 'level-m2', target: m2Target, stop: m2Stop, chg: pctChange(entry, m2Target), note: 'Optional trailing (if you do not rotate): bank 40% at ≥3R, ratchet runner stop to +10%' },
+    { cls: 'm3-row', name: 'Trail 2 (+50%+)', nameClass: 'level-m3', target: m3Target, stop: m2Stop, chg: pctChange(entry, m3Target), note: 'Optional trailing: hold the 60% runner on the 50 SMA / 20 EMA trail (no ceiling)' },
   ];
 
   const body = document.getElementById('gttBody');
@@ -705,6 +697,10 @@ function recalculateFromEntry(entry) {
           <div class="pill-label">💰 Sizing Capital</div>
           <div class="pill-value">${fmtINR(capital)}</div>
         </div>
+        <div class="trade-pill">
+          <div class="pill-label">🔁 Next cycle (+15%)</div>
+          <div class="pill-value">${fmtINR(capRequired * 1.15)}</div>
+        </div>
       `;
     } else {
       pills.innerHTML = `
@@ -719,6 +715,10 @@ function recalculateFromEntry(entry) {
         <div class="trade-pill">
           <div class="pill-label">🏦 Account Base</div>
           <div class="pill-value">${fmtINR(capital)}</div>
+        </div>
+        <div class="trade-pill">
+          <div class="pill-label">🔁 Next cycle (+15%)</div>
+          <div class="pill-value pos">${fmtINR(capRequired * 1.15)}</div>
         </div>
       `;
     }
@@ -1163,32 +1163,25 @@ function buildGTTClipboardText(sig) {
   const cap = shares * entry;
 
   return [
-    `═══ NSE Signal GTT Order (Institutional Two-Tier) ═══`,
+    `═══ NSE Signal — GTT Order (Rotation plan) ═══`,
     `Stock   : ${sig.SYMBOL} (NSE)`,
     `Entry   : ₹${fmt(entry)}`,
     `Shares  : ${shares} shares`,
     `Capital : ₹${fmt(cap)}`,
     ``,
-    `── Initial Stop (-5% to -7% ATR) ────────`,
-    `Trigger : ₹${fmt(stop)} (Hard Stop)`,
+    `── GTT Leg 1: SELL at TARGET (+15%) ─────`,
+    `Trigger : ₹${fmt(m1)}   → sells the FULL ${shares} shares`,
+    `When this fills, redeploy principal + profit into the next leader.`,
     ``,
-    `── Milestone 1 (+15% Risk-Free) ─────────`,
-    `Target  : ₹${fmt(m1)}`,
-    `→ Ratchet Stop to ₹${fmt(entry * 1.015)} (+1.5% Breakeven buffer)`,
-    `→ 100% Position Kept Intact`,
+    `── GTT Leg 2: SELL at STOP ──────────────`,
+    `Trigger : ₹${fmt(stop)} (hard stop, -5% to -7% ATR)`,
+    `Do NOT move this down.`,
     ``,
-    `── Milestone 2 (+22% Bank & Trail) ──────`,
-    `Target  : ₹${fmt(sig.M2_TARGET || (entry * 1.22))}`,
-    `→ Bank 40% Partial Profit (locks in ≥3R reward:risk)`,
-    `→ Ratchet Stop on remaining 60% runner to ₹${fmt(sig.M2_STOP || (entry * 1.10))} (+10% profit floor)`,
+    `── Optional (only if you choose NOT to rotate) ──`,
+    `Trail 1 (+22%): ₹${fmt(sig.M2_TARGET || (entry * 1.22))} → bank 40%, runner stop ₹${fmt(sig.M2_STOP || (entry * 1.10))}`,
+    `Trail 2 (+50%+): hold the runner on a 50 SMA / 20 EMA trail (no ceiling)`,
     ``,
-    `── Milestone 3 (Power Runner > +25%) ─────`,
-    `Target  : UNCAPPED (Let Winners Run)`,
-    `→ Dynamic Trailing Exits:`,
-    `  1. Primary Trend Exit: Daily Close < rising 50 SMA on volume (1-day grace on low vol)`,
-    `  2. Climax Mean-Reversion: Close < 20 EMA if CMP / 50 SMA > 1.35`,
-    `  3. Blow-Off Exhaustion: Close > 1.70x 200 SMA & range > 3x ATR14 with 20d peak vol`,
-    ``,
+    `Set both GTT legs as SELL · OCO where supported.`,
     `CMS Score: ${sig.CMS_SCORE}  |  RSI: ${sig.RSI_14}`,
     `Generated: ${new Date().toLocaleString('en-IN')}`,
   ].join('\n');
@@ -1794,9 +1787,8 @@ function wireGlossaryModal() {
 ══════════════════════════════════════════════════════ */
 
 (function init() {
-  // Purge legacy caches, legacy Google Sheet setting, and stale 0-stock caches
+  // Purge stale 0-stock caches
   try {
-    localStorage.removeItem(LS.SHEET_URL);
     const cached = store.get(LS.LAST_SIGNAL, null);
     if (cached && (!cached.rows || cached.rows.length === 0 || cached.rows[0].STATUS === 'CASH' || (cached.payload && cached.payload.total_qualified === 0))) {
       localStorage.removeItem(LS.LAST_SIGNAL);
@@ -1809,4 +1801,635 @@ function wireGlossaryModal() {
   wireGlossaryModal();
   setupWatchlistSearchAndFilters();
   fetchSignal(true);
+})();
+
+/* ══════════════════════════════════════════════════════
+   V2 RENDER LAYER — master–detail inspector, regime-aware
+   decisioning, sortable data grid, responsive row-cards.
+   These declarations intentionally supersede the legacy
+   renderers above; the fetch / storage / broker logic is
+   untouched.
+══════════════════════════════════════════════════════ */
+
+/** Show the inspector as a bottom sheet / drawer under 1024px. */
+function openInspector() {
+  const pane = document.getElementById('inspectorPane');
+  if (!pane) return;
+  if (window.matchMedia('(min-width: 1024px)').matches) return;
+  pane.classList.add('open');
+  let scrim = document.getElementById('inspectorScrim');
+  if (!scrim) {
+    scrim = document.createElement('div');
+    scrim.id = 'inspectorScrim';
+    scrim.className = 'scrim';
+    scrim.addEventListener('click', closeInspector);
+    document.body.appendChild(scrim);
+  }
+  requestAnimationFrame(() => scrim.classList.add('show'));
+}
+
+function closeInspector() {
+  const pane = document.getElementById('inspectorPane');
+  const scrim = document.getElementById('inspectorScrim');
+  if (pane) pane.classList.remove('open');
+  if (scrim) scrim.classList.remove('show');
+}
+
+function closeInspectorBtn() {
+  const btn = document.getElementById('btnCloseInspector');
+  if (btn) btn.addEventListener('click', closeInspector);
+}
+
+function renderCashState(hero, overrideMsg = null) {
+  const heroCard = document.getElementById('heroCard');
+  if (heroCard) {
+    heroCard.className = 'inspector__header';
+    heroCard.innerHTML = `
+      <div class="ins-top"><span class="ins-status cash">100% cash</span></div>
+      <div class="inspector__empty" style="padding:30px 6px">
+        <svg class="ic ic--lg" aria-hidden="true"><use href="#i-bank"/></svg>
+        <p><strong style="color:var(--text)">${overrideMsg || 'Preserve capital — defensive regime'}</strong><br>No deployable Stage-2 leader in this session. The engine protects capital and waits.</p>
+        ${hero && hero.TIMESTAMP ? `<span class="muted">Screened ${hero.TIMESTAMP}</span>` : ''}
+      </div>`;
+  }
+  const rsiCard = document.getElementById('rsiCard');
+  const gttCard = document.getElementById('gttCard');
+  const dbox = document.getElementById('decisionBox');
+  if (rsiCard) rsiCard.hidden = true;
+  if (gttCard) gttCard.hidden = true;
+  if (dbox) dbox.hidden = true;
+  const credCard = document.getElementById('credCard');
+  if (credCard) credCard.hidden = true;
+  showSkeleton(false);
+}
+
+/** Regime- and risk-aware go / no-go banner for the selected stock. */
+function renderDecision(s, isDefensive, capital) {
+  const box = document.getElementById('decisionBox');
+  if (!box || !s) return;
+  const cmp = parseFloat(s.CMP);
+  const affordable = cmp <= (capital - 26);
+  const band = parseFloat(s.CIRCUIT_BAND) || 20;
+  const circuitRisk = s.CIRCUIT_RISK === true || band <= 5;
+  const turnover = parseFloat(s.TURNOVER_CRORES) || 0;
+
+  if (isDefensive) {
+    box.className = 'decision decision--hold';
+    box.hidden = false;
+    box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>
+      <div><strong>No new entry — capital preserved</strong>The benchmark is below its 200-day average. Levels are shown for monitoring and GTT simulation only.</div>`;
+    return;
+  }
+  if (!affordable) {
+    box.className = 'decision decision--warn';
+    box.hidden = false;
+    box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+      <div><strong>Not affordable at ₹${Number(capital).toLocaleString('en-IN')}</strong>Needs about ₹${Math.ceil(cmp + 26).toLocaleString('en-IN')} for one share. Raise sizing capital or pick a lower-priced leader.</div>`;
+    return;
+  }
+  if (circuitRisk) {
+    box.className = 'decision decision--warn';
+    box.hidden = false;
+    box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+      <div><strong>Execution risk — ${band}% circuit band</strong>Narrow bands can lock into the lower circuit and trap an exit. Prefer a wider-band alternate.</div>`;
+    return;
+  }
+  box.className = 'decision decision--go';
+  box.hidden = false;
+  box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>
+    <div><strong>Deploy — setup validated</strong>Affordable at ₹${Number(capital).toLocaleString('en-IN')} with ${turnover ? `₹${turnover.toFixed(1)} Cr 20-day turnover` : 'sufficient liquidity'}. Risk is capped at 1% of equity by the ticket below.</div>`;
+}
+
+function renderActiveSignal(h, alts, isDefensive = false) {
+  const heroCard = document.getElementById('heroCard');
+  if (!heroCard) return;
+
+  const cmp = parseFloat(h.CMP);
+  const cms = parseFloat(h.CMS_SCORE);
+  const high52 = parseFloat(h.HIGH_52W) || cmp;
+  const proxPct = Math.max(0, ((high52 - cmp) / high52) * 100);
+  const fillPct = Math.max(4, Math.min(100, 100 - proxPct));
+  const atr = parseFloat(h.ATR_14) || (cmp * 0.04);
+  const atrPct = cmp ? (atr / cmp) * 100 : 0;
+  const rsi = parseFloat(h.RSI_14);
+  const setup = (h.SETUP_QUALITY || '').toString().replace(/_/g, ' ');
+
+  heroCard.className = 'inspector__header';
+  heroCard.innerHTML = `
+    <div class="ins-top">
+      <span class="ins-status ${isDefensive ? 'defensive' : 'active'}">${isDefensive ? 'Defensive watchlist' : 'Active signal'}</span>
+      <span class="ins-rank">${isDefensive ? 'Candidate #1' : 'Leader #1'}</span>
+    </div>
+    <div class="ins-identity">
+      <span class="ins-symbol">${h.SYMBOL}</span>
+      ${h.IS_PRIME ? '<span class="tag tag--prime">PRIME</span>' : ''}
+      <span class="ins-cmp num">${fmtINR(cmp)}</span>
+    </div>
+    <div class="ins-sub">${setup || 'Stage-2 momentum leader'}</div>
+    <div class="prox">
+      <div class="prox__row"><span>52-week high</span><strong>${fmtINR(high52)} · −${proxPct.toFixed(1)}% away</strong></div>
+      <div class="prox__track"><span class="prox__fill" style="width:${fillPct}%"></span></div>
+    </div>
+    <div class="ins-chips">
+      <span class="ins-chip"><small>CMS</small><span>${isNaN(cms) ? h.CMS_SCORE : cms.toFixed(1)}</span></span>
+      <span class="ins-chip"><small>RSI</small><span>${isNaN(rsi) ? '–' : rsi.toFixed(1)}</span></span>
+      <span class="ins-chip"><small>ATR</small><span>${atrPct.toFixed(1)}%</span></span>
+      <span class="ins-chip"><small>Band</small><span>${h.CIRCUIT_BAND || '20'}%</span></span>
+    </div>`;
+
+  const capital = state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL);
+  renderDecision(h, isDefensive, capital);
+
+  renderRSIGauge(rsi);
+  const rsiCard = document.getElementById('rsiCard');
+  if (rsiCard) rsiCard.hidden = false;
+
+  const rocRow = document.getElementById('rocRow');
+  if (rocRow) {
+    const r1 = fmtPct(h.ROC_1M), r2 = fmtPct(h.ROC_2M), r3 = fmtPct(h.ROC_3M);
+    rocRow.innerHTML = `
+      <div class="roc-item"><div class="roc-period">1M</div><div class="roc-val ${r1.cls}">${r1.text}</div></div>
+      <div class="roc-item"><div class="roc-period">2M</div><div class="roc-val ${r2.cls}">${r2.text}</div></div>
+      <div class="roc-item"><div class="roc-period">3M</div><div class="roc-val ${r3.cls}">${r3.text}</div></div>`;
+  }
+
+  const smaRow = document.getElementById('smaRow');
+  if (smaRow) {
+    const sma50 = parseFloat(h.SMA_50), sma200 = parseFloat(h.SMA_200);
+    const d50 = sma50 ? ((cmp - sma50) / sma50) * 100 : 0;
+    const d200 = sma200 ? ((cmp - sma200) / sma200) * 100 : 0;
+    smaRow.innerHTML = `
+      <div class="sma-item"><div class="sma-label">Price vs SMA50</div><div class="sma-val" style="color:${cmp > sma50 ? 'var(--accent)' : 'var(--red)'}">${d50 >= 0 ? '+' : ''}${d50.toFixed(1)}%</div></div>
+      <div class="sma-item"><div class="sma-label">Price vs SMA200</div><div class="sma-val" style="color:${cmp > sma200 ? 'var(--accent)' : 'var(--red)'}">${d200 >= 0 ? '+' : ''}${d200.toFixed(1)}%</div></div>`;
+  }
+
+  const specTurnover = document.getElementById('specTurnover');
+  const specATR = document.getElementById('specATR');
+  const specCircuit = document.getElementById('specCircuit');
+  if (specTurnover) { const toCr = parseFloat(h.TURNOVER_CRORES); specTurnover.textContent = !isNaN(toCr) ? `₹${toCr.toFixed(1)} Cr` : '—'; }
+  if (specATR) specATR.textContent = `${fmtINR(atr)} (${atrPct.toFixed(1)}%)`;
+  if (specCircuit) specCircuit.textContent = `${h.CIRCUIT_BAND || '20'}%${h.CIRCUIT_RISK ? ' · risky' : ''}`;
+
+  renderGTT(h);
+  renderCredibility(h.SYMBOL);
+}
+
+function renderGTT(h) {
+  state.activeStock = h;
+  const gttCard = document.getElementById('gttCard');
+  const entryInput = document.getElementById('inputActualEntry');
+  const currentEntry = parseFloat(h.ACTUAL_ENTRY || h.CMP);
+  if (entryInput) entryInput.value = currentEntry;
+  updateGapPillActive(0);
+  recalculateFromEntry(currentEntry);
+  if (gttCard) gttCard.hidden = false;
+}
+
+/* ─── Grid sort / filter state ─── */
+state.sortKey = state.sortKey || 'rank';
+state.sortDir = state.sortDir || 'asc';
+
+function proxPctOf(s) {
+  const cmp = parseFloat(s.CMP);
+  const hi = parseFloat(s.HIGH_52W) || cmp;
+  return hi > 0 ? Math.max(0, ((hi - cmp) / hi) * 100) : 0;
+}
+
+function setupShort(s) {
+  if (s.IS_PRIME) return 'Prime';
+  const q = (s.SETUP_QUALITY || '').toString().replace(/_/g, ' ');
+  if (!q) return 'Momentum';
+  return q.replace(/prime low risk/i, 'Prime').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function buildGridRow(s, idx, userCapital) {
+  const cmp = parseFloat(s.CMP);
+  const cms = parseFloat(s.CMS_SCORE);
+  const rsi = parseFloat(s.RSI_14);
+  const roc1 = parseFloat(s.ROC_1M);
+  const roc3 = parseFloat(s.ROC_3M);
+  const atrPct = parseFloat(s.ATR_PCT);
+  const to = parseFloat(s.TURNOVER_CRORES);
+  const band = parseFloat(s.CIRCUIT_BAND) || 20;
+  const prox = proxPctOf(s);
+  const affordable = cmp <= (userCapital - 26);
+  const shares = affordable ? Math.max(Math.floor((userCapital - 26) / cmp), 1) : 0;
+  const isSelected = state.activeStock && state.activeStock.SYMBOL === s.SYMBOL;
+  const rsiTone = rsi < 45 ? 'var(--red)' : rsi <= 82 ? 'var(--accent)' : 'var(--yellow)';
+  const cmsClass = cms >= 90 ? 'hi' : cms >= 75 ? 'mid' : 'lo';
+  const cred = (state.credIndex || {})[String(s.SYMBOL).toUpperCase()];
+  const credScore = cred && cred.score != null ? cred.score : null;
+  const credClass = credScore == null ? 'lo' : credScore >= 60 ? 'hi' : credScore >= 40 ? 'mid' : 'lo';
+  const credTitle = cred
+    ? `Credibility ${cred.credible ? '✓' : '—'} · score ${credScore == null ? '—' : credScore} · pace ${cred.pace} · +15% hit ${cred.target_hit_rate_pct}% · median ${cred.median_days_to_target}d`
+    : 'No backtest report';
+  const pctCell = v => isNaN(v) ? '–' : `<span class="${v >= 0 ? 'pos' : 'neg'}">${v >= 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
+
+  const tr = document.createElement('tr');
+  tr.className = 'stock-table-row' + (isSelected ? ' selected' : '');
+  tr.setAttribute('role', 'row');
+  tr.dataset.symbol = s.SYMBOL;
+  tr.innerHTML = `
+    <td class="col-rank num" data-label="#">${idx + 1}</td>
+    <td class="col-sec" data-label="Security">
+      <div class="sec-cell">
+        <span class="sec-symbol">${s.SYMBOL}</span>
+        <span class="sec-tags">
+          ${s.IS_PRIME ? '<span class="tag tag--prime">PRIME</span>' : ''}
+          <span class="tag">${band}% band</span>
+          ${(s.CIRCUIT_RISK === true || band <= 5) ? '<span class="tag tag--risk">CIRCUIT RISK</span>' : ''}
+        </span>
+      </div>
+    </td>
+    <td class="num" data-label="CMP">${fmtINR(cmp)}</td>
+    <td class="num col-cms" data-label="CMS"><span class="score-pill ${cmsClass}">${isNaN(cms) ? '–' : cms.toFixed(1)}</span></td>
+    <td class="num col-cred" data-label="Cred"><span class="score-pill ${credClass}" title="${credTitle}">${credScore == null ? '–' : credScore.toFixed(0)}</span></td>
+    <td class="num col-rsi" data-label="RSI"><span style="color:${rsiTone}">${isNaN(rsi) ? '–' : rsi.toFixed(1)}</span></td>
+    <td class="num col-roc col-roc1" data-label="1M ROC">${pctCell(roc1)}</td>
+    <td class="num col-roc" data-label="3M ROC">${pctCell(roc3)}</td>
+    <td class="num col-atr" data-label="ATR%">${isNaN(atrPct) ? '–' : atrPct.toFixed(1) + '%'}</td>
+    <td class="num col-liq" data-label="Turnover">${isNaN(to) ? '–' : '₹' + to.toFixed(1) + ' Cr'}</td>
+    <td class="num col-prox" data-label="vs 52W high">−${prox.toFixed(1)}%</td>
+    <td class="col-setup" data-label="Setup">${setupShort(s)}</td>
+    <td class="num col-size" data-label="Size">${affordable ? `<span class="size-hint ok">${shares} sh</span>` : '<span class="size-hint no">over budget</span>'}</td>
+    <td class="col-action" data-label="Action">
+      <button class="btn btn--sm ${isSelected ? 'btn--primary' : 'btn--secondary'}" data-select aria-label="Inspect ${s.SYMBOL}">${isSelected ? 'Open' : 'Inspect'}</button>
+    </td>`;
+  tr.addEventListener('click', () => selectStockForTrading(s, userCapital));
+  return tr;
+}
+
+function renderAllStocksTable(stocks, userCapital) {
+  const tbody = document.getElementById('allStocksBody');
+  const countBadge = document.getElementById('allStocksCountBadge');
+  const status = document.getElementById('gridStatus');
+  if (!tbody) return;
+  userCapital = userCapital || state.userCapital || DEFAULT_CAPITAL;
+  const all = stocks || [];
+  ensureCredIndex();
+
+  const getters = {
+    rank:     (s, i) => i,
+    symbol:   (s) => s.SYMBOL,
+    cmp:      (s) => parseFloat(s.CMP) || 0,
+    cms:      (s) => parseFloat(s.CMS_SCORE) || 0,
+    cred:     (s) => { const e = (state.credIndex || {})[String(s.SYMBOL).toUpperCase()]; return e && e.score != null ? e.score : -1; },
+    rsi:      (s) => parseFloat(s.RSI_14) || 0,
+    roc1:     (s) => parseFloat(s.ROC_1M) || 0,
+    roc3:     (s) => parseFloat(s.ROC_3M) || 0,
+    atr:      (s) => parseFloat(s.ATR_PCT) || 0,
+    turnover: (s) => parseFloat(s.TURNOVER_CRORES) || 0,
+    prox:     (s) => proxPctOf(s),
+  };
+
+  const q = (currentSearch || '').toUpperCase();
+  const labelMap = { all: 'All', prime: 'Prime', sweet_rsi: 'Sweet RSI', affordable: 'Affordable', circuit_safe: 'Circuit-safe', strong_trend: 'Strong trend' };
+
+  const filtered = all.filter(s => {
+    if (q && !String(s.SYMBOL).toUpperCase().includes(q)) return false;
+    const rsi = parseFloat(s.RSI_14) || 0;
+    const cmp = parseFloat(s.CMP) || 0;
+    const band = parseFloat(s.CIRCUIT_BAND) || 0;
+    const to = parseFloat(s.TURNOVER_CRORES) || 0;
+    switch (currentFilter) {
+      case 'prime':        return s.IS_PRIME === true || (parseFloat(s.CMS_SCORE) || 0) >= 90;
+      case 'sweet_rsi':    return rsi >= 45 && rsi <= 75;
+      case 'affordable':   return cmp <= (userCapital - 26);
+      case 'circuit_safe': return s.CIRCUIT_RISK !== true && band >= 10 && to >= 5;
+      case 'strong_trend': return (parseFloat(s.DIST_50SMA) || 0) > 0 && (parseFloat(s.ROC_2M) || 0) > 0 && rsi <= 82;
+      default:             return true;
+    }
+  });
+
+  const origIndex = new Map(all.map((s, i) => [s, i]));
+  const dir = state.sortDir === 'desc' ? -1 : 1;
+  const get = getters[state.sortKey] || getters.rank;
+  filtered.sort((a, b) => {
+    const va = get(a, origIndex.get(a));
+    const vb = get(b, origIndex.get(b));
+    if (typeof va === 'string' || typeof vb === 'string') return dir * String(va).localeCompare(String(vb));
+    return dir * (va - vb);
+  });
+
+  if (countBadge) countBadge.textContent = `${filtered.length} / ${all.length} leaders`;
+  if (status) status.textContent = `${filtered.length} shown · ${labelMap[currentFilter] || 'All'} · sorted ${state.sortKey} ${state.sortDir}`;
+
+  document.querySelectorAll('.data-grid thead th[data-sort]').forEach(th => {
+    if (th.dataset.sort === state.sortKey) th.setAttribute('aria-sort', state.sortDir === 'asc' ? 'ascending' : 'descending');
+    else th.removeAttribute('aria-sort');
+  });
+
+  tbody.innerHTML = '';
+  if (!filtered.length) {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td colspan="14"><div class="empty-state"><svg class="ic ic--lg" aria-hidden="true"><use href="#i-search"/></svg><p>No leaders match “${currentSearch || labelMap[currentFilter] || 'this filter'}”.</p></div></td>`;
+    tbody.appendChild(row);
+    return;
+  }
+  filtered.forEach((s, i) => tbody.appendChild(buildGridRow(s, i, userCapital)));
+}
+
+function selectStockForTrading(s, userCapital) {
+  const stock = Object.assign({}, s);
+  const cmp = parseFloat(stock.CMP);
+  const shares = Math.max(Math.floor((userCapital - 26) / cmp), 1);
+  stock.SHARES = shares;
+  stock.CAPITAL_REQUIRED = shares * cmp;
+  stock.CAPITAL_BASE = userCapital;
+
+  const all = (state.payload && state.payload.all_qualified) || [];
+  const alts = all.filter(item => item.SYMBOL !== stock.SYMBOL).slice(0, 3);
+  const isDefensive = (state.payload && state.payload.regime && state.payload.regime.regime === 'DEFENSIVE_CASH') || (stock.STATUS === 'CASH');
+
+  renderActiveSignal(stock, alts, isDefensive);
+  renderAllStocksTable(all, userCapital);
+  openInspector();
+  if (window.matchMedia('(min-width: 1024px)').matches) {
+    const pane = document.getElementById('inspectorPane');
+    if (pane) pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+/* ─── Credibility index (backtest scores for grid ranking) ─── */
+function ensureCredIndex() {
+  if (state.credIndexLoaded) return;
+  state.credIndexLoaded = true;
+  state.credIndex = state.credIndex || {};
+  fetch('data/backtests/_index.json?_t=' + Date.now(), { cache: 'no-store' })
+    .then(res => res.ok ? res.json() : null)
+    .then(json => {
+      const entries = (json && json.entries) || [];
+      if (!entries.length) return;
+      entries.forEach(e => { if (e && e.symbol) state.credIndex[String(e.symbol).toUpperCase()] = e; });
+      renderAllStocksTable((state.payload && state.payload.all_qualified) || [], state.userCapital || DEFAULT_CAPITAL);
+    })
+    .catch(() => { /* index is optional; grid still works without it */ });
+}
+
+function wireGridSort() {
+  document.querySelectorAll('.data-grid thead th[data-sort]').forEach(th => {
+    const btn = th.querySelector('.sort-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const key = th.dataset.sort;
+      if (state.sortKey === key) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      else { state.sortKey = key; state.sortDir = key === 'symbol' ? 'asc' : 'desc'; }
+      const all = (state.payload && state.payload.all_qualified) || [];
+      renderAllStocksTable(all, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
+    });
+  });
+}
+
+/* ─── Portfolio ─── */
+function renderPortfolio() {
+  const base = store.get(LS.CAPITAL_BASE, DEFAULT_CAPITAL);
+  const current = store.get(LS.CURRENT_CAPITAL, base);
+  const history = store.get(LS.CAPITAL_HISTORY, []);
+  const sigHist = store.get(LS.SIGNAL_HISTORY, []);
+
+  const disp = document.getElementById('capitalDisplay');
+  const baseDisp = document.getElementById('capitalBaseDisp');
+  if (disp) disp.textContent = fmtINR(current);
+  if (baseDisp) baseDisp.textContent = 'Base ' + fmtINR(base);
+
+  const gain = current - base;
+  const gainPct = base > 0 ? (gain / base) * 100 : 0;
+  const gainEl = document.getElementById('capitalGain');
+  if (gainEl && base > 0) {
+    gainEl.className = 'stat__value num ' + (gain >= 0 ? 'tone-bull' : 'tone-bear');
+    gainEl.textContent = `${gain >= 0 ? '+' : ''}${fmtINR(gain)} (${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(1)}%)`;
+  }
+
+  const trades = sigHist.length;
+  const wins = sigHist.filter(s => s.pnl > 0).length;
+  const winRate = trades ? ((wins / trades) * 100).toFixed(0) + '%' : '–';
+  const st = document.getElementById('statTrades'); if (st) st.textContent = trades;
+  const sw = document.getElementById('statWins'); if (sw) sw.textContent = wins;
+  const swr = document.getElementById('statWinRate'); if (swr) swr.textContent = winRate;
+
+  // Rotation plan — one capital base compounded by +15% cycles.
+  const rotBase = document.getElementById('rotBase');
+  if (rotBase) {
+    rotBase.textContent = fmtINR(base);
+    const rotEquity = document.getElementById('rotEquity');
+    const rotCycles = document.getElementById('rotCycles');
+    const rotNext = document.getElementById('rotNext');
+    if (rotEquity) rotEquity.textContent = fmtINR(current);
+    if (rotCycles) rotCycles.textContent = `${trades} (${wins} won)`;
+    if (rotNext) rotNext.textContent = fmtINR(current * 1.15);
+
+    const ladder = [1, 5, 10, 15, 20, 30, 52];
+    const body = document.getElementById('rotLadder');
+    if (body) body.innerHTML = ladder.map(n => {
+      const eq = base * Math.pow(1.15, n);
+      const ret = (eq / base - 1) * 100;
+      return `<tr><td>${n}</td><td class="num">${fmtINR(eq)}</td><td class="num pos">+${ret.toFixed(0)}%</td></tr>`;
+    }).join('');
+
+    const note = document.getElementById('rotNote');
+    if (note) {
+      const double = Math.ceil(Math.LN2 / Math.log(1.15));
+      note.textContent = `At +15% per cycle, capital doubles roughly every ${double} completed cycles when every target is hit. Cycle outcomes are recorded from your exits; stop-outs count as failed cycles.`;
+    }
+  }
+
+  drawCapitalChart(history, base);
+}
+
+function drawCapitalChart(history, base) {
+  const canvas = document.getElementById('capitalChart');
+  const empty = document.getElementById('chartEmpty');
+  if (!canvas || !empty) return;
+  if (!history || history.length < 2) {
+    canvas.style.display = 'none';
+    empty.style.display = 'flex';
+    return;
+  }
+  canvas.style.display = 'block';
+  empty.style.display = 'none';
+
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth || 360;
+  const H = Math.max(180, Math.min(260, Math.round(W * 0.34)));
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const values = history.map(e => e.capital);
+  const minV = Math.min.apply(null, values.concat(base)) * 0.99;
+  const maxV = Math.max.apply(null, values.concat(base)) * 1.01;
+  const range = (maxV - minV) || 1;
+  const PAD_L = 56, PAD_R = 14, PAD_T = 14, PAD_B = 26;
+  const cw = W - PAD_L - PAD_R, ch = H - PAD_T - PAD_B;
+  const xOf = i => PAD_L + (values.length === 1 ? cw / 2 : (i / (values.length - 1)) * cw);
+  const yOf = v => PAD_T + ch - ((v - minV) / range) * ch;
+  const money = v => '₹' + Math.round(v).toLocaleString('en-IN');
+
+  ctx.font = '10px ui-monospace, monospace';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let g = 0; g <= 4; g++) {
+    const v = minV + range * (g / 4);
+    const y = yOf(v);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+    ctx.fillStyle = '#6E8095'; ctx.fillText(money(v), PAD_L - 8, y);
+  }
+
+  const baseY = yOf(base);
+  ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(76,141,255,0.55)';
+  ctx.beginPath(); ctx.moveTo(PAD_L, baseY); ctx.lineTo(W - PAD_R, baseY); ctx.stroke(); ctx.setLineDash([]);
+
+  const up = values[values.length - 1] >= base;
+  const grad = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + ch);
+  grad.addColorStop(0, up ? 'rgba(34,192,138,0.28)' : 'rgba(240,82,90,0.28)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.moveTo(xOf(0), yOf(values[0]));
+  values.forEach((v, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(v)); });
+  ctx.lineTo(xOf(values.length - 1), PAD_T + ch); ctx.lineTo(xOf(0), PAD_T + ch); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  ctx.beginPath(); ctx.moveTo(xOf(0), yOf(values[0]));
+  values.forEach((v, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(v)); });
+  ctx.strokeStyle = up ? '#22C08A' : '#F0525A'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+
+  values.forEach((v, i) => {
+    ctx.beginPath(); ctx.arc(xOf(i), yOf(v), 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = v >= base ? '#22C08A' : '#F0525A'; ctx.fill();
+  });
+
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = '#6E8095';
+  const step = Math.max(1, Math.floor(history.length / 5));
+  history.forEach((e, i) => {
+    if (i % step === 0 || i === history.length - 1) {
+      const d = new Date(e.date);
+      ctx.fillText(d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), xOf(i), PAD_T + ch + 6);
+    }
+  });
+}
+
+/* ─── History ─── */
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const history = store.get(LS.SIGNAL_HISTORY, []);
+
+  if (list) {
+    if (!history.length) {
+      list.innerHTML = `<div class="empty-state"><svg class="ic ic--lg" aria-hidden="true"><use href="#i-history"/></svg><p>No closed trades recorded yet. Record an exit from the Portfolio tab to build your verified ledger.</p></div>`;
+    } else {
+      list.innerHTML = history.map(t => {
+        const glyph = t.outcome === 'win' ? '▲' : t.outcome === 'loss' ? '▼' : '■';
+        const cls = t.outcome === 'win' ? 'win' : t.outcome === 'loss' ? 'loss' : 'skip';
+        const d = new Date(t.date);
+        const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        return `
+          <div class="history-item">
+            <div class="hist-icon ${cls}" aria-hidden="true">${glyph}</div>
+            <div class="hist-body">
+              <div class="hist-symbol">${t.symbol}</div>
+              <div class="hist-date">${dateStr} · ${t.shares} shares · ${fmtINR(t.entry)} → ${fmtINR(t.exit)}</div>
+            </div>
+            <div>
+              <div class="hist-pnl ${t.pnl >= 0 ? 'pos' : 'neg'}">${t.pnl >= 0 ? '+' : ''}${fmtINR(t.pnl)}</div>
+              <div class="hist-pct">${t.pct >= 0 ? '+' : ''}${t.pct.toFixed(2)}%</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+  }
+
+  const sessionsContainer = document.getElementById('historySessionsList');
+  if (sessionsContainer) {
+    const manifest = (state.payload && state.payload.history_manifest) || [];
+    if (!manifest.length) {
+      sessionsContainer.innerHTML = `<div class="empty-state"><p>No archived sessions available yet.</p></div>`;
+    } else {
+      sessionsContainer.innerHTML = manifest.map(m => {
+        const isSelected = m.date === (state.selectedDate || (state.payload && state.payload.trade_date));
+        const winner = (m.winner && m.winner !== 'CASH') ? m.winner : 'CASH';
+        return `
+          <div class="session-archive-item ${isSelected ? 'selected' : ''}" role="button" tabindex="0" data-date="${m.date}">
+            <div>
+              <div class="session-archive-date">${m.display_date || m.date} ${m.is_today ? '<span class="tag tag--prime">today</span>' : ''}</div>
+              <div class="session-archive-meta">${m.total_qualified != null ? m.total_qualified + ' leaders qualified' : 'EOD bhavcopy snapshot'}</div>
+            </div>
+            <div class="session-archive-stats">
+              <span>${winner}</span>
+              ${m.cms ? `<span class="muted">CMS ${Number(m.cms).toFixed(1)}</span>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+      sessionsContainer.querySelectorAll('.session-archive-item').forEach(el => {
+        const go = () => { selectSessionDate(el.dataset.date); switchTab('Signal'); };
+        el.addEventListener('click', go);
+        el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+      });
+    }
+  }
+}
+
+/* ─── Settings ─── */
+function populateSettings() {
+  const capInput = document.getElementById('inputCapitalBase');
+  if (capInput) capInput.value = store.get(LS.CAPITAL_BASE, DEFAULT_CAPITAL);
+  loadKiteSettings();
+}
+
+/* ─── Backtest credibility panel ─── */
+function renderCredibility(symbol) {
+  const card = document.getElementById('credCard');
+  const grid = document.getElementById('credGrid');
+  const verdict = document.getElementById('credVerdict');
+  const foot = document.getElementById('credFoot');
+  if (!card || !grid) return;
+  if (!symbol) { card.hidden = true; return; }
+  state.backtests = state.backtests || {};
+
+  const paint = (r) => {
+    card.hidden = false;
+    if (!r) {
+      if (verdict) { verdict.className = 'badge'; verdict.textContent = 'no report'; }
+      grid.innerHTML = '<div class="cred-item"><small>Credibility</small><span>—</span></div>';
+      if (foot) foot.textContent = `No backtest report for ${symbol}. Generate one with: python scripts/single_stock_backtest.py --symbol ${symbol}`;
+      return;
+    }
+    const s = r.study || {}, sim = r.simulation || {}, v = r.verdict || {};
+    const score = (v.score == null) ? '—' : v.score;
+    if (verdict) {
+      verdict.className = 'badge ' + (v.credible ? 'badge--bull' : 'badge--defensive');
+      verdict.textContent = (v.credible ? 'Credible · ' : 'Low credibility · ') + score;
+    }
+    const item = (k, val, tone) => `<div class="cred-item ${tone || ''}"><small>${k}</small><span>${val}</span></div>`;
+    grid.innerHTML = [
+      item('+15% hit rate', s.target_hit_rate_pct != null ? s.target_hit_rate_pct + '%' : '—', s.target_hit_rate_pct >= 55 ? 'is-bull' : 'is-caution'),
+      item('Stopped out', s.stop_hit_rate_pct != null ? s.stop_hit_rate_pct + '%' : '—', 'is-bear'),
+      item('Expectancy', s.expectancy_pct != null ? (s.expectancy_pct >= 0 ? '+' : '') + s.expectancy_pct + '%' : '—', s.expectancy_pct >= 0 ? 'is-bull' : 'is-bear'),
+      item('Signals tested', s.observations != null ? s.observations : '—'),
+      item('Avg hold → target', s.avg_hold_to_target_days != null ? s.avg_hold_to_target_days + 'd' : '—'),
+      item('Median days → +15%', (s.time_to_target && s.time_to_target.trading_days)
+        ? `${s.time_to_target.trading_days.median}d (${s.time_to_target.calendar_days.median} cal)` : '—'),
+      item('Rotation cycles', sim.cycles != null ? sim.cycles : '—'),
+      item('Sim ₹1k →', sim.final_capital != null ? fmtINR(sim.final_capital) : '—', sim.total_return_pct >= 0 ? 'is-bull' : 'is-bear'),
+      item('Sim return', sim.total_return_pct != null ? (sim.total_return_pct >= 0 ? '+' : '') + sim.total_return_pct + '%' : '—', sim.total_return_pct >= 0 ? 'is-bull' : 'is-bear'),
+    ].join('');
+    if (foot) foot.textContent = (v.summary || '') + (r.period ? `  ·  backtested ${r.period.start} → ${r.period.end}` : '');
+  };
+
+  if (state.backtests[symbol] !== undefined) { paint(state.backtests[symbol]); return; }
+  card.hidden = false;
+  grid.innerHTML = '<div class="cred-item"><small>Backtest</small><span>loading…</span></div>';
+  if (foot) foot.textContent = '';
+  fetch(`data/backtests/${encodeURIComponent(symbol)}.json?_t=` + Date.now(), { cache: 'no-store' })
+    .then(res => res.ok ? res.json() : null)
+    .then(json => { state.backtests[symbol] = json; paint(json); })
+    .catch(() => { state.backtests[symbol] = null; paint(null); });
+}
+
+/* ─── Extra wiring ─── */
+(function wireV2() {
+  wireGridSort();
+  closeInspectorBtn();
+  const topClose = document.getElementById('btnCancelExitTop');
+  if (topClose) topClose.addEventListener('click', closeExitModal);
 })();

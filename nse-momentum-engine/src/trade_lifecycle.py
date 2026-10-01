@@ -67,6 +67,7 @@ class ExitReason(str, Enum):
     CLIMAX_MEAN_REVERSION_20EMA = "CLIMAX_EMA20"             # CMP > 1.35x 50 SMA and close < 20 EMA
     BLOWOFF_EXHAUSTION = "BLOWOFF_EXHAUSTION"                # CMP > 1.70x 200 SMA + 3x ATR bar + 20d peak vol
     CIRCUIT_LOCK_STOP = "CIRCUIT_LOCK_STOP"                  # Lower circuit lock liquidation
+    ROTATION_TARGET = "ROTATION_TARGET"                      # Fixed-target rotation: sell & redeploy proceeds
     EMERGENCY_MANUAL = "EMERGENCY_MANUAL"
 
 
@@ -156,7 +157,8 @@ class TradeLifecycleManager:
         runner_stop_floor_pct: float = 0.10,       # +10% locked stop on remaining 60% runner
         climax_extension_mult: float = 1.35,       # CMP / 50 SMA > 1.35
         blowoff_sma200_mult: float = 1.70,         # CMP / 200 SMA > 1.70
-        blowoff_range_atr_mult: float = 3.0        # Daily range > 3x ATR14
+        blowoff_range_atr_mult: float = 3.0,       # Daily range > 3x ATR14
+        rotation_target_pct: Optional[float] = None  # Fixed-target rotation exit (e.g. 0.15); None = two-tier mode
     ):
         self.portfolio_equity = float(portfolio_equity)
         self.risk_per_trade_pct = float(risk_per_trade_pct)
@@ -169,6 +171,7 @@ class TradeLifecycleManager:
         self.climax_extension_mult = float(climax_extension_mult)
         self.blowoff_sma200_mult = float(blowoff_sma200_mult)
         self.blowoff_range_atr_mult = float(blowoff_range_atr_mult)
+        self.rotation_target_pct = float(rotation_target_pct) if rotation_target_pct is not None else None
 
     # ─────────────────────────────────────────────────────────────────────────
     # 1. POSITION SIZING & INITIAL RISK ENGINE
@@ -669,6 +672,36 @@ class TradeLifecycleManager:
             position.state = TradeState.STATE_CLOSED
             position.current_shares = 0
             return signals
+
+        # 2b. Fixed-target ROTATION exit (compounding rotation strategy).
+        #     When enabled, the entire position is taken off at the fixed target
+        #     so the principal + profit can be redeployed into the next ranked
+        #     leader. Unlike the two-tier mode, no runner is kept behind.
+        if self.rotation_target_pct is not None:
+            unrealized = (bar.cmp - position.entry_price) / position.entry_price
+            if unrealized >= self.rotation_target_pct:
+                rotate_target = round(position.entry_price * (1.0 + self.rotation_target_pct), 2)
+                exit_signal = OrderSignal(
+                    symbol=position.symbol,
+                    action=OrderAction.FULL_CLOSE,
+                    shares=position.current_shares,
+                    limit_price=rotate_target,
+                    stop_loss=rotate_target,
+                    reason=ExitReason.ROTATION_TARGET,
+                    urgency="IMMEDIATE",
+                    metadata={
+                        "state_at_exit": position.state.value,
+                        "entry_price": position.entry_price,
+                        "target_price": rotate_target,
+                        "pnl_pct": round(unrealized * 100, 2),
+                        "action": "ROTATE_TO_NEXT_LEADER",
+                        "rotation_target_pct": round(self.rotation_target_pct * 100, 1),
+                    }
+                )
+                signals.append(exit_signal)
+                position.state = TradeState.STATE_CLOSED
+                position.current_shares = 0
+                return signals
 
         # 3. Dynamic Power Runner Exits (State 3 Only)
         if position.state == TradeState.STATE_3_POWER_RUNNER:

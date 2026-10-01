@@ -1,0 +1,76 @@
+{
+  "symbol": "LALPATHLAB",
+  "generated_at": "2026-10-01T02:32:13Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-29",
+    "bars": 743
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 158,
+    "target_hits": 39,
+    "stop_hits": 76,
+    "timeouts": 43,
+    "target_hit_rate_pct": 24.7,
+    "stop_hit_rate_pct": 48.1,
+    "expectancy_pct": 1.63,
+    "avg_hold_to_target_days": 26.2,
+    "avg_hold_to_stop_days": 22.3,
+    "median_return_pct": -0.77,
+    "p10_return_pct": -6.07,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 5.68,
+    "time_to_target": {
+      "target_count": 39,
+      "trading_days": {
+        "count": 39,
+        "min": 6.0,
+        "p25": 17.0,
+        "median": 26.0,
+        "p75": 31.0,
+        "p90": 44.0,
+        "max": 46.0
+      },
+      "calendar_days": {
+        "count": 39,
+        "min": 10.0,
+        "p25": 26.0,
+        "median": 36.0,
+        "p75": 45.0,
+        "p90": 63.0,
+        "max": 68.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 0,
+        "6-10d (\u22642 weeks)": 3,
+        "11-21d (\u22641 month)": 13,
+        "22-42d (\u22642 months)": 17,
+        ">42d (slow)": 6
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 0,
+    "final_capital": 1000.0,
+    "total_return_pct": 0.0,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": null,
+    "trades": []
+  },
+  "verdict": {
+    "credible": false,
+    "score": 18.3,
+    "summary": "Weak: stops dominate (48% stopped, 25% reached target)."
+  }
+}

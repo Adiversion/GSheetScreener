@@ -5,6 +5,40 @@ Format: [Version] — YYYY-MM-DD
 
 ---
 
+## [2.2.0] — 2026-10-01
+
+### Added
+- **Credibility index** — `scripts/single_stock_backtest.py` now emits `app/data/backtests/_index.json` (best score first) via `build_index()`, and a new offline `--rebuild-index` flag regenerates it from existing reports without re-downloading history.
+- **`pace` classification** per stock (`fast` / `medium` / `slow`) derived from median days-to-+15%.
+- **Cred column** in the screener grid (sortable), showing the backtest credibility score with pace / hit-rate / median-days tooltips.
+
+### Removed
+- **All Google Sheets plumbing** — deleted `src/data_pump.py` and `scripts/setup_sheets.py`; the live Action already runs `src/quant_engine.py`, so the spreadsheet path was dead weight.
+- Dropped `gspread`, `google-auth`, `google-api-python-client` from `requirements.txt`.
+- Deleted the Sheets docs (`GOOGLE_SHEETS_SETUP.md`, `WHAT_YOU_SHOULD_DO.md`, `SETUP_AND_NEXT_STEPS.md`) and the legacy nested `run_screener.yml`.
+- Removed the legacy `nse_sheet_url` localStorage handling from the app.
+
+### Changed
+- README, ARCHITECTURE and AGENT_GUIDE rewritten around the native pipeline (Bhavcopy → `quant_engine.py` → static JSON in `app/data/` → PWA).
+- Service worker cache bumped `v9 → v10`.
+
+---
+
+## [2.1.0] — 2026-10-01
+
+### Added
+- **Rotation mode** in `TradeLifecycleManager` (`rotation_target_pct`): sells the entire position at a fixed target (+15%) so principal + profit can be redeployed into the next leader. Defaults to `None`, preserving the original two-tier behaviour.
+- **`scripts/single_stock_backtest.py`** — single-stock credibility study (forward-outcome hit rates, expectancy, holding times) plus a compounding rotation simulation from ₹1,000. CLI (`--symbol`, `--all`) writes `app/data/backtests/<SYMBOL>.json`.
+- **Backtest credibility panel** in the terminal inspector, populated from the generated reports.
+- **Rotation plan card** on the Portfolio tab: starting capital, current equity, completed cycles, next +15% target and a projected compounding ladder.
+- **`tests/test_single_stock_backtest.py`** — offline tests covering the study, simulation, verdict thresholds, pace/index helpers and the rotation exit.
+
+### Changed
+- Terminal GTT ticket relabelled for rotation: `Rotate (+15%)` replaces `M1 (Risk-Free)`; the two-tier levels are now shown as optional trailing exits.
+- Portfolio lifecycle steps and strategy guide rewritten around the +15% rotation model.
+
+---
+
 ## [2.0.0] — 2026-09-30
 
 ### Added

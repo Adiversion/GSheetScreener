@@ -1,0 +1,76 @@
+{
+  "symbol": "GLAND",
+  "generated_at": "2026-10-01T02:32:13Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-29",
+    "bars": 742
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 119,
+    "target_hits": 42,
+    "stop_hits": 38,
+    "timeouts": 39,
+    "target_hit_rate_pct": 35.3,
+    "stop_hit_rate_pct": 31.9,
+    "expectancy_pct": 4.07,
+    "avg_hold_to_target_days": 23.5,
+    "avg_hold_to_stop_days": 13.3,
+    "median_return_pct": 2.84,
+    "p10_return_pct": -6.86,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 6.35,
+    "time_to_target": {
+      "target_count": 42,
+      "trading_days": {
+        "count": 42,
+        "min": 3.0,
+        "p25": 12.0,
+        "median": 23.0,
+        "p75": 33.0,
+        "p90": 43.0,
+        "max": 51.0
+      },
+      "calendar_days": {
+        "count": 42,
+        "min": 4.0,
+        "p25": 18.0,
+        "median": 33.0,
+        "p75": 47.0,
+        "p90": 61.0,
+        "max": 73.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 5,
+        "6-10d (\u22642 weeks)": 4,
+        "11-21d (\u22641 month)": 10,
+        "22-42d (\u22642 months)": 18,
+        ">42d (slow)": 5
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 0,
+    "final_capital": 1000.0,
+    "total_return_pct": 0.0,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": null,
+    "trades": []
+  },
+  "verdict": {
+    "credible": false,
+    "score": 35.3,
+    "summary": "Weak: stops dominate (32% stopped, 35% reached target)."
+  }
+}

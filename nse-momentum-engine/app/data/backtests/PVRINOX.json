@@ -1,0 +1,76 @@
+{
+  "symbol": "PVRINOX",
+  "generated_at": "2026-10-01T02:32:14Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-30",
+    "bars": 743
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 80,
+    "target_hits": 6,
+    "stop_hits": 62,
+    "timeouts": 12,
+    "target_hit_rate_pct": 7.5,
+    "stop_hit_rate_pct": 77.5,
+    "expectancy_pct": -3.13,
+    "avg_hold_to_target_days": 16.3,
+    "avg_hold_to_stop_days": 14.3,
+    "median_return_pct": -5.16,
+    "p10_return_pct": -6.59,
+    "p90_return_pct": 3.64,
+    "avg_stop_distance_pct": 5.93,
+    "time_to_target": {
+      "target_count": 6,
+      "trading_days": {
+        "count": 6,
+        "min": 7.0,
+        "p25": 8.0,
+        "median": 15.0,
+        "p75": 25.0,
+        "p90": 25.0,
+        "max": 26.0
+      },
+      "calendar_days": {
+        "count": 6,
+        "min": 10.0,
+        "p25": 11.0,
+        "median": 21.0,
+        "p75": 35.0,
+        "p90": 35.0,
+        "max": 38.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 0,
+        "6-10d (\u22642 weeks)": 2,
+        "11-21d (\u22641 month)": 2,
+        "22-42d (\u22642 months)": 2,
+        ">42d (slow)": 0
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 0,
+    "final_capital": 1000.0,
+    "total_return_pct": 0.0,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": null,
+    "trades": []
+  },
+  "verdict": {
+    "credible": false,
+    "score": 0.0,
+    "summary": "Weak: stops dominate (78% stopped, 8% reached target)."
+  }
+}

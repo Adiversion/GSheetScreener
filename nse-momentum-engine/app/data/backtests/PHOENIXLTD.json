@@ -1,0 +1,76 @@
+{
+  "symbol": "PHOENIXLTD",
+  "generated_at": "2026-10-01T02:32:18Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-29",
+    "bars": 741
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 120,
+    "target_hits": 42,
+    "stop_hits": 71,
+    "timeouts": 7,
+    "target_hit_rate_pct": 35.0,
+    "stop_hit_rate_pct": 59.2,
+    "expectancy_pct": 1.87,
+    "avg_hold_to_target_days": 31.0,
+    "avg_hold_to_stop_days": 16.4,
+    "median_return_pct": -5.0,
+    "p10_return_pct": -6.17,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 5.56,
+    "time_to_target": {
+      "target_count": 42,
+      "trading_days": {
+        "count": 42,
+        "min": 9.0,
+        "p25": 19.0,
+        "median": 28.0,
+        "p75": 44.0,
+        "p90": 52.0,
+        "max": 57.0
+      },
+      "calendar_days": {
+        "count": 42,
+        "min": 13.0,
+        "p25": 28.0,
+        "median": 41.0,
+        "p75": 64.0,
+        "p90": 74.0,
+        "max": 83.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 0,
+        "6-10d (\u22642 weeks)": 1,
+        "11-21d (\u22641 month)": 12,
+        "22-42d (\u22642 months)": 18,
+        ">42d (slow)": 11
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 0,
+    "final_capital": 1000.0,
+    "total_return_pct": 0.0,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": null,
+    "trades": []
+  },
+  "verdict": {
+    "credible": false,
+    "score": 23.5,
+    "summary": "Weak: stops dominate (59% stopped, 35% reached target)."
+  }
+}

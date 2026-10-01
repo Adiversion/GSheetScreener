@@ -7,13 +7,13 @@
 
 ## Repository Purpose
 
-This is a **weekly NSE stock screener** for a ₹1,000 compounding strategy.
+This is a **weekday NSE stock screener** for a ₹1,000 compounding strategy.
 A Zerodha trader runs this fully from their Android phone.
 
 **The system is intentionally simple**:
-- One Python script runs on GitHub Actions every Friday
-- Results go to Google Sheets
-- A PWA app reads Google Sheets and shows the trade
+- One Python script runs on GitHub Actions after each session
+- The engine writes plain JSON into `app/data/` (no database, no Google Sheets)
+- A PWA app reads that static JSON and shows the trade
 - Zerodha Kite places the GTT order (one tap or auto via API)
 
 ---
@@ -23,138 +23,166 @@ A Zerodha trader runs this fully from their Android phone.
 > If you're asked to modify something, find it here first.
 
 ```
-STRATEGY LOGIC        → src/data_pump.py        (Python)
-APP UI                → app/js/app.js            (Vanilla JS, 1000+ lines)
+STRATEGY LOGIC        → src/quant_engine.py      (Python — read-only reference)
+EXIT / ROTATION       → src/trade_lifecycle.py   (Python state machine)
+CREDIBILITY BACKTEST  → scripts/single_stock_backtest.py
+APP UI                → app/js/app.js            (Vanilla JS)
 APP STYLING           → app/css/style.css        (CSS variables, mobile-first)
 APP SHELL             → app/index.html           (4-tab structure)
-SCREENER SCHEDULE     → .github/workflows/run_screener.yml
-APP DEPLOYMENT        → .github/workflows/deploy_app.yml
-ANDROID BUILD         → .github/workflows/build_android.yml
-SHEETS AUTO-SETUP     → scripts/setup_sheets.py  (run once)
+SCREENER SCHEDULE     → ../../.github/workflows/run_screener.yml   (repo root)
+APP DEPLOYMENT        → ../../.github/workflows/deploy_app.yml      (repo root)
+ANDROID BUILD         → ../../.github/workflows/build_android.yml   (repo root)
 ANDROID TWA CONFIG    → android/twa-manifest.json
 ASSET LINKS           → app/.well-known/assetlinks.json
+TESTS                 → tests/test_trade_lifecycle.py, tests/test_single_stock_backtest.py
 ```
+
+> Note: GitHub Actions only reads workflows from the **repository root**
+> (`.github/workflows/`), which is one level above `nse-momentum-engine/`.
 
 ---
 
 ## Critical Rules — Do Not Break
 
-1. **Signal tab schema is fixed** — The PWA reads a published CSV from this tab. If you change column order or names in `write_signal_tab()`, you MUST also update `parseCSV` mapping in `app/js/app.js`. Columns: `STATUS, TIMESTAMP, SYMBOL, CMP, CMS_SCORE, ROC_1M, ROC_2M, ROC_3M, RSI_14, SMA_50, SMA_200, ATR_14, HIGH_52W, SHARES, CAPITAL_REQUIRED, INITIAL_STOP, M1_TARGET, M1_STOP, M2_TARGET, M2_STOP, M3_TARGET, CAPITAL_BASE, TOTAL_QUALIFIED`
+1. **The engine output schema is the contract** — The PWA reads
+   `app/data/signal.json`. If you change a field name or type in the engine, you
+   MUST update the corresponding read in `app/js/app.js`. Key fields:
+   `SYMBOL, CMP, CMS_SCORE, ROC_1M, ROC_2M, ROC_3M, RSI_14, SMA_50, SMA_150,
+   SMA_200, ATR_14, ATR_PCT, HIGH_52W, TURNOVER_CRORES, CIRCUIT_BAND,
+   INITIAL_STOP, M1_TARGET, M2_TARGET`.
 
-2. **`append_to_rawdata()` must stay idempotent** — It checks if the date already exists before inserting. Never remove this check or the sheet will get duplicate rows on re-runs.
+2. **`src/quant_engine.py` is the source of truth and is treated as read-only**
+   for feature work — the backtest tool and lifecycle reference it but never
+   import or mutate it. Change it only with explicit intent, and re-run the
+   tests afterwards.
 
-3. **`MAX_PRICE = CAPITAL_BASE - 26`** — The 26 buffer accounts for DP charges + STT + rounding. Changing this math breaks position sizing.
+3. **The app has zero external JS dependencies** — Never add npm packages, CDN
+   scripts, or build steps to the app. It must work as plain static files.
 
-4. **The app has zero external JS dependencies** — Never add npm packages, CDN scripts, or build steps to the app. It must work as plain static files.
+4. **Service worker cache name** — If you change `app/css/style.css` or
+   `app/js/app.js`, bump the cache version in `app/sw.js`
+   (`const CACHE_NAME = 'nse-signal-vN'` → increment N).
 
-5. **Service worker cache name** — If you change `app/css/style.css` or `app/js/app.js` significantly, bump the cache version in `app/sw.js`: `const CACHE_NAME = 'nse-signal-v2'` (increment v1 → v2).
+5. **NSE Bhavcopy User-Agent** — The NSE server blocks requests without a
+   proper User-Agent. Always keep a browser-like `User-Agent` header.
 
-6. **NSE Bhavcopy User-Agent** — The NSE server blocks requests without a proper User-Agent. Always keep `"User-Agent": "Mozilla/5.0 (compatible; NSE-Screener/2.0)"` in the headers.
+6. **Rotation semantics** — `TradeLifecycleManager(rotation_target_pct=0.15)`
+   sells the whole position at +15%. Passing `None` keeps the legacy two-tier
+   behaviour. Do not silently change the default.
 
 ---
 
 ## Common Tasks
 
-### Task: Change a strategy parameter (e.g., stop from -7% to -8%)
+### Task: Change a strategy parameter (e.g. the +15% target)
 
-Edit `src/data_pump.py`:
-```python
-STOP_PCT = 0.08   # line ~32
-```
-The GTT output values auto-recalculate. No other files need changing.
+The rotation target lives in `src/trade_lifecycle.py` (the `rotation_target_pct`
+parameter) and in the backtest defaults in `scripts/single_stock_backtest.py`
+(`DEFAULTS["target_pct"]`). The terminal copy in `app/js/app.js`
+(`m1Target = entry * 1.15`) must be kept in sync.
 
 ### Task: Add a new filter
 
-In `src/data_pump.py`, inside `screen_symbol()`:
-```python
-# Add after existing filters, before CMS calculation
-your_value = compute_something(df)
-if your_value < THRESHOLD:
-    return None
-```
-Also update `docs/ARCHITECTURE.md` filter stack table.
+In `src/quant_engine.py`, inside the screening pass, add the condition before
+the CMS ranking. Also update the filter table in `docs/ARCHITECTURE.md` and the
+README "Strategy Logic" section.
 
-### Task: Add a new column to the Signal tab output
+### Task: Add a new column to the screener grid
 
-1. In `data_pump.py` → `screen_symbol()` → add to returned dict
-2. In `data_pump.py` → `SIGNAL_COLS` list → append new column name
-3. In `app/js/app.js` → find where signal columns are read → add display logic
-4. Update `docs/ARCHITECTURE.md` Signal Tab schema table
+1. Ensure the field is emitted per stock in `app/data/signal.json`
+2. `app/index.html` → add a `<th class="num col-X" data-sort="X">`
+3. `app/js/app.js` → add the `<td class="num col-X">` in `buildGridRow()` and a
+   getter in `renderAllStocksTable()`
+4. `app/css/style.css` → add a column-priority media query and, if needed, the
+   mobile `display: flex` list
+5. Bump the service worker cache version
 
 ### Task: Add a new app tab
 
-1. `app/index.html` → add `<section class="tab-panel" id="tabNEW">` 
-2. `app/index.html` → add nav item in `<nav class="bottom-nav">`
-3. `app/js/app.js` → add `renderNEW()` function
-4. `app/js/app.js` → in `switchTab()` add case for new tab
-5. `app/css/style.css` → add any new component styles
+1. `app/index.html` → add `<section class="tab-panel" id="tabNEW">`
+2. `app/index.html` → add a nav item in `<nav class="bottom-nav">`
+3. `app/js/app.js` → add `renderNEW()` and a `switchTab()` case
+4. `app/css/style.css` → add any new component styles
 
-### Task: Update the Google Sheets setup
+### Task: Regenerate the credibility index
 
-Edit `scripts/setup_sheets.py`. Run with:
 ```bash
-python scripts/setup_sheets.py --creds path/to/creds.json
+python scripts/single_stock_backtest.py --all            # full re-run (network)
+python scripts/single_stock_backtest.py --rebuild-index   # offline, from existing reports
 ```
-The script is idempotent — safe to re-run on existing sheets.
+
+`--rebuild-index` reads every `app/data/backtests/<SYMBOL>.json` and rebuilds
+`_index.json` (best score first) without touching the network.
 
 ### Task: Trigger a build
 
-- **Screener**: GitHub → Actions → Weekly NSE Momentum Screener → Run workflow
-- **App deploy**: Push any change to `app/` on main branch
+- **Screener**: GitHub → Actions → Daily NSE Momentum Screener → Run workflow
+- **App deploy**: Push any change on the main branch
 - **Android APK**: GitHub → Actions → Build Android App → Run workflow
 
 ---
 
 ## Data Types Reference
 
-### Signal dict returned by `screen_symbol()`
+### Per-stock dict in `signal.json → all_qualified`
+
 ```python
 {
-    "STATUS":           "ACTIVE_SIGNAL",   # str
-    "SYMBOL":           "RELIANCE",        # str (no .NS suffix)
-    "CMP":              2850.45,           # float
-    "CMS_SCORE":        72.31,             # float
-    "ROC_1M":           "+4.23%",          # str (formatted)
-    "ROC_2M":           "+8.11%",          # str
-    "ROC_3M":           "+18.50%",         # str
-    "RSI_14":           58.2,              # float
-    "SMA_50":           2740.10,           # float
-    "SMA_200":          2480.30,           # float
-    "ATR_14":           62.5,              # float
-    "HIGH_52W":         2920.00,           # float
-    "SHARES":           0,                 # int (filled in main())
-    "CAPITAL_REQUIRED": 0.0,               # float (filled in main())
-    "INITIAL_STOP":     2725.45,           # float
-    "M1_TARGET":        3277.02,           # float
-    "M1_STOP":          2921.71,           # float
-    "M2_TARGET":        3705.59,           # float
-    "M2_STOP":          3277.02,           # float
-    "M3_TARGET":        4275.68,           # float
-    "CAPITAL_BASE":     1000.0,            # float
-    "TOTAL_QUALIFIED":  0,                 # int (filled after all screening)
+    "SYMBOL":            "RELIANCE",   # str (no .NS suffix)
+    "CMP":               2850.45,      # float
+    "CMS_SCORE":         72.31,        # float (0–100 percentile composite)
+    "ROC_1M":            4.23,         # float (percent)
+    "ROC_2M":            8.11,
+    "ROC_3M":            18.50,
+    "RSI_14":            58.2,         # float
+    "SMA_50":            2740.10,
+    "SMA_150":           2600.00,
+    "SMA_200":           2480.30,
+    "ATR_14":            62.5,
+    "ATR_PCT":           2.19,         # float
+    "HIGH_52W":          2920.00,
+    "TURNOVER_CRORES":   82.0,         # float (20-day avg turnover ₹ Cr)
+    "CIRCUIT_BAND":      20,           # int (percent)
+    "INITIAL_STOP":      2725.45,
+    "M1_TARGET":         3277.02,      # +15% rotation target
+    "M2_TARGET":         3705.59,
+    "M3_TARGET":         4275.68,
+    "IS_PRIME":          True,         # bool
 }
 ```
 
-### Config dict returned by `read_config()`
+### `app/data/backtests/<SYMBOL>.json`
+
 ```python
 {
-    "capital_base": 1000.0,   # from Config!B2
-    "min_price":    100.0,    # fixed
-    "max_price":    974.0,    # = capital_base - 26
+    "symbol": "CUPID",
+    "generated_at": "2026-09-30T…Z",
+    "period": {"start": "2023-09-29", "end": "2026-09-30", "bars": 750},
+    "pace": "fast",                     # fast | medium | slow | unknown
+    "params": {"capital": 1000.0, "target_pct": 15.0, "…": "…"},
+    "study": {
+        "observations": 26,
+        "target_hit_rate_pct": 61.5,
+        "stop_hit_rate_pct": 12.0,
+        "expectancy_pct": 6.75,
+        "time_to_target": {"trading_days": {"median": 8.0, "…": "…"}, "…": "…"},
+    },
+    "simulation": {"cycles": 26, "final_capital": 1449.0, "…": "…"},
+    "verdict": {"credible": True, "score": 58.5, "summary": "…"},
 }
 ```
 
 ### localStorage keys in app.js
+
 ```javascript
-'nse_sheet_url'         // Google Sheets published CSV URL
 'nse_capital_base'      // Starting capital (₹)
 'nse_current_capital'   // Current running capital after exits
 'nse_capital_history'   // Array of {date, capital} for chart
 'nse_signal_history'    // Array of past trades
-'nse_last_signal'       // {rows, fetchedAt} for offline fallback
+'nse_last_signal'       // {rows, payload, fetchedAt} for offline fallback
 'nse_kite_api_key'      // Kite Connect API key
 'nse_kite_access_token' // Kite access token (daily expiry)
-'nse_active_gtts'       // Array of {symbol, gttId, ...} for placed GTTs
+'nse_active_gtts'       // Array of {symbol, gttId, …} for placed GTTs
 ```
 
 ---
@@ -162,58 +190,68 @@ The script is idempotent — safe to re-run on existing sheets.
 ## Coding Conventions
 
 ### Python (`src/`, `scripts/`)
-- Functions are standalone (no class instances except gspread objects)
-- All config at top of file as module-level constants
+- Functions are standalone; configuration lives as module-level constants
 - Progress printed with emoji prefixes: `[INFO]`, `[WARN]`, `[ERROR]`
-- Error handling: individual symbol failures are caught and skipped; critical failures (no sheets connection, no bhavcopy) raise and fail the job
+- Individual symbol failures are caught and skipped; critical failures (no
+  bhavcopy, no data) raise and fail the job
 - All monetary values stored as `float`, formatted only at output time
-- Timezone: always use IST (`timezone(timedelta(hours=5, minutes=30))`) — never UTC for display
+- Timezone: always use IST (`timezone(timedelta(hours=5, minutes=30))`) for display
 
 ### JavaScript (`app/js/app.js`)
 - Strict mode (`'use strict'` at top)
-- State object is module-level `state = {...}`
+- Module-level `state = {...}` object
 - `store` object wraps localStorage (handles JSON parse/stringify)
-- All DOM IDs are camelCase: `btnRefresh`, `signalContent`, `gttBody`
+- DOM IDs are camelCase: `btnRefresh`, `signalContent`, `gttBody`
 - Toast system: `showToast(message, 'success'|'warn'|'error'|'info')`
-- No `console.log` in production paths (use `console.error` for caught exceptions)
+- The V2 render layer is appended at the end of the file; later function
+  declarations supersede earlier ones
 
 ### CSS (`app/css/style.css`)
-- All colors via CSS variables defined in `:root`
-- Mobile-first (`min-width` media queries for any desktop overrides)
-- Transitions use `var(--transition)` = `0.22s cubic-bezier(.4,0,.2,1)`
+- All colors via CSS variables in `:root`
+- Mobile-first (`min-width` media queries for desktop overrides)
+- Column priority: highest-value columns stay visible on narrow grids
 
 ---
 
 ## Testing Checklist (Before Committing)
 
-- [ ] `python src/data_pump.py` — does it run without errors? (needs real creds)
-- [ ] `python scripts/setup_sheets.py --creds ...` — does it create/update tabs?
+- [ ] `python tests/test_trade_lifecycle.py` — lifecycle + rotation exits pass
+- [ ] `python tests/test_single_stock_backtest.py` — backtester + index pass
+- [ ] `node --check app/js/app.js` — no syntax errors
 - [ ] Open `app/index.html` via `python -m http.server` → does the app load?
-- [ ] Signal tab with `STATUS=CASH` → does app show cash state correctly?
-- [ ] Signal tab with `STATUS=ACTIVE_SIGNAL` → do GTT levels render?
-- [ ] `app/manifest.json` — is `start_url` still correct relative path?
+- [ ] `STATUS=CASH` signal → does the app show the cash state correctly?
+- [ ] `STATUS=ACTIVE_SIGNAL` signal → do GTT levels render?
+- [ ] Credibility panel loads `data/backtests/<SYMBOL>.json` for a selected stock
+- [ ] `app/manifest.json` — is `start_url` correct relative path?
 - [ ] `android/twa-manifest.json` — is `YOUR_GITHUB_USERNAME` replaced?
-- [ ] `app/.well-known/assetlinks.json` — is SHA-256 fingerprint filled in?
+- [ ] `app/.well-known/assetlinks.json` — is the SHA-256 fingerprint filled in?
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: Why is there both `engine.py` and `data_pump.py`?**
-A: `engine.py` was the original yfinance-based implementation. `data_pump.py` is the current production version using NSE Bhavcopy + Google Sheets. `engine.py` is kept for reference only — do not use it in workflows.
+**Q: Why is there both `engine.py` and `quant_engine.py`?**
+A: `engine.py` was the original yfinance-based implementation. `quant_engine.py`
+is the current production engine (Bhavcopy + rolling history + CMS). `engine.py`
+is kept for reference only — do not use it in workflows.
 
-**Q: The screener runs but writes CASH — why?**
-A: This happens when `build_symbol_history()` has < 250 data points per symbol. The first 5 months of running will have this issue as history accumulates. After 250 Fridays (~5 years) every stock has full history. Realistically, after 50 Fridays (~1 year) most liquid stocks pass.
+**Q: The screener writes CASH — why?**
+A: Either the market regime is `DEFENSIVE_CASH` (Nifty 500 below its 200-DMA),
+or no stock passed the Stage-2 filter stack. Early on, limited rolling history
+also means fewer symbols qualify.
 
 **Q: Can I add more assets (F&O, BSE)?**
-A: BSE Bhavcopy is at `bseindia.com/download/BhavCopy/Equity/EQ{DDMMYYYY}_CSV.ZIP`. For F&O, NSE archives have separate Bhavcopy files. Keep them in separate tabs in Google Sheets.
+A: BSE Bhavcopy is at `bseindia.com/download/BhavCopy/Equity/EQ{DDMMYYYY}_CSV.ZIP`.
+For F&O, NSE archives have separate Bhavcopy files. Add a separate data source
+and an `app/data/` output — do not put them in the same signal file.
 
 **Q: The PWA doesn't install on Android — why?**
 A: Check:
 1. Site is HTTPS (GitHub Pages = yes)
-2. `manifest.json` is linked in `<head>` with correct path
-3. Service worker is registered without errors (Chrome DevTools → Application → Service Workers)
-4. User has spent >30 seconds on the page OR you're using the `beforeinstallprompt` button in Settings
+2. `manifest.json` is linked in `<head>` with the correct path
+3. Service worker registers without errors (Chrome DevTools → Application → Service Workers)
+4. The user has spent >30 seconds on the page, or uses the install button
 
 **Q: Auto-GTT fails with "Invalid token"?**
-A: The Kite access token expires at midnight IST daily. User must paste a fresh token in Settings. The app shows this clearly in the kiteStatus div.
+A: The Kite access token expires at midnight IST daily. The user must paste a
+fresh token in Settings. The app shows this clearly in the kite status area.

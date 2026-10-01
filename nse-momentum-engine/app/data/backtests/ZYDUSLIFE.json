@@ -1,0 +1,77 @@
+{
+  "symbol": "ZYDUSLIFE",
+  "generated_at": "2026-10-01T02:32:18Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-30",
+    "bars": 744
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 110,
+    "target_hits": 0,
+    "stop_hits": 73,
+    "timeouts": 37,
+    "target_hit_rate_pct": 0.0,
+    "stop_hit_rate_pct": 66.4,
+    "expectancy_pct": -2.35,
+    "avg_hold_to_target_days": null,
+    "avg_hold_to_stop_days": 17.2,
+    "median_return_pct": -5.0,
+    "p10_return_pct": -5.77,
+    "p90_return_pct": 5.1,
+    "avg_stop_distance_pct": 5.26,
+    "time_to_target": {
+      "target_count": 0,
+      "trading_days": null,
+      "calendar_days": null,
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 0,
+        "6-10d (\u22642 weeks)": 0,
+        "11-21d (\u22641 month)": 0,
+        "22-42d (\u22642 months)": 0,
+        ">42d (slow)": 0
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 1,
+    "final_capital": 933.47,
+    "total_return_pct": -6.65,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown_pct": -6.65,
+    "avg_cycle_days": 13.0,
+    "cagr_pct": null,
+    "target_exits": 0,
+    "stop_exits": 1,
+    "deadline_exits": 0,
+    "trades": [
+      {
+        "entry_date": "2025-07-21",
+        "exit_date": "2025-08-07",
+        "entry_price": 974.0,
+        "exit_price": 925.3,
+        "shares": 1,
+        "pnl": -66.53,
+        "pnl_pct": -6.82,
+        "hold_days": 13,
+        "reason": "stop",
+        "capital_after": 933.47
+      }
+    ]
+  },
+  "verdict": {
+    "credible": false,
+    "score": 0.0,
+    "summary": "Weak: stops dominate (66% stopped, 0% reached target)."
+  }
+}

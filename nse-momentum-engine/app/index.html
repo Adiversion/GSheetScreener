@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, viewport-fit=contain" />
-  <meta name="theme-color" content="#090D14" />
-  <meta name="description" content="NSE Institutional Momentum Terminal – Stage-2 Breakouts & Two-Tier GTT Engine" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0E14" />
+  <meta name="description" content="NSE Institutional Momentum Terminal — Stage-2 breakouts, risk-sized GTT execution & compounding ledger" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -17,686 +17,702 @@
 </head>
 <body>
 
-<!-- ════════════ TOPBAR / COMMAND BAR ════════════ -->
-<header class="app-header">
-  <div class="header-inner">
-    <!-- Brand / Logo -->
-    <div class="header-logo">
-      <div class="logo-icon">📈</div>
-      <div>
-        <span class="logo-text">NSE SIGNAL</span>
-        <span class="logo-sub">QUANT TERMINAL V2</span>
-      </div>
+<!-- ════════════════════ ICON SPRITE ════════════════════ -->
+<svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-terminal" viewBox="0 0 24 24"><path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 9l3 3-3 3M13 15h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-portfolio" viewBox="0 0 24 24"><path d="M3 7h18v12H3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="9" cy="17" r="2" fill="currentColor"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 8h6M9 12h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13h6l-1 8 8-10h-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 15l4-5 3 3 5-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v6l-4 2v-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l9 16H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v4M12 16.5v.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M8 11l4 4 4-4M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5M5 9v9M19 9v9M3 20h18M9 12v6M15 12v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 5v14M8 19l-3-3M16 19V5M16 5l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="app-shell">
+
+  <!-- ════════════════════ APP BAR ════════════════════ -->
+  <header class="app-bar">
+    <div class="app-bar__brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 18l5-6 4 3 7-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">NSE Signal</span>
+        <span class="brand-sub">Momentum Terminal</span>
+      </span>
     </div>
 
-    <!-- Desktop Navigation Tabs (Visible on >=768px) -->
-    <nav class="desktop-nav" role="tablist" aria-label="Terminal Navigation">
-      <button class="desktop-tab-btn active" data-tab="Signal">
-        <span class="tab-icon">📡</span>
-        <span class="tab-label">Terminal</span>
+    <!-- Primary navigation (desktop / tablet) -->
+    <nav class="app-nav" role="tablist" aria-label="Primary">
+      <button class="desktop-tab-btn active" data-tab="Signal" role="tab" aria-selected="true">
+        <svg class="ic" aria-hidden="true"><use href="#i-terminal"/></svg><span class="tab-label">Terminal</span>
       </button>
-      <button class="desktop-tab-btn" data-tab="Portfolio">
-        <span class="tab-icon">💼</span>
-        <span class="tab-label">Portfolio</span>
+      <button class="desktop-tab-btn" data-tab="Portfolio" role="tab" aria-selected="false">
+        <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg><span class="tab-label">Portfolio</span>
       </button>
-      <button class="desktop-tab-btn" data-tab="History">
-        <span class="tab-icon">📋</span>
-        <span class="tab-label">History</span>
+      <button class="desktop-tab-btn" data-tab="History" role="tab" aria-selected="false">
+        <svg class="ic" aria-hidden="true"><use href="#i-history"/></svg><span class="tab-label">History</span>
       </button>
-      <button class="desktop-tab-btn" data-tab="Settings">
-        <span class="tab-icon">⚙️</span>
-        <span class="tab-label">Settings</span>
+      <button class="desktop-tab-btn" data-tab="Settings" role="tab" aria-selected="false">
+        <svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg><span class="tab-label">Settings</span>
       </button>
     </nav>
 
-    <!-- Live Regime Ticker Ribbon (Center) -->
-    <div class="header-regime" id="headerRegimeTicker">
-      <span class="regime-dot"></span>
-      <span id="headerRegimeText">Nifty 500: Syncing...</span>
+    <!-- Benchmark ticker (wide screens only) -->
+    <div class="header-regime" id="headerRegimeTicker" aria-live="polite">
+      <span class="regime-dot" aria-hidden="true"></span>
+      <span id="headerRegimeText">Nifty 500 · syncing…</span>
     </div>
 
-    <!-- Quick Global Search Bar (Desktop) -->
-    <div class="header-search-wrap">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="globalStockSearch" class="header-search-input" placeholder="Search 46 leaders (e.g. CUPID, EMIL)..." autocomplete="off" />
-      <span class="search-kbd">/</span>
+    <!-- Global leader search -->
+    <div class="global-search">
+      <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+      <input type="search" id="globalStockSearch" class="global-search__input"
+             placeholder="Search leaders (CUPID, EMIL…)" autocomplete="off"
+             aria-label="Search momentum leaders" />
+      <kbd class="kbd" aria-hidden="true">/</kbd>
     </div>
 
-    <!-- Right Controls -->
-    <div class="header-right">
-      <div class="offline-badge" id="offlineBadge">
-        <span class="dot"></span>
+    <!-- Utility actions -->
+    <div class="app-bar__actions">
+      <span class="conn-badge" id="offlineBadge" title="Connection status">
+        <span class="conn-dot" aria-hidden="true"></span>
         <span id="offlineText">Online</span>
-      </div>
-      <button class="btn-guide" id="btnOpenGlossary" title="Strategy Guide & Terminology" aria-label="Strategy Guide and Terminology">
-        <span class="guide-icon" aria-hidden="true">📖</span>
-        <span class="guide-label">Guide</span>
+      </span>
+      <button class="icon-btn" id="btnOpenGlossary" title="Strategy guide & glossary" aria-label="Strategy guide and glossary">
+        <svg class="ic" aria-hidden="true"><use href="#i-book"/></svg>
       </button>
-      <button class="btn-refresh" id="btnRefresh" title="Refresh data" aria-label="Refresh">🔄</button>
+      <button class="icon-btn" id="btnRefresh" title="Refresh data" aria-label="Refresh data">
+        <svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg>
+      </button>
     </div>
+  </header>
+
+  <!-- ════════════════════ MACRO REGIME DECISION BAR ════════════════════ -->
+  <div class="regime-bar" id="regimeBanner" role="status" aria-live="polite">
+    <span class="regime-pulse" aria-hidden="true"></span>
+    <span class="badge" id="regimeBadge">—</span>
+    <span class="regime-bar__main">
+      <strong class="regime-bar__title" id="regimeTitle">Market regime syncing…</strong>
+      <span class="regime-bar__desc" id="regimeDesc">Awaiting today's screening run.</span>
+    </span>
+    <span class="regime-bar__decision" id="regimeDecision">—</span>
+    <span class="regime-bar__bench" id="regimeBench"></span>
   </div>
-</header>
 
-<!-- ════════════ MAIN CONTENT ════════════ -->
-<main class="app-main">
+  <!-- ════════════════════ MAIN ════════════════════ -->
+  <main class="app-main">
 
-  <!-- ── Signal / Terminal Tab ── -->
-  <section class="tab-panel active" id="tabSignal">
+    <!-- ─────────── TERMINAL ─────────── -->
+    <section class="tab-panel active" id="tabSignal">
 
-    <!-- Loading Skeleton -->
-    <div id="signalSkeleton">
-      <div class="skeleton skel-hero"></div>
-      <div class="skeleton skel-card"></div>
-      <div class="skeleton skel-card"></div>
-    </div>
-
-    <div id="signalContent" style="display:none">
-
-      <!-- ════════════ UNIFIED TERMINAL CONTROL RIBBON ════════════ -->
-      <div class="terminal-ribbon" id="terminalRibbon">
-        <!-- Session Switcher Segment -->
-        <div class="ribbon-segment session-segment" id="sessionCard">
-          <span class="ribbon-label">📅 Session:</span>
-          <div id="sessionPills" class="session-pills-row">
-            <!-- JS populates session dates -->
-          </div>
-          <div id="bhavcopyPendingNotice" style="display:none" class="bhav-notice">
-            ⏳ <strong>Compiling:</strong> Fallback to prev session
-          </div>
-        </div>
-
-        <div class="ribbon-divider"></div>
-
-        <!-- Position Sizing & Capital Segment -->
-        <div class="ribbon-segment capital-segment" id="capitalControllerCard">
-          <div class="capital-input-group">
-            <span class="ribbon-label">💰 Sizing Capital:</span>
-            <div class="capital-input-wrapper">
-              <span class="currency-prefix">₹</span>
-              <input type="number" id="inputUserCapital" class="capital-input" value="1000" min="100" step="500" placeholder="1000" />
-            </div>
-            <button id="btnApplyCapital" class="btn-capital-apply">Set</button>
-            <span id="capitalModeBadge" class="badge badge-risk">1% Risk Sizing</span>
-          </div>
-          <div class="preset-pills-row">
-            <button class="pill-preset active" data-cap="1000">₹1K</button>
-            <button class="pill-preset" data-cap="2500">₹2.5K</button>
-            <button class="pill-preset" data-cap="5000">₹5K</button>
-            <button class="pill-preset" data-cap="10000">₹10K</button>
-            <button class="pill-preset" data-cap="25000">₹25K</button>
-            <button class="pill-preset" data-cap="50000">₹50K</button>
-          </div>
-        </div>
-
-        <div class="ribbon-divider"></div>
-
-        <!-- Macro Regime Alert Segment -->
-        <div class="ribbon-segment regime-segment" id="regimeBanner" style="display:none">
-          <div class="regime-status-chip">
-            <span class="regime-pulse-dot"></span>
-            <span id="regimeBadge" class="badge">–</span>
-            <strong id="regimeTitle">–</strong>
-          </div>
-          <div id="regimeDesc" class="regime-desc-text">–</div>
-        </div>
+      <!-- Loading skeleton -->
+      <div class="skeleton-shell" id="signalSkeleton">
+        <div class="skeleton sk-provider"></div>
+        <div class="skeleton sk-bar"></div>
+        <div class="skeleton sk-row"></div>
+        <div class="skeleton sk-row"></div>
+        <div class="skeleton sk-row"></div>
+        <div class="skeleton sk-row"></div>
+        <div class="skeleton sk-row"></div>
       </div>
 
-      <!-- Hidden hook for totalQualified -->
-      <div id="qualBanner" style="display:none"><span id="totalQualified"></span></div>
+      <div class="workspace" id="signalContent" hidden>
 
-      <!-- ════════════ TWO-COLUMN TERMINAL WORKSPACE ════════════ -->
-      <div class="terminal-grid" id="signalHeroGrid">
+        <div class="workspace__grid">
 
-        <!-- ── LEFT COLUMN: TRADE STUDIO & GTT ENGINE (~60%) ── -->
-        <div class="studio-col">
-
-          <!-- Hero Active Signal Card -->
-          <div class="card signal-hero" id="heroCard">
-            <!-- Populated dynamically by JS -->
-          </div>
-
-          <!-- Technical & Momentum Indicator Matrix -->
-          <div class="card tech-matrix-card" id="rsiCard" style="display:none">
-            <div class="card-title">
-              <span>📊 Institutional Technical Matrix</span>
-              <span class="badge badge-accent">Stage-2 Validated</span>
-            </div>
-
-            <div class="tech-matrix-grid">
-              <!-- Tile 1: RSI Sweet Zone Meter -->
-              <div class="tech-tile">
-                <div class="tile-label">RSI (14) MOMENTUM</div>
-                <div class="rsi-linear-meter">
-                  <div class="rsi-value-big" id="rsiValueLabel">–</div>
-                  <div class="rsi-track">
-                    <div class="rsi-zone zone-oversold" title="Oversold (<45)"></div>
-                    <div class="rsi-zone zone-sweet" title="Institutional Sweet Zone (45–82)"></div>
-                    <div class="rsi-zone zone-overbought" title="Exhaustion (>82)"></div>
-                    <div class="rsi-marker" id="rsiMarker"></div>
-                  </div>
-                  <div class="rsi-legend">
-                    <span>45 Sweet Zone</span>
-                    <span>82</span>
-                  </div>
-                </div>
-                <!-- Hidden SVG for backward compat with existing JS needle -->
-                <svg id="rsiSvgHidden" style="display:none"><line id="rsiNeedle"></line></svg>
+          <!-- ══ MASTER: SCREENER GRID ══ -->
+          <section class="pane grid-pane" id="allStocksCard" aria-label="Stage-2 leaders screener">
+            <header class="pane__head">
+              <div class="pane__title">
+                <h2>Stage-2 Leaders</h2>
+                <span class="badge badge--brand" id="allStocksCountBadge">0 Leaders</span>
               </div>
 
-              <!-- Tile 2: Rate of Change (ROC) -->
-              <div class="tech-tile">
-                <div class="tile-label">RATE OF CHANGE (SPEED)</div>
-                <div class="roc-row" id="rocRow">
-                  <!-- Populated by JS -->
+              <!-- Session switcher -->
+              <div class="session-switch" id="sessionCard">
+                <span class="field-label">Session</span>
+                <div class="session-pills" id="sessionPills" role="group" aria-label="Trading session"></div>
+                <span id="bhavcopyPendingNotice" class="bhav-pending" hidden>Compiling bhavcopy — using previous session</span>
+              </div>
+
+              <!-- Capital controller -->
+              <div class="capital-ctl">
+                <label class="field" for="inputUserCapital">
+                  <span class="field-label">Sizing capital</span>
+                  <span class="input-affix">
+                    <span class="affix">₹</span>
+                    <input type="number" id="inputUserCapital" class="num-input" value="1000" min="100" step="500" inputmode="numeric" />
+                  </span>
+                </label>
+                <button id="btnApplyCapital" class="btn btn--sm btn--ghost">Apply</button>
+                <div class="preset-row">
+                  <button class="chip chip--sm pill-preset active" data-cap="1000">₹1K</button>
+                  <button class="chip chip--sm pill-preset" data-cap="2500">₹2.5K</button>
+                  <button class="chip chip--sm pill-preset" data-cap="5000">₹5K</button>
+                  <button class="chip chip--sm pill-preset" data-cap="10000">₹10K</button>
+                  <button class="chip chip--sm pill-preset" data-cap="25000">₹25K</button>
+                  <button class="chip chip--sm pill-preset" data-cap="50000">₹50K</button>
                 </div>
               </div>
+            </header>
 
-              <!-- Tile 3: Moving Averages (SEPA Template) -->
-              <div class="tech-tile">
-                <div class="tile-label">MOVING AVERAGE ALIGNMENT</div>
-                <div class="sma-row" id="smaRow">
-                  <!-- Populated by JS -->
-                </div>
+            <!-- Toolbar: search + filters -->
+            <div class="pane__toolbar">
+              <div class="search-field">
+                <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+                <input type="search" id="screenerSearchInput" class="search-field__input"
+                       placeholder="Filter by symbol…" autocomplete="off" aria-label="Filter leaders by symbol" />
+                <button id="btnClearSearch" class="search-field__clear" hidden title="Clear" aria-label="Clear search">
+                  <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+                </button>
               </div>
 
-              <!-- Tile 4: Liquidity & Volatility -->
-              <div class="tech-tile">
-                <div class="tile-label">LIQUIDITY & RISK SPECS</div>
-                <div class="liquidity-specs" id="liquiditySpecs">
-                  <div class="spec-item">
-                    <span class="spec-k">20d Turnover:</span>
-                    <strong class="spec-v" id="specTurnover">₹5.0+ Cr</strong>
-                  </div>
-                  <div class="spec-item">
-                    <span class="spec-k">Daily ATR:</span>
-                    <strong class="spec-v" id="specATR">–</strong>
-                  </div>
-                  <div class="spec-item">
-                    <span class="spec-k">Circuit Band:</span>
-                    <strong class="spec-v" id="specCircuit">20%</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Two-Tier Institutional GTT Order Studio -->
-          <div class="card gtt-card" id="gttCard" style="display:none">
-            <div class="card-header-row">
-              <div class="card-title" style="margin-bottom:0;">
-                <span>🎯 Two-Tier GTT Execution Order</span>
-              </div>
-              <span id="gttEntryBasisBadge" class="badge badge-accent">Based on CMP</span>
-            </div>
-
-            <!-- Interactive Actual Entry Price (Gap-Up) Controller -->
-            <div class="entry-price-box">
-              <div class="entry-price-header">
-                <span class="entry-price-title">⚡ Actual Fill / Entry Price (Market Open Gap)</span>
-                <span id="gapBadge" class="badge">0.0% Flat</span>
-              </div>
-              <div class="entry-input-group">
-                <div class="entry-input-wrapper">
-                  <span class="currency-prefix">₹</span>
-                  <input type="number" id="inputActualEntry" class="actual-entry-input" step="0.05" min="1" placeholder="CMP" />
-                </div>
-                <button id="btnResetEntry" class="btn-reset-entry">Reset CMP</button>
-              </div>
-              <!-- Quick Gap Presets -->
-              <div class="gap-pills-row">
-                <button class="pill-gap active" data-gap="0">0% Flat</button>
-                <button class="pill-gap" data-gap="1">+1% Gap</button>
-                <button class="pill-gap" data-gap="2">+2% Gap</button>
-                <button class="pill-gap" data-gap="3">+3% Max Chase</button>
-              </div>
-              <div id="gapAdviceBox" class="gap-advice-box">
-                🟢 <strong>Ideal Entry:</strong> Opening within 0–3% of CMP preserves optimal institutional risk-reward.
+              <div class="filter-chips" id="screenerFilterChips" role="group" aria-label="Quick filters">
+                <button class="chip filter-chip active" data-filter="all">All</button>
+                <button class="chip filter-chip" data-filter="prime">Prime</button>
+                <button class="chip filter-chip" data-filter="sweet_rsi">Sweet RSI</button>
+                <button class="chip filter-chip" data-filter="affordable">Affordable</button>
+                <button class="chip filter-chip" data-filter="circuit_safe">Circuit-safe</button>
+                <button class="chip filter-chip" data-filter="strong_trend">Strong trend</button>
               </div>
             </div>
 
-            <!-- GTT Execution Table -->
-            <div class="table-scroll-container">
-              <table class="gtt-table">
+            <!-- Data grid -->
+            <div class="table-wrap">
+              <table class="data-grid" role="table" aria-label="Ranked momentum leaders">
                 <thead>
                   <tr>
-                    <th>Milestone</th>
-                    <th>Target ₹</th>
-                    <th>Stop ₹</th>
-                    <th>Change</th>
-                  </tr>
-                </thead>
-                <tbody id="gttBody">
-                  <!-- Populated by JS -->
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Position Sizing Pills -->
-            <div class="trade-pill-row" id="tradePills">
-              <!-- Populated by JS -->
-            </div>
-
-            <!-- Execution Actions Bar (Kite, Groww, Copy) -->
-            <div class="zerodha-actions" id="zerodhaActions">
-              <div class="zerodha-actions-header">
-                <span class="action-guide-title">📝 1-Tap Broker Execution</span>
-                <div class="guide-mini-targets">
-                  <span>Stop: <strong id="guideStopLoss" style="color:var(--red);">–</strong></span>
-                  <span style="margin-left:8px;">Target: <strong id="guideTarget" style="color:var(--accent);">–</strong></span>
-                </div>
-              </div>
-
-              <div class="broker-buttons-grid">
-                <button class="btn-primary btn-copy-gtt" id="btnCopyGTT" title="Copy complete GTT order instructions to clipboard">
-                  📋 1-Tap Copy GTT Form
-                </button>
-                <button class="btn-zerodha" id="btnOpenKite" title="Open Zerodha Kite to place order">
-                  🔗 Open Kite
-                </button>
-                <button class="btn-secondary" id="btnAutoGTT" title="Place GTT automatically via Kite Connect API">
-                  ⚡ 1-Click GTT
-                </button>
-                <button class="btn-secondary" id="btnOpenGroww" title="Open in Groww">
-                  🌱 Groww
-                </button>
-                <button class="btn-secondary" id="btnOpenTV" title="Open TradingView Chart">
-                  📊 Chart
-                </button>
-              </div>
-              <div class="broker-hint">
-                💡 <strong>Execution Flow:</strong> Tap <em>Copy GTT Form</em> → Open Kite → Tap <em>Create GTT</em> → Set Stop & Targets → Done!
-              </div>
-            </div>
-          </div>
-
-        </div> <!-- /.studio-col -->
-
-        <!-- ── RIGHT COLUMN: INSTITUTIONAL WATCHLIST & SCREENER (~40%) ── -->
-        <div class="watchlist-col">
-
-          <div class="card watchlist-card" id="allStocksCard">
-            <!-- Watchlist Header & Search Filter -->
-            <div class="watchlist-header">
-              <div class="watchlist-title-wrap">
-                <div class="card-title" style="margin-bottom:0;">
-                  <span>🏆 Stage-2 Leaders</span>
-                </div>
-                <span id="allStocksCountBadge" class="badge badge-accent">0 Leaders</span>
-              </div>
-
-              <!-- Dedicated Watchlist Real-Time Search Bar -->
-              <div class="screener-search-bar">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="screenerSearchInput" class="screener-search-field" placeholder="Filter by symbol (e.g. CUPID, TFCILTD)..." autocomplete="off" />
-                <button id="btnClearSearch" class="btn-clear-search" style="display:none" title="Clear search">✕</button>
-              </div>
-
-              <!-- Filter Chips Row -->
-              <div class="filter-chips-row" id="screenerFilterChips">
-                <button class="filter-chip active" data-filter="all">All</button>
-                <button class="filter-chip" data-filter="prime">Prime Low-Risk</button>
-                <button class="filter-chip" data-filter="sweet_rsi">Sweet RSI (45–75)</button>
-                <button class="filter-chip" data-filter="affordable">Budget Match</button>
-              </div>
-            </div>
-
-            <div class="watchlist-tip">
-              💡 Tap any stock row or <strong>Inspect 🎯</strong> to load its levels into the Trade Studio.
-            </div>
-
-            <!-- Virtual / Responsive Table Container -->
-            <div class="table-scroll-container watchlist-table-wrap">
-              <!-- Explicit roles keep this a semantic table even when the phone
-                   card layout below switches the display type to grid/block. -->
-              <table class="leader-table" role="table">
-                <thead role="rowgroup">
-                  <tr role="row">
-                    <th class="cell-rank" scope="col">#</th>
-                    <th scope="col">Security</th>
-                    <th scope="col">CMP</th>
-                    <th class="cell-cms" scope="col">CMS</th>
-                    <th class="cell-rsi" scope="col">RSI</th>
-                    <th class="cell-action" scope="col">Action</th>
+                    <th class="col-rank num" scope="col" data-sort="rank" aria-sort="ascending"><button class="sort-btn">#<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="col-sec" scope="col" data-sort="symbol"><button class="sort-btn">Security<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num" scope="col" data-sort="cmp"><button class="sort-btn">CMP<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-cms" scope="col" data-sort="cms"><button class="sort-btn">CMS<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-cred" scope="col" data-sort="cred"><button class="sort-btn" title="Backtest credibility score (+15% hit rate vs stop)">Cred<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-rsi" scope="col" data-sort="rsi"><button class="sort-btn">RSI<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-roc col-roc1" scope="col" data-sort="roc1"><button class="sort-btn">1M<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-roc" scope="col" data-sort="roc3"><button class="sort-btn">3M<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-atr" scope="col" data-sort="atr"><button class="sort-btn">ATR%<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-liq" scope="col" data-sort="turnover"><button class="sort-btn">Turnover<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-prox" scope="col" data-sort="prox"><button class="sort-btn">52W<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="col-setup" scope="col">Setup</th>
+                    <th class="col-size num" scope="col">Size@cap</th>
+                    <th class="col-action" scope="col"><span class="sr-only">Action</span></th>
                   </tr>
                 </thead>
                 <tbody id="allStocksBody" role="rowgroup">
-                  <!-- Populated dynamically by JS -->
+                  <!-- populated by JS -->
                 </tbody>
               </table>
             </div>
-          </div>
 
-        </div> <!-- /.watchlist-col -->
+            <footer class="pane__foot">
+              <span id="gridStatus" class="pane__foot-status">—</span>
+            </footer>
+          </section>
 
-      </div> <!-- /.terminal-grid -->
+          <!-- ══ DETAIL: STOCK INSPECTOR ══ -->
+          <aside class="pane inspector" id="inspectorPane" aria-label="Stock inspector">
+            <div class="inspector__scroll">
 
-    </div> <!-- /#signalContent -->
+              <!-- Selected-stock header (rendered by JS) -->
+              <div class="inspector__header" id="heroCard">
+                <div class="inspector__empty">
+                  <svg class="ic ic--lg" aria-hidden="true"><use href="#i-target"/></svg>
+                  <p>Select a leader from the screener to open its levels, risk profile and GTT ticket.</p>
+                </div>
+              </div>
 
-    <!-- Timestamp Footer -->
-    <div class="last-updated" id="lastUpdatedBar" style="display:none">
-      <span>🕐 Last Synchronized:</span>
-      <span id="lastUpdatedText">–</span>
-    </div>
+              <!-- Decision banner (rendered by JS) -->
+              <div class="decision" id="decisionBox" hidden></div>
 
-  </section>
+              <!-- Signal scorecard -->
+              <div class="card scorecard" id="rsiCard" hidden>
+                <div class="card__head">
+                  <h3>Signal Check</h3>
+                  <span class="badge badge--brand">Stage-2 validated</span>
+                </div>
 
-  <!-- ── Portfolio Tab ── -->
-  <section class="tab-panel" id="tabPortfolio">
-    <div class="portfolio-container">
-      <!-- Left Column: Compounding Metrics & Growth Curve -->
-      <div class="portfolio-main-col">
-        <div class="card">
-          <div class="card-title">💰 Compounding Capital Tracker</div>
-          <div class="capital-hero">
-            <div class="capital-label">Current Account Equity</div>
-            <div class="capital-value" id="capitalDisplay">₹0</div>
-            <div class="capital-base-txt" id="capitalBaseDisp">Base: –</div>
-            <div class="capital-gain" id="capitalGain" style="display:none"></div>
-          </div>
-          <div class="stats-row" id="statsRow">
-            <div class="stat-box">
-              <div class="stat-label">Total Exits</div>
-              <div class="stat-val gold" id="statTrades">0</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">Wins</div>
-              <div class="stat-val green" id="statWins">0</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">Win Rate</div>
-              <div class="stat-val green" id="statWinRate">–</div>
-            </div>
-          </div>
-        </div>
+                <div class="scorecard__grid">
+                  <!-- RSI meter -->
+                  <div class="metric">
+                    <div class="metric__label">RSI (14)</div>
+                    <div class="rsi-meter">
+                      <div class="rsi-meter__value" id="rsiValueLabel">–</div>
+                      <div class="rsi-track" aria-hidden="true">
+                        <span class="rsi-zone zone--oversold" title="Oversold (<45)"></span>
+                        <span class="rsi-zone zone--sweet" title="Sweet zone (45–82)"></span>
+                        <span class="rsi-zone zone--overbought" title="Overbought (>82)"></span>
+                        <span class="rsi-marker" id="rsiMarker"></span>
+                      </div>
+                      <div class="rsi-scale"><span>0</span><span>45</span><span>82</span><span>100</span></div>
+                    </div>
+                    <svg id="rsiSvgHidden" hidden><line id="rsiNeedle" /></svg>
+                  </div>
 
-        <div class="card">
-          <div class="card-title">📈 Compounding Growth Curve</div>
-          <div class="chart-wrap">
-            <canvas class="chart-canvas" id="capitalChart"></canvas>
-            <div class="chart-empty" id="chartEmpty">
-              <span>📉</span>
-              <p>No trades recorded yet.<br>Record your first exit below.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+                  <!-- ROC -->
+                  <div class="metric">
+                    <div class="metric__label">Relative momentum (ROC)</div>
+                    <div class="roc-row" id="rocRow"></div>
+                  </div>
 
-      <!-- Right Column: Trade Management & Lifecycle Rules -->
-      <div class="portfolio-side-col">
-        <!-- Actions & Exit Logger -->
-        <div class="card">
-          <div class="card-title">⚡ Portfolio Operations</div>
-          <div class="portfolio-actions-grid">
-            <button class="btn-primary" id="btnRecordExit">
-              <span>📝</span> Record Trade Exit
+                  <!-- Moving averages -->
+                  <div class="metric">
+                    <div class="metric__label">Trend structure</div>
+                    <div class="sma-row" id="smaRow"></div>
+                  </div>
+
+                  <!-- Liquidity & risk -->
+                  <div class="metric">
+                    <div class="metric__label">Liquidity &amp; risk specs</div>
+                    <dl class="specs">
+                      <div class="spec"><dt>20d turnover</dt><dd id="specTurnover">–</dd></div>
+                      <div class="spec"><dt>Daily ATR</dt><dd id="specATR">–</dd></div>
+                      <div class="spec"><dt>Circuit band</dt><dd id="specCircuit">–</dd></div>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+
+              <!-- GTT execution ticket -->
+              <div class="card gtt-card" id="gttCard" hidden>
+                <div class="card__head">
+                  <h3>GTT execution ticket</h3>
+                  <span class="badge badge--brand" id="gttEntryBasisBadge">Entry basis: CMP</span>
+                </div>
+
+                <!-- Entry price / gap controller -->
+                <div class="entry-box">
+                  <div class="entry-box__head">
+                    <span class="field-label">Actual fill / entry price</span>
+                    <span class="badge" id="gapBadge">0.0% gap</span>
+                  </div>
+                  <div class="entry-box__row">
+                    <span class="input-affix input-affix--lg">
+                      <span class="affix">₹</span>
+                      <input type="number" id="inputActualEntry" class="num-input num-input--lg" step="0.05" min="1" inputmode="decimal" aria-label="Actual entry price" />
+                    </span>
+                    <button id="btnResetEntry" class="btn btn--sm btn--ghost">Reset</button>
+                  </div>
+                  <div class="preset-row">
+                    <button class="chip chip--sm pill-gap active" data-gap="0">Flat</button>
+                    <button class="chip chip--sm pill-gap" data-gap="1">+1%</button>
+                    <button class="chip chip--sm pill-gap" data-gap="2">+2%</button>
+                    <button class="chip chip--sm pill-gap" data-gap="3">+3% max</button>
+                  </div>
+                  <p class="entry-advice" id="gapAdviceBox">Enter your fill price to calibrate the ticket.</p>
+                </div>
+
+                <!-- Levels -->
+                <div class="table-wrap table-wrap--flush">
+                  <table class="level-table">
+                    <thead>
+                      <tr><th scope="col">Milestone</th><th scope="col" class="num">Target</th><th scope="col" class="num">Stop</th><th scope="col" class="num">Δ</th></tr>
+                    </thead>
+                    <tbody id="gttBody"></tbody>
+                  </table>
+                </div>
+
+                <!-- Sizing -->
+                <div class="trade-pills" id="tradePills"></div>
+
+                <!-- Execution -->
+                <div class="exec" id="zerodhaActions">
+                  <div class="exec__head">
+                    <span class="field-label">1-tap broker execution</span>
+                    <span class="exec__targets">
+                      <span>Stop <strong class="tone-bear" id="guideStopLoss">–</strong></span>
+                      <span>Target <strong class="tone-bull" id="guideTarget">–</strong></span>
+                    </span>
+                  </div>
+                  <div class="exec__grid">
+                    <button class="btn btn--primary" id="btnCopyGTT">
+                      <svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg> Copy GTT form
+                    </button>
+                    <button class="btn btn--secondary" id="btnOpenKite">
+                      <svg class="ic" aria-hidden="true"><use href="#i-external"/></svg> Open Kite
+                    </button>
+                    <button class="btn btn--secondary" id="btnAutoGTT">
+                      <svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg> Auto GTT
+                    </button>
+                    <button class="btn btn--secondary" id="btnOpenGroww">
+                      <svg class="ic" aria-hidden="true"><use href="#i-external"/></svg> Groww
+                    </button>
+                    <button class="btn btn--secondary" id="btnOpenTV">
+                      <svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg> Chart
+                    </button>
+                  </div>
+                  <p class="exec__hint">Copy the ticket → open Kite → create an OCO GTT → paste stop &amp; target → set quantity.</p>
+                </div>
+              </div>
+
+              <!-- Backtest credibility for the selected stock -->
+              <div class="card" id="credCard" hidden>
+                <div class="card__head">
+                  <h3>Backtest credibility</h3>
+                  <span class="badge" id="credVerdict">—</span>
+                </div>
+                <div class="cred-grid" id="credGrid"></div>
+                <p class="cred-foot" id="credFoot"></p>
+              </div>
+
+            </div><!-- /.inspector__scroll -->
+
+            <!-- Mobile close affordance for the sheet -->
+            <button class="inspector__close" id="btnCloseInspector" aria-label="Close inspector">
+              <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
             </button>
-            <button class="btn-secondary" id="btnResetCapital">
-              <span>🔄</span> Reset Capital to Base
+          </aside>
+
+        </div><!-- /.workspace__grid -->
+
+        <!-- Timestamp -->
+        <div class="sync-bar" id="lastUpdatedBar" hidden>
+          <svg class="ic ic--xs" aria-hidden="true"><use href="#i-refresh"/></svg>
+          <span>Last synchronized</span>
+          <span id="lastUpdatedText">–</span>
+        </div>
+      </div><!-- /#signalContent -->
+
+      <!-- hidden hook kept for compatibility -->
+      <div id="qualBanner" hidden><span id="totalQualified"></span></div>
+    </section>
+
+    <!-- ─────────── PORTFOLIO ─────────── -->
+    <section class="tab-panel" id="tabPortfolio">
+      <div class="page">
+        <header class="page__head">
+          <div>
+            <h1 class="page__title">Portfolio</h1>
+            <p class="page__sub">Compounding ledger, equity curve and exit discipline.</p>
+          </div>
+          <button class="btn btn--primary" id="btnRecordExit">
+            <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg> Record exit
+          </button>
+        </header>
+
+        <!-- Metric strip -->
+        <div class="metric-strip">
+          <div class="stat">
+            <span class="stat__label">Account equity</span>
+            <span class="stat__value num" id="capitalDisplay">₹0</span>
+            <span class="stat__foot" id="capitalBaseDisp">Base: –</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Net return</span>
+            <span class="stat__value num" id="capitalGain">–</span>
+            <span class="stat__foot">vs. starting base</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Closed trades</span>
+            <span class="stat__value num" id="statTrades">0</span>
+            <span class="stat__foot">logged exits</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Wins</span>
+            <span class="stat__value num tone-bull" id="statWins">0</span>
+            <span class="stat__foot">profitable exits</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Win rate</span>
+            <span class="stat__value num" id="statWinRate">–</span>
+            <span class="stat__foot">hit ratio</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Equity curve -->
+          <div class="card">
+            <div class="card__head">
+              <h3>Equity curve</h3>
+              <span class="badge badge--muted">Capital compounding</span>
+            </div>
+            <div class="chart-wrap">
+              <canvas class="chart-canvas" id="capitalChart" aria-label="Account equity over time"></canvas>
+              <div class="chart-empty" id="chartEmpty">
+                <svg class="ic ic--lg" aria-hidden="true"><use href="#i-chart"/></svg>
+                <p>No closed trades yet.<br>Record an exit to start plotting your equity curve.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lifecycle discipline -->
+          <div class="card">
+            <div class="card__head">
+              <h3>Trade lifecycle</h3>
+              <span class="badge badge--brand">V2 engine</span>
+            </div>
+            <ol class="lifecycle">
+              <li class="lifecycle__step">
+                <span class="lifecycle__badge">0</span>
+                <div><strong>Deploy — full capital</strong><p>Buy the #1 leader with the whole equity. The ATR stop (−5% to −7%) caps the downside.</p></div>
+              </li>
+              <li class="lifecycle__step">
+                <span class="lifecycle__badge">1</span>
+                <div><strong>Target — +15%</strong><p>Sell the entire position at +15%. No partial runner and no trailing — the target is the exit.</p></div>
+              </li>
+              <li class="lifecycle__step">
+                <span class="lifecycle__badge">2</span>
+                <div><strong>Redeploy — reinvest all</strong><p>Put principal + profit into the next ranked leader in a single order.</p></div>
+              </li>
+              <li class="lifecycle__step">
+                <span class="lifecycle__badge">3</span>
+                <div><strong>Repeat — never add capital</strong><p>One capital base compounding indefinitely. Only the target or the stop ends a cycle.</p></div>
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h3>Rotation plan — +15% cycles</h3>
+            <span class="badge badge--brand">No new capital</span>
+          </div>
+          <p class="muted">Each cycle sells the full position at +15% and reinvests principal + profit into the next leader. Nothing is ever topped up from outside.</p>
+          <div class="rotation-grid">
+            <div class="rstat"><span class="rstat__k">Starting capital</span><span class="rstat__v num" id="rotBase">₹0</span></div>
+            <div class="rstat"><span class="rstat__k">Current equity</span><span class="rstat__v num" id="rotEquity">₹0</span></div>
+            <div class="rstat"><span class="rstat__k">Cycles completed</span><span class="rstat__v num" id="rotCycles">0</span></div>
+            <div class="rstat"><span class="rstat__k">Next +15% target</span><span class="rstat__v num tone-bull" id="rotNext">₹0</span></div>
+          </div>
+          <div class="table-wrap table-wrap--flush">
+            <table class="level-table">
+              <thead><tr><th>Cycles</th><th class="num">Projected equity</th><th class="num">Cumulative return</th></tr></thead>
+              <tbody id="rotLadder"></tbody>
+            </table>
+          </div>
+          <p class="cred-foot" id="rotNote"></p>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h3>Compounding operations</h3>
+            <button class="btn btn--sm btn--ghost" id="btnResetCapital">
+              <svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg> Reset to base
             </button>
           </div>
-          <div class="portfolio-guide-hint">
-            💡 <strong>Compounding Math:</strong> Exits automatically update your account equity and scale up position sizing for subsequent Stage-2 leaders.
-          </div>
+          <p class="muted">Recording an exit updates account equity and scales position sizing for subsequent Stage-2 leaders automatically.</p>
         </div>
+      </div>
+    </section>
 
-        <!-- 4-State Trade Lifecycle Rules Card -->
-        <div class="card lifecycle-guide-card">
-          <div class="card-title">
-            <span>🛡️ Institutional Trade Lifecycle</span>
-            <span class="badge badge-accent">V2 Engine</span>
+    <!-- ─────────── HISTORY ─────────── -->
+    <section class="tab-panel" id="tabHistory">
+      <div class="page">
+        <header class="page__head">
+          <div>
+            <h1 class="page__title">History</h1>
+            <p class="page__sub">Browse confirmed EOD screening runs and your closed-trade ledger.</p>
           </div>
-          <div class="lifecycle-steps">
-            <div class="step-item">
-              <div class="step-badge s0">State 0</div>
-              <div class="step-info">
-                <strong>OPEN (1% Risk Sizing)</strong>
-                <p>Initial entry with ATR-based stop (-5% to -7%). Risk strictly limited to 1% of account equity.</p>
-              </div>
+        </header>
+
+        <div class="grid-2 grid-2--history">
+          <div class="card">
+            <div class="card__head">
+              <h3>Session archive</h3>
+              <span class="badge badge--muted">NSE bhavcopy</span>
             </div>
-            <div class="step-item">
-              <div class="step-badge s1">State 1</div>
-              <div class="step-info">
-                <strong>RISK-FREE (+14% Gain)</strong>
-                <p>Stop automatically ratchets to Break-Even + 1.5% buffer. Trade cannot result in a loss.</p>
-              </div>
+            <div class="session-archive" id="historySessionsList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card__head">
+              <h3>Closed-trade ledger</h3>
+              <span class="badge badge--muted">Realized P&amp;L</span>
             </div>
-            <div class="step-item">
-              <div class="step-badge s2">State 2</div>
-              <div class="step-info">
-                <strong>BANK & TRAIL (+22% Gain)</strong>
-                <p>Bank 40% position into locked cash profits. Ratchet remaining 60% runner stop to +10% gain.</p>
-              </div>
-            </div>
-            <div class="step-item">
-              <div class="step-badge s3">State 3</div>
-              <div class="step-info">
-                <strong>POWER RUNNER (+30%+ Multibagger)</strong>
-                <p>Profit targets completely removed! Dynamic trailing below 50 SMA / 20 EMA for massive asymmetric trends.</p>
-              </div>
-            </div>
+            <div class="ledger" id="historyList"></div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ── History Tab ── -->
-  <section class="tab-panel" id="tabHistory">
-    <div class="history-container">
-      <div class="history-grid">
-        <!-- Col 1: NSE Daily Bhavcopy Archives -->
-        <div class="card history-archives-card">
-          <div class="card-title">
-            <span>📅 Trading Session Bhavcopy Archives</span>
-            <span class="badge badge-accent">Daily Snapshots</span>
+    <!-- ─────────── SETTINGS ─────────── -->
+    <section class="tab-panel" id="tabSettings">
+      <div class="page">
+        <header class="page__head">
+          <div>
+            <h1 class="page__title">Settings</h1>
+            <p class="page__sub">Sizing defaults, broker connectivity and app installation.</p>
           </div>
-          <p class="history-intro-txt">
-            Browse and inspect confirmed end-of-day momentum screening runs computed directly from official NSE bhavcopy files.
-          </p>
-          <div class="history-sessions-list" id="historySessionsList">
-            <!-- Populated by JS -->
+        </header>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card__head">
+              <h3>Quant feed pipeline</h3>
+              <span class="badge badge--brand">Static CDN</span>
+            </div>
+            <p class="muted">Delivered as static <code>signal.json</code> from GitHub Pages — no API keys, no token expiry.</p>
+            <div class="field">
+              <label class="field-label" for="inputCapitalBase">Default capital base (₹)
+                <span class="muted">— starting equity for position sizing</span>
+              </label>
+              <input type="number" class="num-input" id="inputCapitalBase" placeholder="1000" min="100" step="100" inputmode="numeric" />
+            </div>
+            <button class="btn btn--primary" id="btnSaveSettings">
+              <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Save defaults
+            </button>
+
+            <hr class="rule" />
+            <h4 class="card__subhead">Cache &amp; storage</h4>
+            <div class="btn-row">
+              <button class="btn btn--ghost" id="btnClearHistory"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Clear signal cache</button>
+              <button class="btn btn--ghost" id="btnClearCapital"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg> Reset capital history</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head">
+              <h3>Zerodha Kite Connect</h3>
+              <span class="badge badge--accent-soft">Personal tier · free</span>
+            </div>
+            <p class="muted">Enables one-click GTT placement from the terminal. Leave blank to use the manual copy form.</p>
+            <div class="field">
+              <label class="field-label" for="kiteApiKey">API key</label>
+              <input type="text" class="num-input" id="kiteApiKey" placeholder="e.g. abc123xyz" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="kiteAccessToken">Daily access token <span class="muted">— refresh each morning</span></label>
+              <input type="password" class="num-input" id="kiteAccessToken" placeholder="Paste today's token" autocomplete="off" />
+            </div>
+            <button class="btn btn--primary" id="btnSaveKite"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Save Kite token</button>
+            <p class="status-line" id="kiteStatus"></p>
+
+            <hr class="rule" />
+            <h4 class="card__subhead">App installation</h4>
+            <button class="btn btn--secondary" id="btnInstall" disabled><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg> Install PWA</button>
+            <p class="muted">Install to your home screen for fast launch and offline data.</p>
           </div>
         </div>
 
-        <!-- Col 2: Closed Trades & P&L Log -->
-        <div class="card history-ledger-card">
-          <div class="card-title">
-            <span>📋 Closed Trade Audit Log</span>
-            <span class="badge">Realized P&L</span>
-          </div>
-          <div id="historyList">
-            <!-- Populated by renderHistory() -->
-          </div>
-        </div>
+        <p class="build-note">NSE Momentum Quant Engine V2 · Two-tier asymmetric profit booking · Uncapped multibagger trailing</p>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ── Settings Tab ── -->
-  <section class="tab-panel" id="tabSettings">
-    <div class="settings-container">
-      <div class="card">
-        <div class="card-title">⚙️ Quant Feed Pipeline</div>
-        <div class="form-group">
-          <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>⚡ High-Speed Static CDN Feed</span>
-            <span class="badge badge-accent">100% Native Serverless ✅</span>
-          </label>
-          <div class="feed-note">
-            Direct high-speed delivery from GitHub Pages CDN. Zero Google Sheets delays, zero token expirations.
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="inputCapitalBase">
-            Default Capital Base (₹)
-            <span>— Starting equity for position sizing</span>
-          </label>
-          <input type="number" class="form-input" id="inputCapitalBase" placeholder="1000" min="100" step="100" />
-        </div>
-        <button class="btn-primary" id="btnSaveSettings">
-          <span>💾</span> Save Default Settings
-        </button>
+  </main>
 
-        <div class="card-title" style="margin-top:24px;">🗑️ Cache & Storage Management</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn-secondary" id="btnClearHistory" style="flex:1;">
-            <span>🗑️</span> Clear Signals Cache
-          </button>
-          <button class="btn-secondary" id="btnClearCapital" style="flex:1;">
-            <span>📉</span> Reset Capital History
-          </button>
-        </div>
-      </div>
+  <!-- ════════════════════ BOTTOM NAV (mobile) ════════════════════ -->
+  <nav class="bottom-nav" role="navigation" aria-label="Primary">
+    <button class="nav-item active" data-tab="Signal">
+      <svg class="ic" aria-hidden="true"><use href="#i-terminal"/></svg><span class="nav-label">Terminal</span>
+    </button>
+    <button class="nav-item" data-tab="Portfolio">
+      <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg><span class="nav-label">Portfolio</span>
+    </button>
+    <button class="nav-item" data-tab="History">
+      <svg class="ic" aria-hidden="true"><use href="#i-history"/></svg><span class="nav-label">History</span>
+    </button>
+    <button class="nav-item" data-tab="Settings">
+      <svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg><span class="nav-label">Settings</span>
+    </button>
+  </nav>
 
-      <div class="card">
-        <div class="card-title">
-          <span style="color:#387ED1; font-weight:800;">Z</span> Zerodha Kite Connect API
-          <span class="badge-free">100% FREE</span>
-        </div>
-        <div class="kite-desc">
-          Kite Connect <strong>Personal tier is completely free</strong>. Enables 1-click GTT placement.
-        </div>
+</div><!-- /.app-shell -->
 
-        <div class="form-group">
-          <label class="form-label" for="kiteApiKey">Kite API Key</label>
-          <input type="text" class="form-input" id="kiteApiKey" placeholder="e.g. abc123xyz" autocomplete="off" />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="kiteAccessToken">
-            Daily Access Token
-            <span style="font-size:0.7rem; color:var(--text-muted);">(paste fresh token each morning)</span>
-          </label>
-          <input type="password" class="form-input" id="kiteAccessToken" placeholder="Paste today's access token" autocomplete="off" />
-        </div>
-
-        <button class="btn-primary" id="btnSaveKite" style="font-size:0.82rem;">
-          💾 Save Kite Token
-        </button>
-        <div id="kiteStatus" style="margin-top:8px; font-size:0.77rem; color:var(--text-muted);"></div>
-
-        <div class="card-title" style="margin-top:24px;">📱 App Installation</div>
-        <button class="btn-install" id="btnInstall" disabled>
-          <span>⬇️</span> Install NSE Signal PWA
-        </button>
-        <p class="version-note">
-          Install on desktop or mobile home screen for fast native launch and offline caching.
-        </p>
-      </div>
-    </div>
-
-    <div class="version-note" style="margin-top:20px; padding:8px; text-align:center;">
-      NSE Momentum Quant Engine V2 · Institutional Architecture<br>
-      Two-Tier Asymmetric Profit Booking · Uncapped Multibagger Trailing
-    </div>
-  </section>
-
-</main>
-
-<!-- ════════════ BOTTOM NAVIGATION (Mobile App Bar) ════════════ -->
-<nav class="bottom-nav" role="navigation" aria-label="Main navigation">
-  <div class="nav-inner">
-    <div class="nav-item active" data-tab="Signal">
-      <span class="nav-icon">📡</span>
-      <span class="nav-label">Terminal</span>
-    </div>
-    <div class="nav-item" data-tab="Portfolio">
-      <span class="nav-icon">💼</span>
-      <span class="nav-label">Portfolio</span>
-    </div>
-    <div class="nav-item" data-tab="History">
-      <span class="nav-icon">📋</span>
-      <span class="nav-label">History</span>
-    </div>
-    <div class="nav-item" data-tab="Settings">
-      <span class="nav-icon">⚙️</span>
-      <span class="nav-label">Settings</span>
-    </div>
-  </div>
-</nav>
-
-<!-- ════════════ MODAL: Record Exit ════════════ -->
-<div class="modal-overlay" id="exitModal" role="dialog" aria-modal="true" aria-label="Record Trade Exit">
+<!-- ════════════════════ MODAL · RECORD EXIT ════════════════════ -->
+<div class="modal-overlay" id="exitModal" role="dialog" aria-modal="true" aria-label="Record trade exit">
   <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">📝 Record Trade Exit</div>
-
-    <div class="form-group">
-      <label class="form-label" for="exitSymbol">Stock Symbol</label>
-      <input type="text" class="form-input" id="exitSymbol" placeholder="e.g. RELIANCE" autocomplete="off" />
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="exitEntry">Entry Price (₹)</label>
-      <input type="number" class="form-input" id="exitEntry" placeholder="0.00" step="0.05" min="0" />
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="exitPrice">Exit Price (₹)</label>
-      <input type="number" class="form-input" id="exitPrice" placeholder="0.00" step="0.05" min="0" />
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="exitShares">Shares Held</label>
-      <input type="number" class="form-input" id="exitShares" placeholder="0" min="1" />
+    <div class="modal-sheet__grip" aria-hidden="true"></div>
+    <div class="modal-sheet__head">
+      <h2>Record trade exit</h2>
+      <button class="icon-btn" id="btnCancelExitTop" aria-label="Close" type="button">
+        <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
     </div>
 
-    <div id="exitCalcPreview" style="display:none; margin-bottom:16px; padding:12px; background:var(--bg); border-radius:8px; border:1px solid var(--border); font-size:0.82rem; line-height:2;">
+    <div class="field">
+      <label class="field-label" for="exitSymbol">Stock symbol</label>
+      <input type="text" class="num-input" id="exitSymbol" placeholder="e.g. RELIANCE" autocomplete="off" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label" for="exitEntry">Entry price (₹)</label>
+        <input type="number" class="num-input" id="exitEntry" placeholder="0.00" step="0.05" min="0" inputmode="decimal" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="exitPrice">Exit price (₹)</label>
+        <input type="number" class="num-input" id="exitPrice" placeholder="0.00" step="0.05" min="0" inputmode="decimal" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="exitShares">Shares</label>
+        <input type="number" class="num-input" id="exitShares" placeholder="0" min="1" inputmode="numeric" />
+      </div>
     </div>
 
-    <button class="btn-primary" id="btnConfirmExit">✅ Confirm & Record</button>
-    <button class="btn-secondary" id="btnCancelExit">Cancel</button>
+    <div class="calc-preview" id="exitCalcPreview" hidden></div>
+
+    <div class="btn-row">
+      <button class="btn btn--primary" id="btnConfirmExit">Confirm &amp; record</button>
+      <button class="btn btn--ghost" id="btnCancelExit">Cancel</button>
+    </div>
   </div>
 </div>
 
-<!-- ════════════ MODAL: Strategy & Terminology Guide ════════════ -->
-<div class="modal-overlay" id="glossaryModal" role="dialog" aria-modal="true" aria-label="Strategy Guide & Dictionary">
-  <div class="modal-sheet" style="max-height:85vh; overflow-y:auto;">
-    <div class="modal-handle"></div>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <div class="modal-title" style="margin-bottom:0;">📖 Strategy & Jargon Guide</div>
-      <button id="btnCloseGlossary" style="background:transparent; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;">✕</button>
+<!-- ════════════════════ MODAL · STRATEGY GUIDE ════════════════════ -->
+<div class="modal-overlay" id="glossaryModal" role="dialog" aria-modal="true" aria-label="Strategy guide and glossary">
+  <div class="modal-sheet modal-sheet--wide">
+    <div class="modal-sheet__grip" aria-hidden="true"></div>
+    <div class="modal-sheet__head">
+      <h2>Strategy &amp; glossary</h2>
+      <button class="icon-btn" id="btnCloseGlossary" aria-label="Close" type="button">
+        <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
     </div>
 
-    <!-- Section 1: The Two-Tier Exit System -->
-    <div class="card" style="margin-bottom:12px; padding:12px 14px;">
-      <div style="font-weight:800; color:var(--accent); font-size:13px; margin-bottom:8px;">🎯 Two-Tier Profit Booking & Multibagger Ride System</div>
-      <ul style="font-size:12px; line-height:1.6; padding-left:18px; color:var(--text); margin:0;">
-        <li style="margin-bottom:6px;"><strong style="color:var(--red);">Initial Stop Loss (-5% to -7% ATR):</strong> Emergency downside boundary ($2 \times \text{ATR}_{14}$ bounded between -5% and -7%, tightened to -4% in defensive regimes). Hard protection against tail risk.</li>
-        <li style="margin-bottom:6px;"><strong style="color:var(--yellow);">M1 Target (+15% Risk-Free):</strong> First milestone. When price reaches +15%, your GTT stop loss is automatically ratcheted up to <strong>+1.5% Breakeven Buffer</strong> (`M1_STOP`) to cover all exchange charges, STT, and stamp duty. 100% position remains active and completely risk-free!</li>
-        <li style="margin-bottom:6px;"><strong style="color:var(--accent);">M2 Target (+22% Bank & Trail):</strong> Second milestone. Bank <strong>40% partial profit</strong> to lock in a $\ge 3:1$ ($3R$) payoff. Simultaneously ratchet stop loss on the remaining 60% runner to <strong>+10% locked profit</strong> floor.</li>
-        <li><strong style="color:#ffd700);">M3 Multibagger Runner (> +25% Uncapped):</strong> No rigid profit cap! Let your 60% runner ride into 100% to 500%+ institutional trends. Trailed dynamically via: (1) 50-day SMA on volume (1-day grace on low vol), (2) 20-day EMA climax exit when extended > 35% above 50 SMA, and (3) Blow-off exhaustion exit into peak volume.</li>
-      </ul>
-    </div>
-
-    <!-- Section 2: Gap-Ups & The 3% Max-Chase Rule -->
-    <div class="card" style="margin-bottom:12px; padding:12px 14px;">
-      <div style="font-weight:800; color:#ffd700; font-size:13px; margin-bottom:8px;">⚡ What if the Stock Gaps Up at 9:15 AM?</div>
-      <div style="font-size:12px; line-height:1.5; color:var(--text);">
-        When market opens, a high-momentum stock may gap up +2% to +5% above yesterday's close:
-        <ul style="padding-left:18px; margin-top:6px; margin-bottom:0;">
-          <li style="margin-bottom:4px;"><strong>0% to +3% Gap (🟢 Safe Zone):</strong> Normal opening. Enter your actual fill price in the app — it recalculates your exact stops and targets from your fill price!</li>
-          <li style="margin-bottom:4px;"><strong>+3% to +5% Gap (🟡 Extended):</strong> Chasing increases pullback risk. Wait 15 minutes for a dip or take smaller quantity.</li>
-          <li><strong>> +5% / Upper Circuit (🔴 Do NOT Chase):</strong> Never chase an over-extended gap or locked circuit! Immediately switch to <strong>Alternate #1 (Rank #2)</strong>.</li>
+    <div class="doc">
+      <section class="doc__section">
+        <h3>Rotation plan — +15% cycles, one capital base</h3>
+        <ul>
+          <li><strong class="tone-bear">Initial stop (−5% to −7% ATR):</strong> 2×ATR₁₄ bounded between −5% and −7%, tightened to −4% in defensive regimes. Hard tail-risk protection.</li>
+          <li><strong class="tone-bull">Target (+15%):</strong> the <em>entire</em> position is sold at +15%. In rotation mode there is no partial runner and no trailing — the target is the exit.</li>
+          <li><strong class="tone-brand">Redeploy:</strong> sell proceeds (principal + profit) buy the next ranked leader. No new capital is ever added; only the first ₹1,000 is funded.</li>
+          <li><strong class="tone-brand">Optional trailing (advanced):</strong> if you choose not to rotate, you can instead bank 40% at +22% and trail the remaining 60% below the 50-SMA / 20-EMA. The terminal shows both, but the rotation plan is the default.</li>
         </ul>
-      </div>
+      </section>
+
+      <section class="doc__section">
+        <h3>Gap-ups and the 3% max-chase rule</h3>
+        <ul>
+          <li><strong class="tone-bull">0–3% gap (safe):</strong> normal open. Enter your real fill price — the ticket recalculates every level from it.</li>
+          <li><strong class="tone-caution">+3% to +5% (extended):</strong> chasing raises pullback risk. Wait for a dip or take a smaller quantity.</li>
+          <li><strong class="tone-bear">&gt; +5% / circuit (do not chase):</strong> never chase an over-extended gap or locked circuit. Switch to the next alternate.</li>
+        </ul>
+      </section>
+
+      <section class="doc__section">
+        <h3>Terminology</h3>
+        <dl class="glossary">
+          <div><dt>CMP</dt><dd>Current market price (latest NSE close).</dd></div>
+          <div><dt>CMS score</dt><dd>Cross-sectional percentile rank blending 3M momentum and 52W-high proximity.</dd></div>
+          <div><dt>RSI (14)</dt><dd>Relative Strength Index; 45–82 is the momentum sweet spot.</dd></div>
+          <div><dt>ATR (14)</dt><dd>Average True Range — average daily price movement.</dd></div>
+          <div><dt>SMA 50/200</dt><dd>Price must hold above both for Stage-2 mark-up.</dd></div>
+          <div><dt>GTT</dt><dd>Good-Till-Triggered standing order that auto-sells at your stop or target.</dd></div>
+          <div><dt>Regime</dt><dd>Benchmark trend state that gates whether new capital may be deployed.</dd></div>
+        </dl>
+      </section>
     </div>
 
-    <!-- Section 3: Jargon Dictionary -->
-    <div class="card" style="margin-bottom:14px; padding:12px 14px;">
-      <div style="font-weight:800; color:var(--text); font-size:13px; margin-bottom:8px;">📚 Jargon Dictionary</div>
-      <div style="display:grid; grid-template-columns:1fr; gap:6px; font-size:12px; line-height:1.5;">
-        <div><strong>CMP:</strong> Current Market Price (latest closing price on NSE).</div>
-        <div><strong>CMS Score:</strong> Cross-Sectional Percentile Rank blending 3M momentum speed and 52W high breakout proximity.</div>
-        <div><strong>RSI (14):</strong> Relative Strength Index. 45–82 is the institutional momentum sweet spot.</div>
-        <div><strong>ATR (14):</strong> Average True Range. Average daily price movement in rupees.</div>
-        <div><strong>SMA 50 / 200:</strong> 50-day and 200-day Simple Moving Average. Price must stay above both for Stage-2 markup.</div>
-        <div><strong>GTT:</strong> Good Till Triggered. A 1-year standing order on Zerodha/Groww that automatically sells when your stop or target is hit.</div>
-      </div>
-    </div>
-
-    <button class="btn-primary" id="btnCloseGlossaryBottom" style="width:100%; padding:11px; font-weight:700;">Got It! 👍</button>
+    <button class="btn btn--primary btn--block" id="btnCloseGlossaryBottom">Got it</button>
   </div>
 </div>
 
-<!-- ════════════ TOAST CONTAINER ════════════ -->
-<div class="toast-container" id="toastContainer"></div>
+<!-- ════════════════════ TOASTS ════════════════════ -->
+<div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
 
 <script src="js/app.js"></script>
 </body>

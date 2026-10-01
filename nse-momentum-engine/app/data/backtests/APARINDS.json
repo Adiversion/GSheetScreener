@@ -1,0 +1,76 @@
+{
+  "symbol": "APARINDS",
+  "generated_at": "2026-10-01T02:32:15Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-30",
+    "bars": 744
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 257,
+    "target_hits": 101,
+    "stop_hits": 141,
+    "timeouts": 15,
+    "target_hit_rate_pct": 39.3,
+    "stop_hit_rate_pct": 54.9,
+    "expectancy_pct": 2.22,
+    "avg_hold_to_target_days": 14.6,
+    "avg_hold_to_stop_days": 8.7,
+    "median_return_pct": -5.65,
+    "p10_return_pct": -7.0,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 6.77,
+    "time_to_target": {
+      "target_count": 101,
+      "trading_days": {
+        "count": 101,
+        "min": 3.0,
+        "p25": 7.0,
+        "median": 12.0,
+        "p75": 24.0,
+        "p90": 27.0,
+        "max": 31.0
+      },
+      "calendar_days": {
+        "count": 101,
+        "min": 3.0,
+        "p25": 11.0,
+        "median": 17.0,
+        "p75": 34.0,
+        "p90": 38.0,
+        "max": 43.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 17,
+        "6-10d (\u22642 weeks)": 25,
+        "11-21d (\u22641 month)": 29,
+        "22-42d (\u22642 months)": 30,
+        ">42d (slow)": 0
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 0,
+    "final_capital": 1000.0,
+    "total_return_pct": 0.0,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": null,
+    "trades": []
+  },
+  "verdict": {
+    "credible": false,
+    "score": 28.8,
+    "summary": "Weak: stops dominate (55% stopped, 39% reached target)."
+  }
+}

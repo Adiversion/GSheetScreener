@@ -10,8 +10,8 @@ const f = document.getElementById('f');
 f.style.width = W + 'px';
 function run() {
   const d = f.contentDocument, w = f.contentWindow;
-  const wrap = d.querySelector('.watchlist-table-wrap');
-  const tbl = d.querySelector('.leader-table');
+  const wrap = d.querySelector('.grid-pane .table-wrap') || d.querySelector('.table-wrap');
+  const tbl = d.querySelector('.data-grid');
   if (!tbl || !tbl.querySelector('tbody tr')) { setTimeout(run, 800); return; }
   const r = { w: W, wrapClient: wrap.clientWidth, wrapScroll: wrap.scrollWidth };
 
@@ -23,7 +23,7 @@ function run() {
   }));
 
   // which descendant is widest inside the security cell (drives min-content)
-  const sec = tbl.querySelector('tbody .cell-security');
+  const sec = tbl.querySelector('tbody .col-sec');
   if (sec) {
     r.secInner = [...sec.querySelectorAll('*')].map(e => ({
       c: e.className || e.tagName, w: Math.round(e.getBoundingClientRect().width)

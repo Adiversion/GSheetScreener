@@ -196,14 +196,14 @@ jobs:
             1. Download `NSESignal-${{ env.VERSION }}.apk` below
             2. Open it on your Android phone
             3. Allow "Install from unknown sources" if prompted
-            4. Open the app → Settings → paste your Google Sheets CSV URL
+            4. Open the app → Settings → set your capital base (default ₹1000)
 
             ### Files
             - **APK**: Direct install on Android (recommended)
             - **AAB**: For future Play Store submission only
 
             ### After installing
-            Open the app → tap ⚙️ Settings → paste your Google Sheet Signal URL → Save
+            Open the app → tap ⚙️ Settings → enter your capital base and (optional) Kite API key → Save
           files: |
             dist/*.apk
             dist/*.aab

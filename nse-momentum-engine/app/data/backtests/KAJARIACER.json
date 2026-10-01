@@ -1,0 +1,76 @@
+{
+  "symbol": "KAJARIACER",
+  "generated_at": "2026-10-01T02:32:14Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-09-29",
+    "bars": 742
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 99,
+    "target_hits": 1,
+    "stop_hits": 72,
+    "timeouts": 26,
+    "target_hit_rate_pct": 1.0,
+    "stop_hit_rate_pct": 72.7,
+    "expectancy_pct": -4.09,
+    "avg_hold_to_target_days": 27.0,
+    "avg_hold_to_stop_days": 16.1,
+    "median_return_pct": -5.0,
+    "p10_return_pct": -7.0,
+    "p90_return_pct": -0.72,
+    "avg_stop_distance_pct": 5.78,
+    "time_to_target": {
+      "target_count": 1,
+      "trading_days": {
+        "count": 1,
+        "min": 27.0,
+        "p25": 27.0,
+        "median": 27.0,
+        "p75": 27.0,
+        "p90": 27.0,
+        "max": 27.0
+      },
+      "calendar_days": {
+        "count": 1,
+        "min": 39.0,
+        "p25": 39.0,
+        "median": 39.0,
+        "p75": 39.0,
+        "p90": 39.0,
+        "max": 39.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 0,
+        "6-10d (\u22642 weeks)": 0,
+        "11-21d (\u22641 month)": 0,
+        "22-42d (\u22642 months)": 1,
+        ">42d (slow)": 0
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 0,
+    "final_capital": 1000.0,
+    "total_return_pct": 0.0,
+    "win_rate_pct": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": null,
+    "trades": []
+  },
+  "verdict": {
+    "credible": false,
+    "score": 0.0,
+    "summary": "Weak: stops dominate (73% stopped, 1% reached target)."
+  }
+}

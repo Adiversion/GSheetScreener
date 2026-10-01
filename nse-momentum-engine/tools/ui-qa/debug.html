@@ -13,24 +13,24 @@ function run() {
   const d = f.contentDocument, w = f.contentWindow;
   const out = { w: W };
 
-  const wrap = d.querySelector('.watchlist-table-wrap');
+  const wrap = d.querySelector('.grid-pane .table-wrap') || d.querySelector('.table-wrap');
   if (wrap) {
     const cs = w.getComputedStyle(wrap);
     out.wrapContainerType = cs.containerType;
     out.wrapWidth = Math.round(wrap.getBoundingClientRect().width);
   }
-  const chip = d.querySelector('.leader-table .sec-chip');
+  const chip = d.querySelector('.data-grid .sec-tags .tag');
   out.chipExists = !!chip;
   if (chip) out.chipDisplay = w.getComputedStyle(chip).display;
 
-  const table = d.querySelector('.leader-table');
+  const table = d.querySelector('.data-grid');
   if (table) {
     out.tableW = Math.round(table.getBoundingClientRect().width);
     out.ths = [...table.querySelectorAll('thead th')].map(th => ({
       t: th.textContent.trim(), w: Math.round(th.getBoundingClientRect().width)
     }));
-    out.wsRsi = table.querySelector('.cell-rsi') ? w.getComputedStyle(table.querySelector('.cell-rsi')).whiteSpace : null;
-    out.wsCmp = table.querySelector('.cell-cmp') ? w.getComputedStyle(table.querySelector('.cell-cmp')).whiteSpace : null;
+    out.wsRsi = table.querySelector('td[data-label="RSI"]') ? w.getComputedStyle(table.querySelector('td[data-label="RSI"]')).whiteSpace : null;
+    out.wsCmp = table.querySelector('td[data-label="CMP"]') ? w.getComputedStyle(table.querySelector('td[data-label="CMP"]')).whiteSpace : null;
   }
 
   // Find elements wider than the viewport / sticking out to the right

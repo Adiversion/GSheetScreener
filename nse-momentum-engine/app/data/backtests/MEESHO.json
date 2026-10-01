@@ -1,0 +1,77 @@
+{
+  "symbol": "MEESHO",
+  "generated_at": "2026-10-01T02:32:16Z",
+  "period": {
+    "start": "2025-12-10",
+    "end": "2026-09-30",
+    "bars": 204
+  },
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 3,
+    "target_hits": 0,
+    "stop_hits": 0,
+    "timeouts": 3,
+    "target_hit_rate_pct": 0.0,
+    "stop_hit_rate_pct": 0.0,
+    "expectancy_pct": 4.03,
+    "avg_hold_to_target_days": null,
+    "avg_hold_to_stop_days": null,
+    "median_return_pct": 4.92,
+    "p10_return_pct": 2.69,
+    "p90_return_pct": 5.01,
+    "avg_stop_distance_pct": 7.0,
+    "time_to_target": {
+      "target_count": 0,
+      "trading_days": null,
+      "calendar_days": null,
+      "buckets_trading_days": {
+        "0-2d": 0,
+        "3-5d (\u22641 week)": 0,
+        "6-10d (\u22642 weeks)": 0,
+        "11-21d (\u22641 month)": 0,
+        "22-42d (\u22642 months)": 0,
+        ">42d (slow)": 0
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 1,
+    "final_capital": 1025.05,
+    "total_return_pct": 2.51,
+    "win_rate_pct": 100.0,
+    "profit_factor": null,
+    "max_drawdown_pct": 0.0,
+    "avg_cycle_days": 2.0,
+    "cagr_pct": null,
+    "target_exits": 0,
+    "stop_exits": 0,
+    "deadline_exits": 1,
+    "trades": [
+      {
+        "entry_date": "2026-09-28",
+        "exit_date": "2026-09-30",
+        "entry_price": 217.06,
+        "exit_price": 227.75,
+        "shares": 4,
+        "pnl": 25.05,
+        "pnl_pct": 2.88,
+        "hold_days": 2,
+        "reason": "deadline",
+        "capital_after": 1025.05
+      }
+    ]
+  },
+  "verdict": {
+    "credible": false,
+    "score": null,
+    "summary": "Not enough historical signals for this stock to judge credibility."
+  }
+}

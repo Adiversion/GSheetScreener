@@ -9,7 +9,7 @@ const W = parseInt(new URLSearchParams(location.search).get('w') || '320', 10);
 const f = document.getElementById('f');
 f.style.width = W + 'px';
 const CANDIDATES = ['.studio-col', '.watchlist-col', '.terminal-ribbon', '.app-header',
-                    '.gtt-card', '.leader-table', '#signalContent', '#tabPortfolio', '#tabHistory', '#tabSettings'];
+                    '.gtt-card', '.data-grid', '#signalContent', '#tabPortfolio', '#tabHistory', '#tabSettings'];
 function run() {
   const d = f.contentDocument, w = f.contentWindow;
   if (!d || !d.querySelector('.gtt-table')) { setTimeout(run, 800); return; }

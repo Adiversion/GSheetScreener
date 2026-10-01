@@ -181,6 +181,6 @@ git push origin v1.1.0
 | "Add to Home screen" option missing | Must use Chrome; try visiting the page for 30+ seconds |
 | APK build fails — "Keystore not found" | Check `ANDROID_KEYSTORE_B64` secret is set correctly |
 | APK installs but shows Chrome toolbar | SHA-256 fingerprint not yet pasted in assetlinks.json |
-| App shows "Configure Google Sheet URL" | Open Settings tab → paste published CSV URL |
+| App shows "No signal data available" | Wait for the Action to commit `app/data/signal.json`, then refresh |
 | App won't update after code change | Clear app data or uninstall and reinstall |
-| Service worker errors in console | Bump cache version in `sw.js` to `nse-signal-v2` |
+| Service worker errors in console | Bump cache version in `sw.js` to `nse-signal-v10` |
