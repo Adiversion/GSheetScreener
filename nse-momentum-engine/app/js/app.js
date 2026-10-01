@@ -96,6 +96,9 @@ const store = {
   },
   set: (key, val) => {
     try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) { console.warn('LS write fail', e); }
+  },
+  remove: (key) => {
+    try { localStorage.removeItem(key); } catch(_) {}
   }
 };
 
@@ -122,17 +125,6 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => {
         reg.update();
-        reg.onupdatefound = () => {
-          const installingWorker = reg.installing;
-          if (installingWorker) {
-            installingWorker.onstatechange = () => {
-              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('[SW] New version installed. Reloading for instant update...');
-                window.location.reload();
-              }
-            };
-          }
-        };
         console.log('[SW] Registered & Checked for updates:', reg.scope);
         updateOfflineBadge(navigator.onLine);
       })
@@ -189,7 +181,9 @@ document.querySelectorAll('.nav-item, .desktop-tab-btn').forEach(item => {
 });
 
 function switchTab(name) {
+  if (!name) return;
   state.currentTab = name;
+  try { sessionStorage.setItem('nse_active_tab', name); } catch (_) {}
   document.querySelectorAll('.nav-item, .desktop-tab-btn').forEach(n => {
     const on = n.dataset.tab === name;
     n.classList.toggle('active', on);
@@ -2250,6 +2244,7 @@ function renderPortfolio() {
   }
 
   drawCapitalChart(history, base);
+  renderLiveTracker();
 }
 
 function drawCapitalChart(history, base) {
@@ -2733,6 +2728,16 @@ async function renderLiveTracker() {
     return;
   }
 
+  // Ensure form inputs remain populated from stored position
+  const symInput = document.getElementById('liveSymbol');
+  const entryInput = document.getElementById('liveEntry');
+  const capInput = document.getElementById('liveCapital');
+  const tgtInput = document.getElementById('liveTargetPct');
+  if (symInput && live.symbol && !symInput.value) symInput.value = live.symbol;
+  if (entryInput && live.entry && !entryInput.value) entryInput.value = live.entry;
+  if (capInput && live.capital && !capInput.value) capInput.value = live.capital;
+  if (tgtInput && live.targetPct && !tgtInput.value) tgtInput.value = live.targetPct;
+
   // Connect live streaming WebSocket for the single portfolio stock
   connectYahooStream(live.symbol);
 
@@ -2863,4 +2868,12 @@ function wireLiveTracker() {
   closeInspectorBtn();
   const topClose = document.getElementById('btnCancelExitTop');
   if (topClose) topClose.addEventListener('click', closeExitModal);
+
+  // Restore saved active tab on refresh (e.g. Portfolio)
+  try {
+    const savedTab = sessionStorage.getItem('nse_active_tab');
+    if (savedTab && savedTab !== 'Signal') {
+      switchTab(savedTab);
+    }
+  } catch (_) {}
 })();
