@@ -65,6 +65,9 @@
       <button class="desktop-tab-btn" data-tab="Portfolio" role="tab" aria-selected="false">
         <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg><span class="tab-label">Portfolio</span>
       </button>
+      <button class="desktop-tab-btn" data-tab="Compounding" role="tab" aria-selected="false">
+        <svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg><span class="tab-label">Equity</span>
+      </button>
       <button class="desktop-tab-btn" data-tab="History" role="tab" aria-selected="false">
         <svg class="ic" aria-hidden="true"><use href="#i-history"/></svg><span class="tab-label">History</span>
       </button>
@@ -401,41 +404,12 @@
         <header class="page__head">
           <div>
             <h1 class="page__title">Portfolio</h1>
-            <p class="page__sub">Compounding ledger, equity curve and exit discipline.</p>
+            <p class="page__sub">Active trade execution, real-time tracking &amp; open positions.</p>
           </div>
           <button class="btn btn--primary" id="btnRecordExit">
             <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg> Record exit
           </button>
         </header>
-
-        <!-- Metric strip -->
-        <div class="metric-strip">
-          <div class="stat">
-            <span class="stat__label">Account equity</span>
-            <span class="stat__value num" id="capitalDisplay">₹0</span>
-            <span class="stat__foot" id="capitalBaseDisp">Base: –</span>
-          </div>
-          <div class="stat">
-            <span class="stat__label">Net return</span>
-            <span class="stat__value num" id="capitalGain">–</span>
-            <span class="stat__foot">vs. starting base</span>
-          </div>
-          <div class="stat">
-            <span class="stat__label">Closed trades</span>
-            <span class="stat__value num" id="statTrades">0</span>
-            <span class="stat__foot">logged exits</span>
-          </div>
-          <div class="stat">
-            <span class="stat__label">Wins</span>
-            <span class="stat__value num tone-bull" id="statWins">0</span>
-            <span class="stat__foot">profitable exits</span>
-          </div>
-          <div class="stat">
-            <span class="stat__label">Win rate</span>
-            <span class="stat__value num" id="statWinRate">–</span>
-            <span class="stat__foot">hit ratio</span>
-          </div>
-        </div>
 
         <!-- Active Position & Live Target Tracker (Paper or Real) -->
         <div class="card" id="liveCard">
@@ -486,6 +460,50 @@
             <button class="btn btn--secondary btn--sm" id="btnLiveSaveKey"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Save source</button>
             <p class="muted">⚡ Real-time Yahoo WebSocket is active automatically (zero setup, 100% free). You can optionally configure a Twelve Data API key or Cloudflare Worker proxy above as a fallback.</p>
           </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── COMPOUNDING & EQUITY ─────────── -->
+    <section class="tab-panel" id="tabCompounding">
+      <div class="page">
+        <header class="page__head">
+          <div>
+            <h1 class="page__title">Equity &amp; Compounding</h1>
+            <p class="page__sub">Account equity growth, compounding ledger and +15% rotation cycles.</p>
+          </div>
+          <button class="btn btn--sm btn--ghost" id="btnResetCapital">
+            <svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg> Reset to base
+          </button>
+        </header>
+
+        <!-- Metric strip -->
+        <div class="metric-strip">
+          <div class="stat">
+            <span class="stat__label">Account equity</span>
+            <span class="stat__value num" id="capitalDisplay">₹0</span>
+            <span class="stat__foot" id="capitalBaseDisp">Base: –</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Net return</span>
+            <span class="stat__value num" id="capitalGain">–</span>
+            <span class="stat__foot">vs. starting base</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Closed trades</span>
+            <span class="stat__value num" id="statTrades">0</span>
+            <span class="stat__foot">logged exits</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Wins</span>
+            <span class="stat__value num tone-bull" id="statWins">0</span>
+            <span class="stat__foot">profitable exits</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Win rate</span>
+            <span class="stat__value num" id="statWinRate">–</span>
+            <span class="stat__foot">hit ratio</span>
+          </div>
         </div>
 
         <div class="grid-2">
@@ -555,11 +573,8 @@
         <div class="card">
           <div class="card__head">
             <h3>Compounding operations</h3>
-            <button class="btn btn--sm btn--ghost" id="btnResetCapital">
-              <svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg> Reset to base
-            </button>
+            <p class="muted" style="margin:0;">Recording an exit updates account equity and scales position sizing for subsequent Stage-2 leaders automatically.</p>
           </div>
-          <p class="muted">Recording an exit updates account equity and scales position sizing for subsequent Stage-2 leaders automatically.</p>
         </div>
       </div>
     </section>
@@ -666,6 +681,9 @@
     </button>
     <button class="nav-item" data-tab="Portfolio">
       <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg><span class="nav-label">Portfolio</span>
+    </button>
+    <button class="nav-item" data-tab="Compounding">
+      <svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg><span class="nav-label">Equity</span>
     </button>
     <button class="nav-item" data-tab="History">
       <svg class="ic" aria-hidden="true"><use href="#i-history"/></svg><span class="nav-label">History</span>

@@ -194,9 +194,10 @@ function switchTab(name) {
   });
   closeInspector();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (name === 'Portfolio') renderPortfolio();
-  if (name === 'History')   renderHistory();
-  if (name === 'Settings')  populateSettings();
+  if (name === 'Portfolio')   renderPortfolio();
+  if (name === 'Compounding') renderCompounding();
+  if (name === 'History')     renderHistory();
+  if (name === 'Settings')    populateSettings();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -749,129 +750,11 @@ function renderAlternates(alts) {
 }
 
 /* ══════════════════════════════════════════════════════
-   PORTFOLIO TAB
+   PORTFOLIO TAB (TRADES & POSITIONS)
 ══════════════════════════════════════════════════════ */
 
 function renderPortfolio() {
-  const base    = store.get(LS.CAPITAL_BASE, DEFAULT_CAPITAL);
-  const current = store.get(LS.CURRENT_CAPITAL, base);
-  const history = store.get(LS.CAPITAL_HISTORY, []);
-  const sigHist = store.get(LS.SIGNAL_HISTORY, []);
-
-  // Capital display
-  document.getElementById('capitalDisplay').textContent = fmtINR(current);
-  document.getElementById('capitalBaseDisp').textContent = `Base: ${fmtINR(base)}`;
-
-  const gain = current - base;
-  const gainPct = (gain / base) * 100;
-  const gainEl = document.getElementById('capitalGain');
-  if (base > 0) {
-    gainEl.style.display = 'inline-block';
-    gainEl.className = 'capital-gain ' + (gain >= 0 ? 'pos' : 'neg');
-    gainEl.textContent = `${gain >= 0 ? '+' : ''}${fmtINR(gain)} (${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(1)}%)`;
-  }
-
-  // Stats
-  const trades   = sigHist.length;
-  const wins     = sigHist.filter(s => s.pnl > 0).length;
-  const winRate  = trades ? ((wins / trades) * 100).toFixed(0) + '%' : '–';
-  document.getElementById('statTrades').textContent  = trades;
-  document.getElementById('statWins').textContent    = wins;
-  document.getElementById('statWinRate').textContent = winRate;
-
-  // Chart
-  drawCapitalChart(history, base);
-}
-
-function drawCapitalChart(history, base) {
-  const canvas = document.getElementById('capitalChart');
-  const empty  = document.getElementById('chartEmpty');
-
-  if (!history || history.length < 2) {
-    canvas.style.display = 'none';
-    empty.style.display  = 'flex';
-    return;
-  }
-  canvas.style.display = 'block';
-  empty.style.display  = 'none';
-
-  const dpr = window.devicePixelRatio || 1;
-  const W   = canvas.parentElement.clientWidth;
-  const H   = 140;
-  canvas.width  = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const values = history.map(e => e.capital);
-  const minV   = Math.min(...values, base) * 0.98;
-  const maxV   = Math.max(...values, base) * 1.02;
-  const range  = maxV - minV || 1;
-
-  const PAD_L = 12, PAD_R = 12, PAD_T = 16, PAD_B = 28;
-  const chartW = W - PAD_L - PAD_R;
-  const chartH = H - PAD_T - PAD_B;
-
-  const xOf = i  => PAD_L + (i / (values.length - 1)) * chartW;
-  const yOf = v  => PAD_T + chartH - ((v - minV) / range) * chartH;
-
-  // Gradient fill
-  const grad = ctx.createLinearGradient(0, PAD_T, 0, H - PAD_B);
-  grad.addColorStop(0,   'rgba(0,200,150,0.25)');
-  grad.addColorStop(1,   'rgba(0,200,150,0.0)');
-
-  ctx.beginPath();
-  ctx.moveTo(xOf(0), yOf(values[0]));
-  values.forEach((v, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(v)); });
-  ctx.lineTo(xOf(values.length - 1), H - PAD_B);
-  ctx.lineTo(xOf(0), H - PAD_B);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  // Line
-  ctx.beginPath();
-  ctx.moveTo(xOf(0), yOf(values[0]));
-  values.forEach((v, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(v)); });
-  ctx.strokeStyle = '#00C896';
-  ctx.lineWidth   = 2;
-  ctx.lineJoin    = 'round';
-  ctx.stroke();
-
-  // Base line
-  const baseY = yOf(base);
-  ctx.beginPath();
-  ctx.setLineDash([4, 4]);
-  ctx.moveTo(PAD_L, baseY);
-  ctx.lineTo(W - PAD_R, baseY);
-  ctx.strokeStyle = 'rgba(122,153,187,0.3)';
-  ctx.lineWidth   = 1;
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Dots
-  values.forEach((v, i) => {
-    ctx.beginPath();
-    ctx.arc(xOf(i), yOf(v), 3, 0, Math.PI * 2);
-    ctx.fillStyle = v >= base ? '#00C896' : '#FF4757';
-    ctx.fill();
-  });
-
-  // X-axis labels
-  ctx.font       = '9px -apple-system, sans-serif';
-  ctx.fillStyle  = '#4A6A8A';
-  ctx.textAlign  = 'center';
-  const step = Math.max(1, Math.floor(history.length / 4));
-  history.forEach((e, i) => {
-    if (i % step === 0 || i === history.length - 1) {
-      const d = new Date(e.date);
-      const label = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-      ctx.fillText(label, xOf(i), H - PAD_B + 14);
-    }
-  });
+  renderLiveTracker();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -978,6 +861,7 @@ document.getElementById('btnConfirmExit').addEventListener('click', () => {
   closeExitModal();
   showToast(`Trade recorded! ${pnl >= 0 ? '🎉' : '💪'} ${pnl >= 0 ? '+' : ''}${fmtINR(pnl)}`, pnl >= 0 ? 'success' : 'info');
   renderPortfolio();
+  renderCompounding();
 });
 
 document.getElementById('btnResetCapital').addEventListener('click', () => {
@@ -985,6 +869,7 @@ document.getElementById('btnResetCapital').addEventListener('click', () => {
   store.set(LS.CURRENT_CAPITAL, base);
   store.set(LS.CAPITAL_HISTORY, []);
   renderPortfolio();
+  renderCompounding();
   showToast('Capital reset to base', 'info', '🔄');
 });
 
@@ -1092,6 +977,7 @@ document.getElementById('btnClearCapital').addEventListener('click', () => {
     store.set(LS.CURRENT_CAPITAL, store.get(LS.CAPITAL_BASE, DEFAULT_CAPITAL));
     showToast('Capital history cleared', 'info', '📉');
     renderPortfolio();
+    renderCompounding();
   }
 });
 
@@ -1127,7 +1013,7 @@ let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (state.currentTab === 'Portfolio') renderPortfolio();
+    if (state.currentTab === 'Compounding') renderCompounding();
   }, 200);
 });
 
@@ -2190,8 +2076,8 @@ function wireGridSort() {
   });
 }
 
-/* ─── Portfolio ─── */
-function renderPortfolio() {
+/* ─── Compounding & Equity ─── */
+function renderCompounding() {
   const base = store.get(LS.CAPITAL_BASE, DEFAULT_CAPITAL);
   const current = store.get(LS.CURRENT_CAPITAL, base);
   const history = store.get(LS.CAPITAL_HISTORY, []);
@@ -2244,7 +2130,6 @@ function renderPortfolio() {
   }
 
   drawCapitalChart(history, base);
-  renderLiveTracker();
 }
 
 function drawCapitalChart(history, base) {

@@ -4,8 +4,8 @@
    Cache-first for static assets, Network-first for static JSON
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'nse-signal-v13';
-const DATA_CACHE = 'nse-signal-data-v13';
+const CACHE_NAME = 'nse-signal-v14';
+const DATA_CACHE = 'nse-signal-data-v14';
 
 const STATIC_ASSETS = [
   './',
