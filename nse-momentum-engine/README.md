@@ -247,6 +247,51 @@ No capital is ever added after the first deposit. `TradeLifecycleManager`
 supports this via `rotation_target_pct=0.15`; when it is left at `None` the
 original two-tier (risk-free → bank 40% → trailing runner) behaviour is kept.
 
+### Live tracking your open position
+
+Once you have bought a stock and placed the GTT, the **Portfolio → Live target
+tracker** card tracks it against the +15% target. Enter the symbol, your entry
+price and the target %, and it shows the live price, move %, distance to target
+and whether the target or stop has been hit.
+
+The app polls a price every 60 seconds while the Portfolio tab is open. Price
+sources are tried in order (all free):
+
+| # | Source | Setup | Notes |
+|---|--------|-------|-------|
+| 1 | **Twelve Data** | Free API key, stored in the browser | CORS-friendly, NSE-aware, ~800 calls/day |
+| 2 | **Cloudflare Worker proxy** | Deploy `workers/yahoo-proxy.js` (free, ~5 min) | **Keyless**, no cron, 100k req/day |
+| 3 | Scheduled tracker | `positions.json` + the Action | Near-live / EOD, works offline from the app |
+| 4 | Screen close | None | Falls back to the latest screening price |
+
+> **There is no Google Finance API** — it was shut down in 2012 and survives only
+> as the `GOOGLEFINANCE()` spreadsheet formula. Yahoo/NSE endpoints block browser
+> requests (CORS). Use a free CORS-friendly key (Twelve Data) **or** self-host the
+> Worker proxy. Avoid public CORS proxies: a stranger sees every request, and they
+> get rate-limited or shut down without warning.
+
+**Deploy the keyless proxy (optional, ~5 min):**
+
+1. Free account at [dash.cloudflare.com](https://dash.cloudflare.com) →
+   Workers & Pages → Create Worker.
+2. Paste [`workers/yahoo-proxy.js`](workers/yahoo-proxy.js) → Deploy.
+3. Copy the `*.workers.dev` URL into the app: Portfolio → Live target tracker →
+   *Live-quote source* → Worker proxy URL.
+
+For the scheduled keyless path, add your holdings to `positions.json`:
+
+```json
+{
+  "positions": [
+    { "symbol": "CUPID", "entry": 100.0, "shares": 9, "target_pct": 15, "stop_pct": 6 }
+  ]
+}
+```
+
+The **Daily Rotation Target Tracker** workflow runs after each close, writes
+`app/data/targets.json`, and commits it — so the tracker keeps working even when
+the app is closed.
+
 ### Single-stock credibility backtest
 
 Before committing to a name, test how it behaved historically under the exact

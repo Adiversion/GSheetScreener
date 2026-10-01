@@ -856,6 +856,18 @@ body.modal-open { overflow: hidden; }
 .cred-foot { font-size: .72rem; color: var(--text-muted); margin-top: 8px; line-height: 1.45; }
 .rotation-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 
+/* ─────────────────────────── LIVE TARGET TRACKER ─────────────────────────── */
+.live-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+.live-body { margin-top: 10px; }
+.live-hero { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.live-price { font-family: var(--font-mono); font-size: 1.7rem; font-weight: 700; line-height: 1; }
+.live-sym { font-weight: 700; letter-spacing: .02em; }
+.live-meta { font-size: .74rem; color: var(--text-muted); }
+.live-key { margin-top: 12px; }
+.live-key summary { cursor: pointer; font-size: .74rem; color: var(--text-muted); }
+.live-key .field { margin-top: 10px; }
+@media (max-width: 640px) { .live-form { grid-template-columns: minmax(0, 1fr); } }
+
 /* ─────────────────────────── ACCESSIBILITY ─────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }

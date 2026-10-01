@@ -21,6 +21,7 @@ env/
 !app/data/*.json
 !app/data/**/*.json
 !data/*.json
+!positions.json
 credentials.json
 service_account*.json
 keystore_b64.txt

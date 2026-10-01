@@ -2426,9 +2426,181 @@ function renderCredibility(symbol) {
     .catch(() => { state.backtests[symbol] = null; paint(null); });
 }
 
+/* ─── Live target tracker (single purchased stock) ─── */
+const LS_LIVE = 'nse_live_stock';
+const LS_TD_KEY = 'nse_twelvedata_key';
+const LS_PROXY = 'nse_live_proxy';
+
+/** Classify a live price against the rotation target / stop. */
+function liveStatus(entry, cmp, targetPct, stopPct) {
+  const t = targetPct / 100, s = (stopPct == null ? 6 : stopPct) / 100;
+  const targetPrice = entry * (1 + t);
+  const stopPrice = entry * (1 - s);
+  const pnlPct = entry > 0 ? ((cmp - entry) / entry) * 100 : 0;
+  const toTarget = cmp > 0 ? ((targetPrice - cmp) / cmp) * 100 : 0;
+  let status = 'holding';
+  if (cmp <= stopPrice) status = 'stopped';
+  else if (cmp >= targetPrice) status = 'hit';
+  else if (pnlPct >= t * 100 * 0.70) status = 'near';
+  return { status, pnlPct, toTarget, targetPrice, stopPrice };
+}
+
+async function fetchLiveQuote(symbol) {
+  const sym = String(symbol || '').toUpperCase();
+  const errors = [];
+
+  // 1) Twelve Data — free key, browser-side, CORS-friendly.
+  const key = store.get(LS_TD_KEY, '');
+  if (key) {
+    try {
+      const url = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(sym)}&exchange=NSE&apikey=${encodeURIComponent(key)}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      const json = await res.json();
+      if (json && json.price && !isNaN(parseFloat(json.price))) {
+        return { price: parseFloat(json.price), source: 'Twelve Data · live' };
+      }
+      errors.push(json && json.message ? json.message : 'Twelve Data: no price');
+    } catch (_) { errors.push('Twelve Data unreachable'); }
+  }
+
+  // 2) Self-hosted Cloudflare Worker proxy — keyless, no cron.
+  const proxy = store.get(LS_PROXY, '');
+  if (proxy) {
+    try {
+      const base = String(proxy).replace(/\/+$/, '');
+      const symNs = sym.includes('.') ? sym : sym + '.NS';
+      const res = await fetch(`${base}/?symbol=${encodeURIComponent(symNs)}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (json && json.price != null && !isNaN(parseFloat(json.price))) {
+        return { price: parseFloat(json.price), source: 'Worker proxy · live' };
+      }
+      errors.push(json && json.error ? ('proxy: ' + json.error) : 'proxy: no price');
+    } catch (_) { errors.push('proxy unreachable'); }
+  }
+
+  // 3) The scheduled tracker's price (near-live, no key needed).
+  try {
+    const res = await fetch('data/targets.json?_t=' + Date.now(), { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      const e = (json.entries || []).find(x => String(x.symbol).toUpperCase() === sym);
+      if (e && e.cmp != null) return { price: parseFloat(e.cmp), source: 'Scheduled tracker' };
+    }
+  } catch (_) { /* optional */ }
+
+  // 4) Latest screening price for this symbol.
+  const all = (state.payload && state.payload.all_qualified) || [];
+  const hit = all.find(s => String(s.SYMBOL).toUpperCase() === sym);
+  if (hit && hit.CMP) return { price: parseFloat(hit.CMP), source: 'Screen close' };
+
+  throw new Error(errors.length ? errors[0]
+    : 'Set a free Twelve Data key or a Worker proxy URL for live quotes');
+}
+
+function paintLive(sym, entry, targetPct, quote, err) {
+  const body = document.getElementById('liveBody');
+  const badge = document.getElementById('liveSourceBadge');
+  if (!body) return;
+  if (err) {
+    if (badge) { badge.className = 'badge badge--muted'; badge.textContent = 'no live data'; }
+    body.innerHTML = `<p class="muted">${err}</p>`;
+    return;
+  }
+  const { status, pnlPct, toTarget, targetPrice, stopPrice } = liveStatus(entry, quote.price, targetPct);
+  const badgeCls = { hit: 'badge--bull', near: 'badge--caution', stopped: 'badge--defensive', holding: 'badge--muted' }[status];
+  const badgeTxt = { hit: '✅ TARGET HIT', near: 'Approaching', stopped: 'Stopped out', holding: 'Holding' }[status];
+  if (badge) { badge.className = 'badge ' + badgeCls; badge.textContent = badgeTxt; }
+  const tone = pnlPct >= 0 ? 'pos' : 'neg';
+  body.innerHTML = `
+    <div class="live-hero">
+      <span class="live-sym">${sym}</span>
+      <span class="live-price">${fmtINR(quote.price)}</span>
+      <span class="num ${tone}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>
+    </div>
+    <div class="rotation-grid">
+      <div class="rstat"><span class="rstat__k">Target (+${targetPct}%)</span><span class="rstat__v">${fmtINR(targetPrice)}</span></div>
+      <div class="rstat"><span class="rstat__k">To target</span><span class="rstat__v ${toTarget <= 0 ? 'tone-bull' : ''}">${toTarget >= 0 ? '' : '+'}${toTarget.toFixed(2)}%</span></div>
+      <div class="rstat"><span class="rstat__k">Stop</span><span class="rstat__v">${fmtINR(stopPrice)}</span></div>
+      <div class="rstat"><span class="rstat__k">Entry</span><span class="rstat__v">${fmtINR(entry)}</span></div>
+    </div>
+    <p class="live-meta">Source: ${quote.source} · updated ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>`;
+}
+
+async function renderLiveTracker() {
+  const body = document.getElementById('liveBody');
+  if (!body) return;
+  const live = store.get(LS_LIVE, null);
+  if (!live || !live.symbol || !(live.entry > 0)) {
+    const badge = document.getElementById('liveSourceBadge');
+    if (badge) { badge.className = 'badge badge--muted'; badge.textContent = 'not configured'; }
+    body.innerHTML = '<p class="muted">No stock tracked yet. Enter the symbol you bought and its entry price, then tap <strong>Track this stock</strong>.</p>';
+    return;
+  }
+  try {
+    const quote = await fetchLiveQuote(live.symbol);
+    paintLive(live.symbol, live.entry, live.targetPct || 15, quote, null);
+  } catch (e) {
+    // Still show the target/stop levels even without a price.
+    paintLive(live.symbol, live.entry, live.targetPct || 15, null, e.message || 'Live quote unavailable');
+  }
+  const key = store.get(LS_TD_KEY, '');
+  const keyInput = document.getElementById('liveApiKey');
+  if (keyInput && !keyInput.value && key) keyInput.value = key;
+}
+
+function wireLiveTracker() {
+  const symInput = document.getElementById('liveSymbol');
+  const entryInput = document.getElementById('liveEntry');
+  const tgtInput = document.getElementById('liveTargetPct');
+
+  // Prefill from whatever is currently selected / tracked.
+  const live = store.get(LS_LIVE, null);
+  if (live) {
+    if (symInput) symInput.value = live.symbol || '';
+    if (entryInput) entryInput.value = live.entry || '';
+    if (tgtInput) tgtInput.value = live.targetPct || 15;
+  }
+
+  const saveBtn = document.getElementById('btnLiveSave');
+  if (saveBtn) saveBtn.addEventListener('click', () => {
+    const symbol = (symInput && symInput.value || '').trim().toUpperCase();
+    const entry = parseFloat(entryInput && entryInput.value);
+    const targetPct = parseFloat(tgtInput && tgtInput.value) || 15;
+    if (!symbol || !(entry > 0)) { showToast('Enter a symbol and a valid entry price', 'error'); return; }
+    store.set(LS_LIVE, { symbol, entry, targetPct });
+    showToast(`Tracking ${symbol} at ${fmtINR(entry)}`, 'success', '🎯');
+    renderLiveTracker();
+  });
+
+  const refreshBtn = document.getElementById('btnLiveRefresh');
+  if (refreshBtn) refreshBtn.addEventListener('click', renderLiveTracker);
+
+  const proxyInput = document.getElementById('liveProxyUrl');
+  if (proxyInput) { const p = store.get(LS_PROXY, ''); if (p) proxyInput.value = p; }
+
+  const keyBtn = document.getElementById('btnLiveSaveKey');
+  if (keyBtn) keyBtn.addEventListener('click', () => {
+    const keyInput = document.getElementById('liveApiKey');
+    const key = (keyInput && keyInput.value || '').trim();
+    const proxy = (proxyInput && proxyInput.value || '').trim();
+    store.set(LS_TD_KEY, key);
+    store.set(LS_PROXY, proxy);
+    showToast('Live-quote source saved', 'success');
+    renderLiveTracker();
+  });
+
+  renderLiveTracker();
+  if (!state.liveTimer) {
+    state.liveTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') renderLiveTracker();
+    }, 60000);
+  }
+}
+
 /* ─── Extra wiring ─── */
 (function wireV2() {
   wireGridSort();
+  wireLiveTracker();
   closeInspectorBtn();
   const topClose = document.getElementById('btnCancelExitTop');
   if (topClose) topClose.addEventListener('click', closeExitModal);

@@ -498,6 +498,49 @@
           <p class="cred-foot" id="rotNote"></p>
         </div>
 
+        <!-- Live target tracker — one purchased stock -->
+        <div class="card" id="liveCard">
+          <div class="card__head">
+            <h3>Live target tracker</h3>
+            <span class="badge badge--muted" id="liveSourceBadge">not configured</span>
+          </div>
+          <p class="muted">Track the stock you actually bought against its +15% rotation target. Live quotes need a free Twelve Data key (browser-side, ~800 calls/day); without one it falls back to the latest screening price.</p>
+          <div class="live-form">
+            <div class="field">
+              <label class="field-label" for="liveSymbol">Symbol</label>
+              <input type="text" class="num-input" id="liveSymbol" placeholder="e.g. CUPID" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="liveEntry">Entry price (₹)</label>
+              <input type="number" class="num-input" id="liveEntry" placeholder="Buy price" step="0.05" inputmode="decimal" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="liveTargetPct">Target %</label>
+              <input type="number" class="num-input" id="liveTargetPct" value="15" step="0.5" inputmode="decimal" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn--primary btn--sm" id="btnLiveSave"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Track this stock</button>
+            <button class="btn btn--secondary btn--sm" id="btnLiveRefresh"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg> Refresh now</button>
+          </div>
+          <div class="live-body" id="liveBody">
+            <p class="muted">No stock tracked yet. Enter the symbol you bought and its entry price, then tap <strong>Track this stock</strong>.</p>
+          </div>
+          <details class="live-key">
+            <summary>Live-quote source (free)</summary>
+            <div class="field">
+              <label class="field-label" for="liveApiKey">Twelve Data API key <span class="muted">— stored only in this browser</span></label>
+              <input type="text" class="num-input" id="liveApiKey" placeholder="Paste your free key" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="liveProxyUrl">Cloudflare Worker proxy URL <span class="muted">— keyless option</span></label>
+              <input type="text" class="num-input" id="liveProxyUrl" placeholder="https://nse-quote.you.workers.dev" autocomplete="off" />
+            </div>
+            <button class="btn btn--secondary btn--sm" id="btnLiveSaveKey"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Save source</button>
+            <p class="muted">Either use a free key from <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener">twelvedata.com</a>, or deploy the free Worker in <code>workers/yahoo-proxy.js</code> (no key, no cron). Twelve Data wins if both are set.</p>
+          </details>
+        </div>
+
         <div class="card">
           <div class="card__head">
             <h3>Compounding operations</h3>

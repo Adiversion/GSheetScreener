@@ -5,6 +5,22 @@ Format: [Version] — YYYY-MM-DD
 
 ---
 
+## [2.3.0] — 2026-10-01
+
+### Added
+- **Live target tracker** — a Portfolio card that tracks one purchased stock against its +15% rotation target (price, move %, distance to target, hit/stopped status). Polls every 60s while open, no cron required.
+- **`workers/yahoo-proxy.js`** — a free, keyless Cloudflare Worker CORS proxy for a single Yahoo/NSE quote. Recommended over public CORS proxies, which see every request and get shut down.
+- **Live-quote source order** — Twelve Data free key → Worker proxy → scheduled tracker (`targets.json`) → latest screening close.
+- **`scripts/track_targets.py`** — keyless scheduled tracker: reads `positions.json`, quotes via Kite Connect (if `KITE_API_KEY`/`KITE_ACCESS_TOKEN` set) or yfinance, and writes `app/data/targets.json`.
+- **Daily Rotation Target Tracker** workflow — one post-close reconciliation per weekday.
+- **`positions.json`** — plain-file list of open holdings.
+- **`tests/test_track_targets.py`** — 10 offline tests for the status/`summary` logic.
+
+### Note
+- Google Finance has **no API** (shut down 2012); Yahoo/NSE quote endpoints are CORS-blocked in the browser. A free Twelve Data key or a self-hosted Worker proxy is the practical in-page live source.
+
+---
+
 ## [2.2.0] — 2026-10-01
 
 ### Added

@@ -26,6 +26,9 @@ A Zerodha trader runs this fully from their Android phone.
 STRATEGY LOGIC        → src/quant_engine.py      (Python — read-only reference)
 EXIT / ROTATION       → src/trade_lifecycle.py   (Python state machine)
 CREDIBILITY BACKTEST  → scripts/single_stock_backtest.py
+LIVE TARGET TRACKER   → scripts/track_targets.py  (positions.json → targets.json)
+OPEN POSITIONS        → positions.json            (symbol, entry, shares, target_pct)
+LIVE QUOTE PROXY      → workers/yahoo-proxy.js     (free Cloudflare Worker, keyless)
 APP UI                → app/js/app.js            (Vanilla JS)
 APP STYLING           → app/css/style.css        (CSS variables, mobile-first)
 APP SHELL             → app/index.html           (4-tab structure)
@@ -34,7 +37,8 @@ APP DEPLOYMENT        → ../../.github/workflows/deploy_app.yml      (repo root
 ANDROID BUILD         → ../../.github/workflows/build_android.yml   (repo root)
 ANDROID TWA CONFIG    → android/twa-manifest.json
 ASSET LINKS           → app/.well-known/assetlinks.json
-TESTS                 → tests/test_trade_lifecycle.py, tests/test_single_stock_backtest.py
+TESTS                 → tests/test_trade_lifecycle.py, tests/test_single_stock_backtest.py,
+                        tests/test_track_targets.py
 ```
 
 > Note: GitHub Actions only reads workflows from the **repository root**
@@ -217,6 +221,7 @@ python scripts/single_stock_backtest.py --rebuild-index   # offline, from existi
 
 - [ ] `python tests/test_trade_lifecycle.py` — lifecycle + rotation exits pass
 - [ ] `python tests/test_single_stock_backtest.py` — backtester + index pass
+- [ ] `python tests/test_track_targets.py` — target tracker status logic passes
 - [ ] `node --check app/js/app.js` — no syntax errors
 - [ ] Open `app/index.html` via `python -m http.server` → does the app load?
 - [ ] `STATUS=CASH` signal → does the app show the cash state correctly?
