@@ -54,6 +54,8 @@ from trade_lifecycle import (
     Position,
     calculate_theoretical_skewness_edge
 )
+from momentum_quality import evaluate_institutional_quality
+
 
 IST = ZoneInfo("Asia/Kolkata")
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -384,6 +386,9 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
         is_prime = (dist_50 <= 25.0) and (atr_pct <= 6.5)
         setup_quality = "PRIME_LOW_RISK" if is_prime else ("OVER_EXTENDED" if dist_50 > 25.0 else "HIGH_VOLATILITY")
 
+        # Evaluate Institutional Quality (Volume Surge, VCP Coiling, Frog-in-the-Pan Smoothness)
+        inst_quality = evaluate_institutional_quality(df_s)
+
         # Circuit band metadata
         band_raw = circuit_bands.get(sym, "Dynamic")
         band_pct_val = None
@@ -429,6 +434,16 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
             "CIRCUIT_DIAG": circuit_diag,
             "IS_PRIME": is_prime,
             "SETUP_QUALITY": setup_quality,
+            "INSTITUTIONAL_GRADE": inst_quality["grade"],
+            "INSTITUTIONAL_SCORE": inst_quality["quality_score"],
+            "VCP_RATIO": inst_quality["vcp_ratio"],
+            "VCP_STATUS": inst_quality["vcp_status"],
+            "VOL_SURGE_RATIO": inst_quality["vol_ratio"],
+            "VOL_STATUS": inst_quality["vol_status"],
+            "FIP_SMOOTHNESS": inst_quality["fip_smoothness_pct"],
+            "FIP_STATUS": inst_quality["fip_status"],
+            "INSTITUTIONAL_WARNINGS": inst_quality["warnings"],
+            "IS_INSTITUTIONAL": inst_quality["is_institutional_grade"],
         })
 
     # 7. Cross-Sectional Percentile Normalization for CMS Score
@@ -497,11 +512,30 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
                 "M3_TARGET": m3_ref,
                 "M3_RUNNER_RULE": "Power Runner: Dynamic 50 SMA / 20 EMA / Blow-off trail (Ceiling removed)",
                 "SIZING_META": size_meta,
-                "CIRCUIT_RISK": row["CIRCUIT_DIAG"]["execution_risk_flag"]
+                "CIRCUIT_RISK": row["CIRCUIT_DIAG"]["execution_risk_flag"],
+                "INSTITUTIONAL_GRADE": row["INSTITUTIONAL_GRADE"],
+                "INSTITUTIONAL_SCORE": row["INSTITUTIONAL_SCORE"],
+                "VCP_RATIO": row["VCP_RATIO"],
+                "VCP_STATUS": row["VCP_STATUS"],
+                "VOL_SURGE_RATIO": row["VOL_SURGE_RATIO"],
+                "VOL_STATUS": row["VOL_STATUS"],
+                "FIP_SMOOTHNESS": row["FIP_SMOOTHNESS"],
+                "FIP_STATUS": row["FIP_STATUS"],
+                "INSTITUTIONAL_WARNINGS": row["INSTITUTIONAL_WARNINGS"],
+                "IS_INSTITUTIONAL": row["IS_INSTITUTIONAL"],
             })
 
-    # Sort: Prime low-risk setups first, then sorted by CMS descending
-    qualified_stocks.sort(key=lambda x: (x["IS_PRIME"], x["CMS_SCORE"]), reverse=True)
+    # Sort: Institutional Grade first (PRIME_INSTITUTIONAL > MODERATE > LOW_PROB > RETAIL_TRAP),
+    # then Prime low-risk setups, then sorted by CMS descending
+    grade_weights = {"PRIME_INSTITUTIONAL": 3, "MODERATE_CONVICTION": 2, "LOW_PROBABILITY": 1, "RETAIL_TRAP": 0}
+    qualified_stocks.sort(
+        key=lambda x: (
+            grade_weights.get(x.get("INSTITUTIONAL_GRADE", ""), 0),
+            x["IS_PRIME"],
+            x["CMS_SCORE"]
+        ),
+        reverse=True
+    )
     total_qualified = len(qualified_stocks)
     print(f"\n🏆 INSTITUTIONAL STAGE-2 QUALIFIED LEADERS (₹5 Cr+ Turnover): {total_qualified}")
 
@@ -514,10 +548,11 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
         alternates = []
         print(f"🛑 CASH REGIME ENFORCED: {regime_info['benchmark']} is below its 200 SMA. No new positions permitted.")
     else:
-        # Sizing winner for small capital demo or configured capital
-        cands_under_default = [s for s in qualified_stocks if s["CMP"] <= (capital_default - BUFFER)]
-        winner = cands_under_default[0] if cands_under_default else (qualified_stocks[0] if qualified_stocks else None)
-        alternates = cands_under_default[1:4] if len(cands_under_default) > 1 else qualified_stocks[1:4]
+        # Sizing winner: Only candidates meeting institutional quality grade are eligible
+        eligible_leaders = [s for s in qualified_stocks if s.get("IS_INSTITUTIONAL", False)]
+        cands_under_default = [s for s in eligible_leaders if s["CMP"] <= (capital_default - BUFFER)]
+        winner = cands_under_default[0] if cands_under_default else (eligible_leaders[0] if eligible_leaders else (qualified_stocks[0] if qualified_stocks else None))
+        alternates = [s for s in eligible_leaders if s != winner][:3] if eligible_leaders else qualified_stocks[1:4]
         status = "ACTIVE_SIGNAL" if winner else "CASH"
 
         if winner:
@@ -643,12 +678,11 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
 
     print("\n" + "=" * 65)
     print(f"🎯  TOP MOMENTUM LEADERS (TWO-TIER GTT) FOR {dt_obj.strftime('%d-%b-%Y')}:")
-    print("=" * 65)
     for idx, s in enumerate(qualified_stocks[:10], 1):
         print(
             f"{idx:2d}. {s['SYMBOL']:12s} | CMP: ₹{s['CMP']:7.2f} | CMS: {s['CMS_SCORE']:5.1f} | "
-            f"RSI: {s['RSI_14']:4.1f} | Stop: ₹{s['INITIAL_STOP']:7.2f} (-{s['INITIAL_STOP_PCT']}%) | "
-            f"M1: ₹{s['M1_TARGET']:7.2f} | M2: ₹{s['M2_TARGET']:7.2f} (Bank 40%)"
+            f"Grade: {s.get('INSTITUTIONAL_GRADE', 'N/A'):20s} | Vol: {s.get('VOL_SURGE_RATIO', 1.0):4.2f}x | "
+            f"VCP: {s.get('VCP_RATIO', 1.0):4.2f} | Stop: ₹{s['INITIAL_STOP']:7.2f} (-{s['INITIAL_STOP_PCT']}%)"
         )
     print("=" * 65)
 

@@ -1744,6 +1744,14 @@ function renderDecision(s, isDefensive, capital) {
       <div><strong>Not affordable at ₹${Number(capital).toLocaleString('en-IN')}</strong>Needs about ₹${Math.ceil(cmp + 26).toLocaleString('en-IN')} for one share. Raise sizing capital or pick a lower-priced leader.</div>`;
     return;
   }
+  if (s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP') {
+    const reason = (s.INSTITUTIONAL_WARNINGS && s.INSTITUTIONAL_WARNINGS[0]) || 'Low volume or expanding volatility';
+    box.className = 'decision decision--warn';
+    box.hidden = false;
+    box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+      <div><strong>⚠️ Institutional Risk — Retail Trap</strong>${reason}. Institutional volume is missing or volatility is whipsawing. High probability of false breakout.</div>`;
+    return;
+  }
   if (circuitRisk) {
     box.className = 'decision decision--warn';
     box.hidden = false;
@@ -1779,7 +1787,9 @@ function renderActiveSignal(h, alts, isDefensive = false) {
     </div>
     <div class="ins-identity">
       <span class="ins-symbol">${h.SYMBOL}</span>
-      ${h.IS_PRIME ? '<span class="tag tag--prime">PRIME</span>' : ''}
+      ${h.INSTITUTIONAL_GRADE === 'PRIME_INSTITUTIONAL' ? '<span class="tag tag--prime" style="background:rgba(34,197,94,0.18);color:#22c55e;border:1px solid rgba(34,197,94,0.4)">★ INST PRIME</span>' : ''}
+      ${h.INSTITUTIONAL_GRADE === 'RETAIL_TRAP' ? '<span class="tag tag--risk" style="background:rgba(239,68,68,0.18);color:#ef4444;border:1px solid rgba(239,68,68,0.4)">⚠️ RETAIL TRAP</span>' : ''}
+      ${h.IS_PRIME && h.INSTITUTIONAL_GRADE !== 'PRIME_INSTITUTIONAL' ? '<span class="tag tag--prime">PRIME</span>' : ''}
       <span class="ins-cmp num">${fmtINR(cmp)}</span>
     </div>
     <div class="ins-sub">${setup || 'Stage-2 momentum leader'}</div>
@@ -1789,6 +1799,8 @@ function renderActiveSignal(h, alts, isDefensive = false) {
     </div>
     <div class="ins-chips">
       <span class="ins-chip"><small>CMS</small><span>${isNaN(cms) ? h.CMS_SCORE : cms.toFixed(1)}</span></span>
+      <span class="ins-chip"><small>Vol Surge</small><span style="color:${(parseFloat(h.VOL_SURGE_RATIO) || 1.0) >= 1.0 ? 'var(--accent)' : 'var(--red)'}">${h.VOL_SURGE_RATIO || h.VOL_RATIO || 1.0}x</span></span>
+      <span class="ins-chip"><small>VCP</small><span>${h.VCP_RATIO || '1.0'}</span></span>
       <span class="ins-chip"><small>RSI</small><span>${isNaN(rsi) ? '–' : rsi.toFixed(1)}</span></span>
       <span class="ins-chip"><small>ATR</small><span>${atrPct.toFixed(1)}%</span></span>
       <span class="ins-chip"><small>Band</small><span>${h.CIRCUIT_BAND || '20'}%</span></span>
@@ -1853,6 +1865,8 @@ function proxPctOf(s) {
 }
 
 function setupShort(s) {
+  if (s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP') return '⚠️ Retail Trap';
+  if (s.INSTITUTIONAL_GRADE === 'PRIME_INSTITUTIONAL') return '★ Inst. Prime';
   if (s.IS_PRIME) return 'Prime';
   const q = (s.SETUP_QUALITY || '').toString().replace(/_/g, ' ');
   if (!q) return 'Momentum';
@@ -1882,8 +1896,11 @@ function buildGridRow(s, idx, userCapital) {
     : 'No backtest report';
   const pctCell = v => isNaN(v) ? '–' : `<span class="${v >= 0 ? 'pos' : 'neg'}">${v >= 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
 
+  const isTrap = s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP';
+  const isInstPrime = s.INSTITUTIONAL_GRADE === 'PRIME_INSTITUTIONAL';
+
   const tr = document.createElement('tr');
-  tr.className = 'stock-table-row' + (isSelected ? ' selected' : '');
+  tr.className = 'stock-table-row' + (isSelected ? ' selected' : '') + (isTrap ? ' row--trap' : '');
   tr.setAttribute('role', 'row');
   tr.dataset.symbol = s.SYMBOL;
   tr.innerHTML = `
@@ -1892,7 +1909,9 @@ function buildGridRow(s, idx, userCapital) {
       <div class="sec-cell">
         <span class="sec-symbol">${s.SYMBOL}</span>
         <span class="sec-tags">
-          ${s.IS_PRIME ? '<span class="tag tag--prime">PRIME</span>' : ''}
+          ${isInstPrime ? '<span class="tag tag--prime" style="background:rgba(34,197,94,0.18);color:#22c55e;border:1px solid rgba(34,197,94,0.4)">★ INST PRIME</span>' : ''}
+          ${isTrap ? '<span class="tag tag--risk" style="background:rgba(239,68,68,0.18);color:#ef4444;border:1px solid rgba(239,68,68,0.4)">⚠️ RETAIL TRAP</span>' : ''}
+          ${s.IS_PRIME && !isInstPrime ? '<span class="tag tag--prime">PRIME</span>' : ''}
           <span class="tag">${band}% band</span>
           ${(s.CIRCUIT_RISK === true || band <= 5) ? '<span class="tag tag--risk">CIRCUIT RISK</span>' : ''}
         </span>

@@ -1,11 +1,12 @@
 {
   "symbol": "JGCHEM",
-  "generated_at": "2026-10-01T02:32:12Z",
+  "generated_at": "2026-10-01T06:13:55Z",
   "period": {
     "start": "2024-03-13",
-    "end": "2026-09-29",
-    "bars": 633
+    "end": "2026-10-01",
+    "bars": 634
   },
+  "pace": "fast",
   "params": {
     "capital": 1000.0,
     "target_pct": 15.0,
@@ -15,13 +16,13 @@
     "max_hold_days": 60
   },
   "study": {
-    "observations": 100,
+    "observations": 101,
     "target_hits": 41,
     "stop_hits": 51,
-    "timeouts": 8,
-    "target_hit_rate_pct": 41.0,
-    "stop_hit_rate_pct": 51.0,
-    "expectancy_pct": 3.16,
+    "timeouts": 9,
+    "target_hit_rate_pct": 40.6,
+    "stop_hit_rate_pct": 50.5,
+    "expectancy_pct": 2.53,
     "avg_hold_to_target_days": 10.8,
     "avg_hold_to_stop_days": 10.2,
     "median_return_pct": -7.0,
@@ -60,13 +61,13 @@
   },
   "simulation": {
     "cycles": 8,
-    "final_capital": 1008.43,
-    "total_return_pct": 0.84,
+    "final_capital": 964.82,
+    "total_return_pct": -3.52,
     "win_rate_pct": 50.0,
-    "profit_factor": 1.04,
+    "profit_factor": 0.84,
     "max_drawdown_pct": -15.64,
-    "avg_cycle_days": 11.6,
-    "cagr_pct": 0.7,
+    "avg_cycle_days": 11.8,
+    "cagr_pct": -2.9,
     "target_exits": 3,
     "stop_exits": 4,
     "deadline_exits": 1,
@@ -157,21 +158,21 @@
       },
       {
         "entry_date": "2026-09-17",
-        "exit_date": "2026-09-29",
+        "exit_date": "2026-10-01",
         "entry_price": 583.0,
-        "exit_price": 658.65,
+        "exit_price": 615.0,
         "shares": 1,
-        "pnl": 58.48,
-        "pnl_pct": 10.02,
-        "hold_days": 8,
+        "pnl": 14.87,
+        "pnl_pct": 2.55,
+        "hold_days": 9,
         "reason": "deadline",
-        "capital_after": 1008.43
+        "capital_after": 964.82
       }
     ]
   },
   "verdict": {
     "credible": false,
-    "score": 32.7,
-    "summary": "Weak: stops dominate (51% stopped, 41% reached target)."
+    "score": 31.6,
+    "summary": "Weak: stops dominate (50% stopped, 41% reached target)."
   }
 }
