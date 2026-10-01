@@ -1,5 +1,15 @@
 [
   {
+    "date": "2026-10-01",
+    "display_date": "01 Oct 2026",
+    "is_today": true,
+    "winner": "CASH",
+    "cmp": 0,
+    "cms": 0,
+    "total_qualified": 79,
+    "regime": "DEFENSIVE_CASH"
+  },
+  {
     "date": "2026-09-30",
     "display_date": "30 Sep 2026",
     "is_today": false,
