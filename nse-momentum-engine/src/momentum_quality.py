@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-momentum_quality.py — Institutional Accumulation Quality & Anti-Trap Defense
-=============================================================================
-Pure domain module implementing canonical institutional quality and anti-trap gates:
-  1. Wyckoff Closing Range (Internal Bar Strength: (Close - Low) / (High - Low))
-  2. Up/Down Volume Ratio (Accumulation vs. Distribution over 50 sessions)
-  3. Volume Dry-Up (VDU) in Base prior to breakout
-  4. Minervini Volume Surge Confirmation (Breakout volume vs. 20d average)
-  5. Volatility Contraction Pattern (VCP) Ratio (ATR5 / ATR20 coiling)
-  6. Frog-in-the-Pan (FIP) Information Discreteness (Smoothness vs. discrete spike)
-  7. Composite Accumulation Quality Score (AQS: 0–100) & Hard Anti-Trap Vetoes
-
-Strictly adheres to AGENTS.md: pure functions, immutable inputs, typed outputs.
-"""
+"""momentum_quality.py — Institutional Accumulation Quality (AQS) & Anti-Trap Defense (AGENTS.md compliant)."""
 
 from __future__ import annotations
 import math
@@ -227,12 +214,15 @@ def evaluate_institutional_quality(df: pd.DataFrame) -> Dict[str, Any]:
     warnings: List[str] = []
     is_trap_veto = False
 
-    # 1. Hard Anti-Trap Veto: Wyckoff Upthrust on heavy volume
-    if cr["is_upthrust_trap"] and vol["vol_ratio"] >= 1.20:
+    # 1. Hard Anti-Trap Veto: Wyckoff Upthrust without underlying accumulation (CR <= 0.30 and Vol >= 1.50)
+    if cr["closing_range"] <= 0.30 and vol["vol_ratio"] >= 1.50 and ud["up_down_vol_ratio"] < 1.05:
         is_trap_veto = True
-        warnings.append(f"Wyckoff Upthrust Trap: Volume surged ({vol['vol_ratio']}x) but Close in lower half (CR {cr['closing_range']})")
+        warnings.append(f"Wyckoff Upthrust Trap: Volume surged ({vol['vol_ratio']}x) with close in bottom third (CR {cr['closing_range']})")
+    elif cr["closing_range"] <= 0.30 and vol["vol_ratio"] >= 1.50:
+        is_trap_veto = True
+        warnings.append(f"Wyckoff Upthrust Trap: Heavy volume ({vol['vol_ratio']}x) rejected near session lows (CR {cr['closing_range']})")
     elif cr["is_upthrust_trap"]:
-        warnings.append(f"Weak close in lower half of daily range (CR {cr['closing_range']})")
+        warnings.append(f"Resistance rejection warning: Session closed in lower half (CR {cr['closing_range']}) — Breakout unconfirmed")
 
     # 2. Hard Anti-Trap Veto: Heavy distribution volume with sub-average breakout
     if ud["ud_status"] == "DISTRIBUTION_PRESSURE" and vol["vol_ratio"] < 0.85:
@@ -246,9 +236,9 @@ def evaluate_institutional_quality(df: pd.DataFrame) -> Dict[str, Any]:
     if not fip["is_smooth"]:
         warnings.append(f"Discrete jump profile (Smoothness {fip['smoothness_pct']}%) — Mean-reversion risk")
 
-    # Composite AQS Points (0 - 100)
+    # Composite AQS Points (0 - 100): Preserves multi-month institutional accumulation
     score = 0.0
-    score += 25.0 if cr["is_strong_close"] else (15.0 if not cr["is_upthrust_trap"] else 0.0)
+    score += 25.0 if cr["is_strong_close"] else (15.0 if cr["closing_range"] >= 0.45 else 0.0)
     score += 20.0 if vol["vol_ratio"] >= 1.20 else (10.0 if vol["is_confirmed"] else 0.0)
     score += 20.0 if ud["up_down_vol_ratio"] >= 1.20 else (10.0 if ud["is_accumulating"] else 0.0)
     score += 20.0 if vcp["is_coiled"] else (10.0 if vcp["vcp_ratio"] <= 1.20 else 0.0)

@@ -1946,7 +1946,10 @@ function renderAQSDiagnostics(h) {
 
   const score = h.AQS_SCORE != null ? Math.round(parseFloat(h.AQS_SCORE)) : (h.INSTITUTIONAL_SCORE ? Math.round(parseFloat(h.INSTITUTIONAL_SCORE)) : null);
   const grade = h.AQS_GRADE || h.INSTITUTIONAL_GRADE || 'NEUTRAL';
-  const isTrap = h.IS_TRAP_VETO === true || grade === 'RETAIL_TRAP' || grade === 'TRAP_VETO' || h.CR_STATUS === 'UPTHRUST_TRAP';
+  const isTrap = h.IS_TRAP_VETO === true || grade === 'RETAIL_TRAP' || grade === 'TRAP_VETO';
+  const ftfState = h.FTF_STATE || '';
+  const isCoiling = ftfState === 'FTF_COILING' || ftfState === 'RESISTANCE_PROBE';
+  const isConfirmedBreakout = ftfState === 'CONFIRMED_BREAKOUT';
   const isPrime = grade === 'PRIME_ACCUMULATION' || (score >= 75 && !isTrap);
   const cr = parseFloat(h.CLOSING_RANGE);
   const crStatus = h.CR_STATUS || (cr >= 0.7 ? 'STRONG_BULL_CLOSE' : cr < 0.5 ? 'UPTHRUST_TRAP' : 'NEUTRAL_CLOSE');
@@ -1957,21 +1960,35 @@ function renderAQSDiagnostics(h) {
 
   if (badge) {
     badge.textContent = `${score != null ? score + '/100 ' : ''}${grade}`;
-    badge.className = 'badge ' + (isTrap ? 'badge--defensive' : isPrime ? 'badge--bull' : 'badge--caution');
+    badge.className = 'badge ' + (isTrap ? 'badge--defensive' : (isConfirmedBreakout || isPrime) ? 'badge--bull' : 'badge--caution');
   }
 
   let bannerHtml = '';
   if (isTrap) {
     bannerHtml = `<div class="aqs-banner aqs-banner--trap">
       <svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
-      <div><strong>⚠️ TRAP VETO / RETAIL TRAP DETECTED</strong>
-      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">Price action indicates speculative retail chasing or selling into highs, not orderly institutional accumulation.</p></div>
+      <div><strong>⚠️ TRAP VETO / DISTRIBUTION TRAP DETECTED</strong>
+      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">Price action indicates severe distribution or failed breakout near session lows without institutional accumulation.</p></div>
+    </div>`;
+  } else if (isConfirmedBreakout) {
+    bannerHtml = `<div class="aqs-banner aqs-banner--prime" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4)">
+      <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>
+      <div><strong>🚀 CONFIRMED BREAKOUT EXPANSION</strong>
+      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">${h.FTF_DIAGNOSTIC || 'Cleared prior resistance peak on strong institutional volume surge.'}</p></div>
+    </div>`;
+  } else if (isCoiling) {
+    bannerHtml = `<div class="aqs-banner aqs-banner--neutral" style="background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:var(--text)">
+      <div style="font-size:1.1rem;margin-right:6px">⏳</div>
+      <div><strong>${ftfState === 'RESISTANCE_PROBE' ? '⚠️ RESISTANCE PROBE / UNCONFIRMED ATTEMPT' : '⏳ COILING ABSORPTION (FAILURE-TO-FAIL)'}</strong>
+      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">${h.FTF_DIAGNOSTIC || 'Prior resistance tested; downside floor held. Coiling for potential expansion.'}</p>
+      ${h.FTF_TRIGGER ? `<div style="margin-top:5px;font-size:0.74rem;font-weight:600;color:var(--accent)">🎯 Actionable Trigger: ${h.FTF_TRIGGER}</div>` : ''}
+      </div>
     </div>`;
   } else if (isPrime) {
     bannerHtml = `<div class="aqs-banner aqs-banner--prime">
       <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>
       <div><strong>★ PRIME ACCUMULATION VALIDATED</strong>
-      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">Strong persistent demand: High closing range with confirmed volume surge and tight pullback supply.</p></div>
+      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">Strong persistent demand: Orderly volume asymmetry, tight base contraction, and institutional sponsorship.</p></div>
     </div>`;
   } else {
     bannerHtml = `<div class="aqs-banner aqs-banner--neutral">
@@ -2107,6 +2124,8 @@ function buildGridRow(s, idx, userCapital) {
 
   const isTrap = s.IS_TRAP_VETO === true || s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP' || s.AQS_GRADE === 'TRAP_VETO';
   const isAqsPrime = s.AQS_GRADE === 'PRIME_ACCUMULATION' || (parseFloat(s.AQS_SCORE) >= 75) || s.INSTITUTIONAL_GRADE === 'PRIME_INSTITUTIONAL';
+  const isCoiling = s.FTF_STATE === 'FTF_COILING' || s.FTF_STATE === 'RESISTANCE_PROBE';
+  const isBreakout = s.FTF_STATE === 'CONFIRMED_BREAKOUT';
 
   const aqs = parseFloat(s.AQS_SCORE) || parseFloat(s.INSTITUTIONAL_SCORE);
   const aqsClass = aqs >= 75 ? 'hi' : aqs >= 55 ? 'mid' : 'lo';
@@ -2123,6 +2142,8 @@ function buildGridRow(s, idx, userCapital) {
         <span class="sec-symbol">${s.SYMBOL}</span>
         <span class="sec-tags">
           ${isAqsPrime ? `<span class="tag tag--prime" style="background:rgba(34,197,94,0.18);color:#22c55e;border:1px solid rgba(34,197,94,0.4)" title="Accumulation Quality Score: ${s.AQS_SCORE || '75+'}">★ AQS ${s.AQS_SCORE ? Math.round(s.AQS_SCORE) : 'PRIME'}</span>` : ''}
+          ${isBreakout ? `<span class="tag" style="background:rgba(34,197,94,0.22);color:#16a34a;border:1px solid rgba(34,197,94,0.5)" title="${s.FTF_DIAGNOSTIC || 'Confirmed Multi-Day Breakout'}">🚀 BREAKOUT</span>` : ''}
+          ${isCoiling ? `<span class="tag" style="background:rgba(234,179,8,0.18);color:#eab308;border:1px solid rgba(234,179,8,0.4)" title="${s.FTF_TRIGGER || 'Coiling near resistance'}">⏳ ${s.FTF_STATE === 'RESISTANCE_PROBE' ? 'PROBE' : 'COILING'}</span>` : ''}
           ${isTrap ? '<span class="tag tag--risk" style="background:rgba(239,68,68,0.18);color:#ef4444;border:1px solid rgba(239,68,68,0.4)" title="Anti-Trap Veto: Wyckoff upthrust or distribution">⚠️ TRAP VETO</span>' : ''}
           ${s.IS_PRIME && !isAqsPrime ? '<span class="tag tag--prime">PRIME</span>' : ''}
           <span class="tag">${band}% band</span>
@@ -2173,7 +2194,7 @@ function renderAllStocksTable(stocks, userCapital) {
   };
 
   const q = (currentSearch || '').toUpperCase();
-  const labelMap = { all: 'All', aqs_prime: '⚡ AQS Prime (≥70)', prime: 'Prime', sweet_rsi: 'Sweet RSI', affordable: 'Affordable', circuit_safe: 'Circuit-safe', strong_trend: 'Strong trend' };
+  const labelMap = { all: 'All', aqs_prime: '⚡ AQS Prime (≥70)', coiling: '⏳ Coiling (FTF)', prime: 'Prime', sweet_rsi: 'Sweet RSI', affordable: 'Affordable', circuit_safe: 'Circuit-safe', strong_trend: 'Strong trend' };
 
   const filtered = all.filter(s => {
     if (q && !String(s.SYMBOL).toUpperCase().includes(q)) return false;
@@ -2184,6 +2205,7 @@ function renderAllStocksTable(stocks, userCapital) {
     const aqs = parseFloat(s.AQS_SCORE) || parseFloat(s.INSTITUTIONAL_SCORE) || 0;
     switch (currentFilter) {
       case 'aqs_prime':    return aqs >= 70 && !s.IS_TRAP_VETO;
+      case 'coiling':      return s.FTF_STATE === 'FTF_COILING' || s.FTF_STATE === 'RESISTANCE_PROBE' || s.FTF_STATE === 'CONFIRMED_BREAKOUT';
       case 'prime':        return s.IS_PRIME === true || (parseFloat(s.CMS_SCORE) || 0) >= 90;
       case 'sweet_rsi':    return rsi >= 45 && rsi <= 75;
       case 'affordable':   return cmp <= (userCapital - 26);

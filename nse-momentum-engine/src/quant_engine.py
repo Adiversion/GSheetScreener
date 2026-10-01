@@ -55,6 +55,7 @@ from trade_lifecycle import (
     calculate_theoretical_skewness_edge
 )
 from momentum_quality import evaluate_institutional_quality
+from failure_to_fail import compute_failure_to_fail
 
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -408,6 +409,7 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
 
         # Evaluate Institutional Quality (Volume Surge, VCP Coiling, Frog-in-the-Pan Smoothness)
         inst_quality = evaluate_institutional_quality(df_s)
+        ftf_state = compute_failure_to_fail(df_s, high_52w=h52)
 
         # Circuit band metadata
         band_raw = circuit_bands.get(sym, "Dynamic")
@@ -474,6 +476,11 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
             "FIP_STATUS": inst_quality["fip_status"],
             "INSTITUTIONAL_WARNINGS": inst_quality["warnings"],
             "IS_INSTITUTIONAL": inst_quality["is_institutional_grade"],
+            "FTF_STATE": ftf_state["state"],
+            "FTF_TRIGGER": ftf_state.get("trigger_guidance"),
+            "FTF_DIAGNOSTIC": ftf_state.get("diagnostic"),
+            "PIVOT_RESISTANCE": ftf_state.get("pivot_resistance"),
+            "DOWNSIDE_FLOOR": ftf_state.get("downside_floor"),
         })
 
     # 7. Cross-Sectional Percentile Normalization for CMS Score
@@ -563,6 +570,11 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
                 "FIP_STATUS": row["FIP_STATUS"],
                 "INSTITUTIONAL_WARNINGS": row["INSTITUTIONAL_WARNINGS"],
                 "IS_INSTITUTIONAL": row["IS_INSTITUTIONAL"],
+                "FTF_STATE": row["FTF_STATE"],
+                "FTF_TRIGGER": row["FTF_TRIGGER"],
+                "FTF_DIAGNOSTIC": row["FTF_DIAGNOSTIC"],
+                "PIVOT_RESISTANCE": row["PIVOT_RESISTANCE"],
+                "DOWNSIDE_FLOOR": row["DOWNSIDE_FLOOR"],
             })
 
     # Sort: Anti-Trap Vetoes suppressed, then AQS Grade, then AQS Score, then CMS

@@ -1,0 +1,1117 @@
+Yes — **if Gemini called TDPOWERSYS a “trap” using only the 1-Oct data, we need to separate what is actually visible on 1-Oct from what we know from the preceding days.**
+
+And after checking the actual 1-Oct data, I think there is a **specific reason Gemini could call it a trap**, but that does **not** mean the trap conclusion is proven.
+
+### What 1-Oct actually showed
+
+TDPOWERSYS on 1-Oct:
+
+- Open: **₹779.90**
+- High: **₹811.95**
+- Low: **₹773.55**
+- Close/current reported: **₹809.70**
+- Volume: about **2.67M**
+- Previous close: **₹786.05**
+- 52-week high: **₹817.55** [Investing.com Nigeria](https://ng.investing.com/equities/td-power-historical-data?utm_source=chatgpt.com)
+
+So the day's structure is approximately:
+
+```text
+₹817.55 ───────── 52W HIGH
+             ↑
+        ₹811.95 high
+             │
+             │
+₹809.70 ─────● close/current
+             │
+₹786.05 ───── previous close
+             │
+₹779.90 ───── open
+             │
+₹773.55 ───── low
+```
+
+That **does not look like a completed failed breakout**.
+
+It is actually a session that moved from ₹779.90 to an intraday ₹811.95 and remained close to the high.
+
+---
+
+# So why could Gemini call it a trap?
+
+There are **three possible reasons**.
+
+## 1. It approached the 52-week high but didn't actually break it
+
+This is probably the strongest argument.
+
+The 52-week high is:
+
+**₹817.55**
+
+The 1-Oct high:
+
+**₹811.95**
+
+So:
+
+```text
+817.55 - 811.95 = ₹5.60
+```
+
+It got very close but **didn't take out the 52W high**.
+
+Therefore Gemini may be interpreting:
+
+```text
+approach resistance
++
+intraday rejection
++
+no actual breakout
+```
+
+as a potential bull trap.
+
+But that's only a **potential trap**, not a confirmed one.
+
+---
+
+# 2. Volume wasn't explosive relative to the prior day
+
+This is more interesting.
+
+29-Sep:
+
+**7.60M shares**
+
+30-Sep:
+
+**2.61M**
+
+1-Oct:
+
+**2.67M** according to Investing's historical feed. [The Economic Times](https://economictimes.indiatimes.com/td-power-systems-ltd/prices/companyid-34499.cms?utm_source=chatgpt.com)
+
+So:
+
+```text
+29 Sep       7.60M
+              ↓
+30 Sep       2.61M
+              ↓
+1 Oct        2.67M
+```
+
+The price is approaching the 52W high, but **volume on 1-Oct isn't returning to the huge 29-Sep participation level**.
+
+That's a legitimate warning that Gemini could be using.
+
+However, it is **not enough to call the move a trap**.
+
+It could equally mean:
+
+```text
+high-volume expansion
+        ↓
+lower-volume consolidation
+        ↓
+price retains gains
+        ↓
+final breakout still pending
+```
+
+That's precisely the phenomenon we're researching.
+
+---
+
+# 3. The intraday candle had rejection from ₹811.95
+
+The range:
+
+```text
+High = 811.95
+Low  = 773.55
+Close = 809.70
+```
+
+Actually gives a closing range of approximately:
+
+**94.4%**
+
+because:
+
+```text
+(809.70 - 773.55)
+------------------
+(811.95 - 773.55)
+≈ 94%
+```
+
+That's **very strong**, not weak.
+
+This is important.
+
+If Gemini says:
+
+> "1-Oct is a trap because it has a rejection candle"
+
+then the actual OHLC data doesn't strongly support that characterization.
+
+The stock closed very close to the day's high.
+
+---
+
+# Therefore I would NOT classify 1-Oct as a confirmed trap
+
+Based purely on the completed/available 1-Oct price data:
+
+```text
+52W high        817.55
+1-Oct high      811.95
+1-Oct close     809.70
+Closing range   ~94%
+```
+
+I'd classify it:
+
+# **UNRESOLVED BREAKOUT APPROACH**
+
+rather than:
+
+# **TRAP**
+
+That's a very important distinction.
+
+---
+
+# But here's where Gemini may have a valid point
+
+Suppose Gemini's logic is:
+
+```text
+29-Sep:
++7.67%
+7.60M volume
+major expansion
+
+30-Sep:
+volume collapses
+
+1-Oct:
+price approaches 52W high
+BUT
+volume remains only ~2.67M
+AND
+high fails to clear ₹817.55
+```
+
+Then its argument is:
+
+```text
+BIG MOVE
+   ↓
+BIG VOLUME
+   ↓
+FOLLOW-THROUGH
+   ↓
+BUT
+   ↓
+NO NEW HIGH
+   ↓
+NO LARGE VOLUME CONFIRMATION
+```
+
+That is a **valid warning condition**.
+
+But the correct label should be:
+
+```text
+BREAKOUT ATTEMPT — UNCONFIRMED
+```
+
+not:
+
+```text
+TRAP = TRUE
+```
+
+because we haven't seen the subsequent failure yet.
+
+---
+
+# This is exactly why our new state machine matters
+
+At the end of 1-Oct:
+
+```text
+STATE:
+
+Strong candidate
+      ↓
+High-volume expansion
+      ↓
+Resistance / 52W-high approach
+      ↓
+Price holding strongly
+      ↓
+High does NOT exceed 817.55
+      ↓
+Volume not extreme
+      ↓
+        ?
+```
+
+The correct state is:
+
+```text
+⚠️ BREAKOUT ATTEMPT / UNRESOLVED
+```
+
+Then there are two possible futures.
+
+### Future A
+
+```text
+2-Oct
+
+High > 817.55
+Close > 817.55
+Volume expands
+CR remains strong
+        ↓
+CONFIRMED BREAKOUT
+```
+
+### Future B
+
+```text
+2-Oct
+
+Price falls
+        ↓
+817.55 rejected
+        ↓
+800 breaks
+        ↓
+786 breaks
+        ↓
+heavy selling
+        ↓
+FAILED BREAKOUT / TRAP
+```
+
+**Only Future B earns the label "trap."**
+
+---
+
+# And this reveals an important flaw in Gemini's approach
+
+If Gemini says:
+
+> "It's a trap"
+
+**based only on the 1-Oct candle**, it is making a classification that requires future information.
+
+Your research specification explicitly prohibits this:
+
+> At T, use only T and earlier; T+1/T+2 are for outcome labeling. USER_V25_TRAP_TEST_CONFIRMATION…
+
+So Gemini can say:
+
+> **"Potential trap / failed-breakout risk."**
+
+It cannot objectively say:
+
+> **"This is a confirmed trap."**
+
+on 1-Oct alone.
+
+---
+
+# There's another very interesting piece of evidence
+
+Groww's technical page currently has:
+
+- Price around ₹762.75 in its captured snapshot
+- R1 ₹777.48
+- R2 ₹799.96
+- R3 ₹812.78
+- RSI 59.12
+- MACD -5.11
+- 50D SMA ₹651.58
+- 200D SMA ₹511.63 [Groww](https://groww.in/stocks/td-power-systems-ltd/technicals?utm_source=chatgpt.com)
+
+Notice how Groww's resistance levels put:
+
+```text
+R1 ≈ 777
+R2 ≈ 800
+R3 ≈ 813
+```
+
+The 1-Oct session traded:
+
+```text
+High ≈ 812
+```
+
+So it effectively reached **R3 / just below the 52W high**.
+
+That gives Gemini a legitimate technical reason to be cautious:
+
+```text
+R3 / 52W resistance
+        ↓
+price reaches it
+        ↓
+breakout not yet established
+```
+
+But again:
+
+**caution ≠ trap confirmation.**
+
+---
+
+# The research question we should now ask
+
+This is actually getting very interesting.
+
+For TDPOWERSYS, compare:
+
+### Pattern A
+
+```text
+Large-volume expansion
+→ volume contraction
+→ price holds
+→ approaches 52W high
+→ fails to break
+→ reverses
+```
+
+versus:
+
+### Pattern B
+
+```text
+Large-volume expansion
+→ volume contraction
+→ price holds
+→ approaches 52W high
+→ breaks
+→ continues
+```
+
+That is exactly the **trap-vs-confirmation problem**.
+
+And TDPOWERSYS is currently sitting **between those two outcomes**.
+
+So I would not use TDPOWERSYS as evidence that the pattern works yet.
+
+I would use it as an **excellent unresolved test case**.
+
+---
+
+## My classification from 1-Oct data only
+
+| Feature | 1-Oct observation | Interpretation |
+|---|---|---|
+| Near 52W high | Yes | ⚠️ Resistance |
+| 52W high broken | **No** | ⚠️ Unconfirmed |
+| Intraday rejection | Some | Not decisive |
+| Closing range | **~94%** | ✅ Strong |
+| Close vs previous close | **Positive** | ✅ Positive |
+| Volume | ~2.67M | ⚠️ Not extreme |
+| Previous-day volume | ~2.61M | Neutral |
+| 29-Sep volume | ~7.60M | Important context |
+| Support lost | **No** | ✅ |
+| Confirmed trap | **No** | ❌ Not established |
+| Confirmed breakout | **No** | ❌ Not established |
+| Correct state | **BREAKOUT ATTEMPT / WAIT** | |
+
+The 1-Oct historical figures are independently reported by Investing.com and Economic Times. [The Economic Times](https://economictimes.indiatimes.com/td-power-systems-ltd/prices/companyid-34499.cms?utm_source=chatgpt.com)
+
+**So if Gemini's exact claim was "TDPOWERSYS is a trap because of 1-Oct," send me its analysis/output. I can dissect it line-by-line and identify exactly which part is supported by the data, which part is a reasonable warning, and which part is an unsupported inference.**
+
+
+
+### AQS & Anti-Trap Check
+
+**35/100 TRAP_VETO**
+
+**⚠️ TRAP VETO / RETAIL TRAP DETECTED**
+
+**Price action indicates speculative retail chasing or selling into highs, not orderly institutional accumulation.**
+
+**Triggered Anti-Trap Warnings:**
+
+- Wyckoff Upthrust Trap: Volume surged (2.06x) but Close in lower half (CR 0.48)
+- Expanding volatility whipsaw (VCP 1.14) — Stop-out risk
+
+| **Wyckoff Closing Range (CR)**<br>(Close - Low) / (High - Low) |   **48%** | UPTHRUST_TRAP       |
+| -------------------------------------------------------------- | --------: | ------------------- |
+| **Breakout Volume Ratio**<br>Session Vol / 20d Volume Avg      | **2.06x** | Surge confirmed     |
+| **50-day Up/Down Volume**<br>Sum(Up Vol) / Sum(Down Vol)       |  **2.80** | STRONG_ACCUMULATION |
+| **Volume Dry-Up (VDU)**<br>Base Vol vs 50d avg                 | **1.00x** | MODERATE_VOLUME     |
+
+**Chart Verification:**\
+Verify on TradingView / NSE: TDPOWERSYS (CMP ₹792.15).\
+• Daily candle closed at 48% of range (lower half). Long upper wick shows intraday rejection.
+
+
+### AQS & Anti-Trap Check
+
+**35/100 TRAP_VETO**
+
+**⚠️ TRAP VETO / RETAIL TRAP DETECTED**
+
+**Price action indicates speculative retail chasing or selling into highs, not orderly institutional accumulation.**
+
+**Triggered Anti-Trap Warnings:**
+
+- Wyckoff Upthrust Trap: Volume surged (2.06x) but Close in lower half (CR 0.48)
+- Expanding volatility whipsaw (VCP 1.14) — Stop-out risk
+
+| **Wyckoff Closing Range (CR)**<br>(Close - Low) / (High - Low) |   **48%** | UPTHRUST_TRAP       |
+| -------------------------------------------------------------- | --------: | ------------------- |
+| **Breakout Volume Ratio**<br>Session Vol / 20d Volume Avg      | **2.06x** | Surge confirmed     |
+| **50-day Up/Down Volume**<br>Sum(Up Vol) / Sum(Down Vol)       |  **2.80** | STRONG_ACCUMULATION |
+| **Volume Dry-Up (VDU)**<br>Base Vol vs 50d avg                 | **1.00x** | MODERATE_VOLUME     |
+
+**Chart Verification:**\
+Verify on TradingView / NSE: TDPOWERSYS (CMP ₹792.15).\
+• Daily candle closed at 48% of range (lower half). Long upper wick shows intraday rejection.
+
+
+
+Yes. **Now that you have given me Gemini's exact AQS output, I can see why it called TDPOWERSYS a trap.** But I would separate the parts that are mathematically supported from the parts where Gemini is over-interpreting the candle.
+
+## Gemini's claim
+
+It says:
+
+> **35/100 TRAP_VETO → retail trap detected**
+
+based primarily on:
+
+- CR = **48%**
+- Volume ratio = **2.06×**
+- 50D Up/Down Volume = **2.80**
+- VDU = **1.00×**
+- VCP = **1.14**
+- long upper wick / rejection
+
+The important question is:
+
+> **Does 1-Oct actually contain enough information to justify "trap"?**
+
+### My answer: **it justifies a warning, but not a confirmed trap.**
+
+---
+
+# 1. First, let's reconstruct 1-Oct
+
+The NSE historical feed I can verify reports:
+
+| 1-Oct-2026 | Value |
+|---|---:|
+| Open | ₹779.90 |
+| High | ₹811.95 |
+| Low | ₹773.55 |
+| Close | ₹809.70 |
+| Volume | 2.67M |
+| Previous close | ₹786.05 |
+| 52W high | ₹817.55 | :chatgpt-content-reference{index="0"}
+
+
+There are intraday sources with slightly different snapshots because the session was still running when some pages were captured. For example, Choice reported ₹801.65 at 11:24 AM, with high ₹809.45 and volume 22.13 lakh; it also reported delivery at 41.27%. [Choice India](https://choiceindia.com/stocks/td-power-systems-ltd-share-price?utm_source=chatgpt.com)
+
+So we should use the **completed NSE historical series** for the final candle rather than an intraday snapshot.
+
+---
+
+# 2. Gemini's CR = 48% doesn't match that completed candle
+
+This is the first major issue.
+
+Using:
+
+```text
+CR = (Close - Low) / (High - Low)
+```
+
+with the completed NSE values:
+
+```text
+Close = 809.70
+Low   = 773.55
+High  = 811.95
+```
+
+we get:
+
+**CR ≈ 94.1%**
+
+not 48%.
+
+So if Gemini says:
+
+```text
+CR = 48%
+```
+
+it is almost certainly using a **different candle/data snapshot**, or it calculated CR from a different set of OHLC values.
+
+That matters enormously.
+
+Because:
+
+```text
+CR = 48%
+```
+
+would imply:
+
+> price closed around the middle of the day's range.
+
+Whereas:
+
+```text
+CR ≈ 94%
+```
+
+means:
+
+> price closed very close to the day's high.
+
+Those are **completely different price-action interpretations**.
+
+And the latter is not what I would call a classic upthrust.
+
+---
+
+# 3. What does the actual 1-Oct candle look like?
+
+Using the verified completed values:
+
+```text
+₹817.55 ───────── 52W HIGH
+          │
+₹811.95 ──┐ HIGH
+          │
+₹809.70 ──● CLOSE
+          │
+          │
+₹786.05 ── previous close
+          │
+₹779.90 ── OPEN
+          │
+₹773.55 ── LOW
+```
+
+The stock:
+
+- opened below previous close,
+- dipped to ₹773.55,
+- rallied to ₹811.95,
+- closed at ₹809.70.
+
+That's a **strong closing location**.
+
+So I would reject the specific statement:
+
+> "Close in lower half → upthrust trap"
+
+**if we're talking about the completed 1-Oct NSE candle.**
+
+The data doesn't support that.
+
+---
+
+# 4. But Gemini has one legitimate warning
+
+The 52-week high is:
+
+**₹817.55**
+
+1-Oct high:
+
+**₹811.95**
+
+So it got within only:
+
+**₹5.60**
+
+of the 52-week high.
+
+That's approximately:
+
+**0.68% below the 52W high.**
+
+Therefore:
+
+```text
+approaching major resistance
++
+large intraday range
++
+doesn't actually clear 52W high
+```
+
+is a legitimate **breakout-risk warning**.
+
+But that is different from:
+
+```text
+TRAP CONFIRMED
+```
+
+I'd call it:
+
+### `BREAKOUT ATTEMPT — UNCONFIRMED`
+
+---
+
+# 5. What about the 2.06× volume?
+
+This is actually the most interesting part of Gemini's analysis.
+
+If Gemini's 2.06× is correctly calculated against its chosen 20-day baseline, then:
+
+```text
+Volume ≈ 2.06 × normal
+```
+
+That's meaningful participation.
+
+But volume alone cannot tell us:
+
+```text
+buying
+selling
+institutional
+retail
+trap
+```
+
+And your own research specification explicitly prohibits that interpretation. USER_V25_TRAP_TEST_CONFIRMATION…
+
+We need:
+
+```text
+VOLUME
++
+PRICE RESULT
+```
+
+The actual completed candle gives:
+
+```text
+Volume = elevated
++
+Close near high
++
+Positive return
+```
+
+That's **not a classic high-effort / poor-result candle**.
+
+It's closer to:
+
+```text
+HIGH EFFORT
++
+STRONG RESULT
+```
+
+---
+
+# 6. The previous day makes this even more important
+
+29-Sep:
+
+```text
+Open  = ₹719
+High  = ₹799
+Low   = ₹714
+Close = ₹777.35
+Volume = 7.60M
+```
+
+30-Sep:
+
+```text
+Open  = ₹783
+High  = ₹801
+Low   = ₹770.15
+Close = ₹786.05
+Volume = 2.61M
+```
+
+1-Oct:
+
+```text
+Open  = ₹779.90
+High  = ₹811.95
+Low   = ₹773.55
+Close = ₹809.70
+Volume = 2.67M
+``` :chatgpt-content-reference{index="3"}
+
+
+Now look at the sequence:
+
+```text
+29 Sep
++7.67%
+7.60M volume
+      ↓
+30 Sep
++1.12%
+2.61M
+      ↓
+1 Oct
++3.01%
+2.67M
+```
+
+This is **not obviously a trap sequence**.
+
+It's actually:
+
+```text
+EXPANSION
+   ↓
+CONSOLIDATION
+   ↓
+CONTINUATION
+```
+
+at least through the 1-Oct close.
+
+---
+
+# 7. And this is where Gemini's "VCP 1.14" needs clarification
+
+If VCP means:
+
+```text
+ATR5 / ATR20
+```
+
+then:
+
+**1.14** means recent volatility is only moderately above the longer baseline.
+
+That is a warning about volatility, but it isn't itself evidence of a trap.
+
+Your research specification already treats VCR as a **contextual feature**, not a trap verdict. USER_V25_TRAP_TEST_CONFIRMATION…
+
+So:
+
+```text
+VCR = 1.14
+```
+
+should mean something like:
+
+```text
+NORMAL / MODERATELY EXPANDED VOLATILITY
+```
+
+not:
+
+```text
+TRAP
+```
+
+---
+
+# 8. The 50D U/D = 2.80 is actually going in the other direction
+
+Gemini itself says:
+
+```text
+50D Up/Down Volume = 2.80
+STRONG_ACCUMULATION
+```
+
+We should not call it "institutional accumulation," but mathematically:
+
+```text
+positive-return-day volume
+--------------------------------
+negative-return-day volume
+
+= 2.80
+```
+
+means there has been considerably more volume on positive-return days than negative-return days under that definition.
+
+So Gemini is simultaneously saying:
+
+```text
+Historical volume asymmetry = strong
+```
+
+and:
+
+```text
+Today's candle = trap
+```
+
+Those aren't necessarily contradictory.
+
+But the correct interpretation is:
+
+> **Historical strength is good, while today's breakout confirmation is questionable.**
+
+That's exactly why we created **AQS ≠ ECS**.
+
+---
+
+# 9. This is the distinction Gemini is missing
+
+Gemini has:
+
+```text
+AQS / Anti-Trap
+        ↓
+TRAP_VETO
+```
+
+which collapses multiple dimensions into one verdict.
+
+Our revised architecture should instead say:
+
+```text
+AQS
+│
+├── 50D U/D = 2.80
+├── historical price-volume quality
+└── prior trend
+        ↓
+     GOOD
+```
+
+while:
+
+```text
+ECS
+│
+├── 52W high not cleared
+├── volume confirmation
+├── closing range
+├── resistance acceptance
+└── follow-through
+        ↓
+   UNCONFIRMED
+```
+
+Therefore:
+
+# **GOOD STOCK + UNCONFIRMED BREAKOUT**
+
+not:
+
+# **BAD STOCK / TRAP**
+
+---
+
+# 10. Where Gemini's trap logic could become correct
+
+Suppose the next sessions do this:
+
+```text
+1-Oct
+809.70
+       ↓
+2-Oct
+falls below 800
+       ↓
+breaks 786
+       ↓
+breaks 777
+       ↓
+heavy selling
+```
+
+Then Gemini's interpretation gets much stronger.
+
+We would have:
+
+```text
+RESISTANCE APPROACH
+       ↓
+HIGH PARTICIPATION
+       ↓
+FAILURE TO CLEAR 817.55
+       ↓
+LOSS OF BREAKOUT ZONE
+       ↓
+DOWNSIDE FOLLOW-THROUGH
+```
+
+Now:
+
+### `FAILED BREAKOUT`
+
+becomes objectively defensible.
+
+And if it then produces substantial downside:
+
+### `TRAP`
+
+becomes an **outcome label**.
+
+---
+
+# 11. But if 2-Oct does this...
+
+```text
+High > 817.55
+Close > 817.55
+```
+
+and then:
+
+```text
+3-Oct
+holds >817
+```
+
+Gemini's "trap" classification on 1-Oct would have been wrong.
+
+That's exactly why our research specification says:
+
+> T+1/T+2 should resolve the event rather than retrospectively classifying T. USER_V25_TRAP_TEST_CONFIRMATION…
+
+---
+
+# 12. So I would rewrite Gemini's output
+
+Instead of:
+
+> **35/100 TRAP_VETO — RETAIL TRAP DETECTED**
+
+I would output:
+
+### **35/100 — BREAKOUT CONFIRMATION WEAK / UNRESOLVED**
+
+With:
+
+```text
+Historical AQS
+────────────────────────
+50D U/D       2.80     GOOD
+Historical trend         GOOD
+Accumulation quality     GOOD
+
+
+Current ECS
+────────────────────────
+52W high cleared?        NO
+Resistance proximity    VERY HIGH
+Volume                   ELEVATED
+Closing range            ~94%  ← if using completed NSE candle
+Price return             +3.01%
+Volatility               MODERATELY EXPANDED
+```
+
+### State
+
+```text
+🟡 BREAKOUT ATTEMPT
+   / UNRESOLVED
+```
+
+### What would confirm?
+
+```text
+Close > ₹817.55
++
+preferably continued acceptance above it
++
+no immediate rejection
+```
+
+### What would invalidate?
+
+```text
+loss of ₹786
++
+loss of ₹777
++
+downside follow-through
+```
+
+---
+
+# 13. And there's a very important data-quality lesson here
+
+Your Gemini output says:
+
+```text
+CMP ₹792.15
+CR 48%
+Volume 2.06x
+```
+
+while the completed NSE historical data I can verify gives:
+
+```text
+Close ₹809.70
+CR ~94%
+Volume 2.67M
+```
+
+and intraday sources show different values depending on the timestamp. [Investing.com Nigeria](https://ng.investing.com/equities/td-power-historical-data?utm_source=chatgpt.com)
+
+So **before changing the algorithm, we need to establish exactly what timestamp/data snapshot Gemini used.**
+
+If Gemini evaluated the stock **during the trading session**, then:
+
+> 48% CR may have been a legitimate **intraday snapshot** at that moment.
+
+But it cannot be compared directly with a completed daily candle.
+
+This is potentially a **very important bug in your Anti-Trap engine**:
+
+```text
+LIVE CANDLE
+    ↓
+classified as completed daily candle
+    ↓
+TRAP
+```
+
+If that's happening, the system can produce completely different conclusions depending on what time the scan runs.
+
+---
+
+# My conclusion
+
+**Gemini's underlying caution is reasonable; its label is too strong based on the information you've shown me.**
+
+The correct decomposition is:
+
+```text
+AQS = GOOD
+       ↓
+Historical accumulation/strength is not the problem.
+
+ECS = UNCONFIRMED
+       ↓
+The stock is approaching major resistance,
+but breakout acceptance is not yet established.
+
+TRAP = NOT YET PROVEN
+       ↓
+Requires subsequent failure / downside follow-through.
+```
+
+And the **CR=48% is the first thing I'd investigate in your code**, because if the engine is using the same completed 1-Oct OHLC that the historical feed reports, **48% is mathematically inconsistent with the candle**.
+
+That is more important than arguing whether Wyckoff or Gemini is right. **We should audit the exact inputs and timestamp first.**
