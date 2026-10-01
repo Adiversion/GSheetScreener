@@ -13,7 +13,7 @@
   <title>NSE Momentum Terminal</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.svg" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=13" />
 </head>
 <body>
 
@@ -355,6 +355,9 @@
                     <button class="btn btn--secondary" id="btnOpenTV">
                       <svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg> Chart
                     </button>
+                    <button class="btn btn--secondary" id="btnQuickTrack">
+                      <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Track in Portfolio
+                    </button>
                   </div>
                   <p class="exec__hint">Copy the ticket → open Kite → create an OCO GTT → paste stop &amp; target → set quantity.</p>
                 </div>
@@ -434,6 +437,57 @@
           </div>
         </div>
 
+        <!-- Active Position & Live Target Tracker (Paper or Real) -->
+        <div class="card" id="liveCard">
+          <div class="card__head">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <h3>Active Position &amp; Live Tracker</h3>
+              <span class="badge badge--brand">⚡ Real-time</span>
+            </div>
+            <span class="badge badge--muted" id="liveSourceBadge">not configured</span>
+          </div>
+          <p class="muted" style="margin-bottom:12px;">Real-time tick-by-tick market tracker for your active holding or paper trade. Tracks P&amp;L live without opening Zerodha.</p>
+          <div class="live-form">
+            <div class="field">
+              <label class="field-label" for="liveSymbol">Symbol</label>
+              <input type="text" class="num-input" id="liveSymbol" placeholder="e.g. CUPID or TATAMOTORS" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="liveEntry">Entry price (₹)</label>
+              <input type="number" class="num-input" id="liveEntry" placeholder="Fill price" step="0.05" inputmode="decimal" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="liveCapital">Allocated capital (₹)</label>
+              <input type="number" class="num-input" id="liveCapital" placeholder="e.g. 10000" step="100" inputmode="numeric" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="liveTargetPct">Target %</label>
+              <input type="number" class="num-input" id="liveTargetPct" value="15" step="0.5" inputmode="decimal" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn--primary btn--sm" id="btnLiveSave"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Track this stock</button>
+            <button class="btn btn--secondary btn--sm" id="btnLiveRefresh"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg> Refresh now</button>
+            <button class="btn btn--ghost btn--sm" id="btnLiveClear" style="margin-left:auto;"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg> Clear</button>
+          </div>
+          <div class="live-body" id="liveBody">
+            <p class="muted">No stock tracked yet. Enter the symbol you bought and its entry price, then tap <strong>Track this stock</strong>.</p>
+          </div>
+          <details class="live-key">
+            <summary>Live quote settings &amp; fallbacks (optional)</summary>
+            <div class="field">
+              <label class="field-label" for="liveApiKey">Twelve Data API key <span class="muted">— stored only in this browser</span></label>
+              <input type="text" class="num-input" id="liveApiKey" placeholder="Paste your free key" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="liveProxyUrl">Cloudflare Worker proxy URL <span class="muted">— keyless option</span></label>
+              <input type="text" class="num-input" id="liveProxyUrl" placeholder="https://nse-quote.you.workers.dev" autocomplete="off" />
+            </div>
+            <button class="btn btn--secondary btn--sm" id="btnLiveSaveKey"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Save source</button>
+            <p class="muted">⚡ Real-time Yahoo WebSocket is active automatically (zero setup, 100% free). You can optionally configure a Twelve Data API key or Cloudflare Worker proxy above as a fallback.</p>
+          </details>
+        </div>
+
         <div class="grid-2">
           <!-- Equity curve -->
           <div class="card">
@@ -496,49 +550,6 @@
             </table>
           </div>
           <p class="cred-foot" id="rotNote"></p>
-        </div>
-
-        <!-- Live target tracker — one purchased stock -->
-        <div class="card" id="liveCard">
-          <div class="card__head">
-            <h3>Live target tracker</h3>
-            <span class="badge badge--muted" id="liveSourceBadge">not configured</span>
-          </div>
-          <p class="muted">Track the stock you actually bought against its +15% rotation target. Live quotes need a free Twelve Data key (browser-side, ~800 calls/day); without one it falls back to the latest screening price.</p>
-          <div class="live-form">
-            <div class="field">
-              <label class="field-label" for="liveSymbol">Symbol</label>
-              <input type="text" class="num-input" id="liveSymbol" placeholder="e.g. CUPID" autocomplete="off" />
-            </div>
-            <div class="field">
-              <label class="field-label" for="liveEntry">Entry price (₹)</label>
-              <input type="number" class="num-input" id="liveEntry" placeholder="Buy price" step="0.05" inputmode="decimal" />
-            </div>
-            <div class="field">
-              <label class="field-label" for="liveTargetPct">Target %</label>
-              <input type="number" class="num-input" id="liveTargetPct" value="15" step="0.5" inputmode="decimal" />
-            </div>
-          </div>
-          <div class="btn-row">
-            <button class="btn btn--primary btn--sm" id="btnLiveSave"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Track this stock</button>
-            <button class="btn btn--secondary btn--sm" id="btnLiveRefresh"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg> Refresh now</button>
-          </div>
-          <div class="live-body" id="liveBody">
-            <p class="muted">No stock tracked yet. Enter the symbol you bought and its entry price, then tap <strong>Track this stock</strong>.</p>
-          </div>
-          <details class="live-key">
-            <summary>Live-quote source (free)</summary>
-            <div class="field">
-              <label class="field-label" for="liveApiKey">Twelve Data API key <span class="muted">— stored only in this browser</span></label>
-              <input type="text" class="num-input" id="liveApiKey" placeholder="Paste your free key" autocomplete="off" />
-            </div>
-            <div class="field">
-              <label class="field-label" for="liveProxyUrl">Cloudflare Worker proxy URL <span class="muted">— keyless option</span></label>
-              <input type="text" class="num-input" id="liveProxyUrl" placeholder="https://nse-quote.you.workers.dev" autocomplete="off" />
-            </div>
-            <button class="btn btn--secondary btn--sm" id="btnLiveSaveKey"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Save source</button>
-            <p class="muted">Either use a free key from <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener">twelvedata.com</a>, or deploy the free Worker in <code>workers/yahoo-proxy.js</code> (no key, no cron). Twelve Data wins if both are set.</p>
-          </details>
         </div>
 
         <div class="card">
@@ -757,6 +768,6 @@
 <!-- ════════════════════ TOASTS ════════════════════ -->
 <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
 
-<script src="js/app.js"></script>
+<script src="js/app.js?v=13"></script>
 </body>
 </html>

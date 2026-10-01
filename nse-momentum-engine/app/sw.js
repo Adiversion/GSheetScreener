@@ -4,8 +4,8 @@
    Cache-first for static assets, Network-first for static JSON
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'nse-signal-v12';
-const DATA_CACHE = 'nse-signal-data-v12';
+const CACHE_NAME = 'nse-signal-v13';
+const DATA_CACHE = 'nse-signal-data-v13';
 
 const STATIC_ASSETS = [
   './',
@@ -56,9 +56,31 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-first for static CSS/JS/icons
+  // Network-first for app JS and CSS so new commits are immediately reflected
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(networkFirstAssetStrategy(event.request));
+    return;
+  }
+
+  // Cache-first for static icons/manifest
   event.respondWith(cacheFirstStrategy(event.request));
 });
+
+/** Network-first for JS and CSS: fetch freshest from network, cache for offline fallback */
+async function networkFirstAssetStrategy(request) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (_) {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    return caches.match(request.url);
+  }
+}
 
 /** Network-first navigation strategy: fetches fresh HTML, falls back to cache */
 async function networkFirstNavigationStrategy(request) {

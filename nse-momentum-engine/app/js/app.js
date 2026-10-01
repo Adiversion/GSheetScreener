@@ -122,6 +122,17 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => {
         reg.update();
+        reg.onupdatefound = () => {
+          const installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[SW] New version installed. Reloading for instant update...');
+                window.location.reload();
+              }
+            };
+          }
+        };
         console.log('[SW] Registered & Checked for updates:', reg.scope);
         updateOfflineBadge(navigator.onLine);
       })
@@ -879,12 +890,17 @@ document.getElementById('exitModal').addEventListener('click', e => {
   if (e.target === document.getElementById('exitModal')) closeExitModal();
 });
 
-// Pre-fill symbol from current signal
-function openExitModal() {
+// Pre-fill symbol from current signal or custom trade
+function openExitModal(customTrade) {
   const modal = document.getElementById('exitModal');
   modal.classList.add('open');
   document.body.classList.add('modal-open');
-  if (state.signalData && state.signalData[0] && state.signalData[0].STATUS === 'ACTIVE_SIGNAL') {
+  if (customTrade && customTrade.symbol) {
+    document.getElementById('exitSymbol').value = customTrade.symbol || '';
+    document.getElementById('exitEntry').value  = customTrade.entry || '';
+    if (customTrade.exit) document.getElementById('exitPrice').value = customTrade.exit || '';
+    if (customTrade.shares) document.getElementById('exitShares').value = customTrade.shares || '';
+  } else if (state.signalData && state.signalData[0] && state.signalData[0].STATUS === 'ACTIVE_SIGNAL') {
     const h = state.signalData[0];
     document.getElementById('exitSymbol').value = h.SYMBOL || '';
     document.getElementById('exitEntry').value  = h.CMP || '';
@@ -2431,6 +2447,141 @@ const LS_LIVE = 'nse_live_stock';
 const LS_TD_KEY = 'nse_twelvedata_key';
 const LS_PROXY = 'nse_live_proxy';
 
+/**
+ * Yahoo Finance WebSocket Protobuf Decoder (Zero-dependency, browser-native)
+ * Decodes the PricingData binary payload streamed from wss://streamer.finance.yahoo.com/
+ */
+function decodeYahooProtobuf(base64Str) {
+  if (!base64Str) return null;
+  try {
+    const binaryString = atob(base64Str);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const view = new DataView(bytes.buffer);
+    let pos = 0;
+    const result = {};
+
+    while (pos < bytes.length) {
+      const key = bytes[pos++];
+      const wireType = key & 0x07;
+      const fieldNumber = key >> 3;
+
+      if (wireType === 0) { // Varint
+        let val = 0;
+        let shift = 0;
+        while (pos < bytes.length) {
+          const b = bytes[pos++];
+          val |= (b & 0x7f) << shift;
+          if ((b & 0x80) === 0) break;
+          shift += 7;
+        }
+        result['f_' + fieldNumber] = val;
+      } else if (wireType === 5) { // 32-bit float
+        if (pos + 4 <= bytes.length) {
+          const val = view.getFloat32(pos, true); // little-endian
+          pos += 4;
+          if (fieldNumber === 2) result.price = val;
+          else if (fieldNumber === 8) result.changePercent = val;
+          else if (fieldNumber === 10) result.dayHigh = val;
+          else if (fieldNumber === 11) result.dayLow = val;
+          else if (fieldNumber === 12) result.change = val;
+        } else break;
+      } else if (wireType === 2) { // Length-delimited string
+        let strLen = 0;
+        let shift = 0;
+        while (pos < bytes.length) {
+          const b = bytes[pos++];
+          strLen |= (b & 0x7f) << shift;
+          if ((b & 0x80) === 0) break;
+          shift += 7;
+        }
+        let str = '';
+        for (let i = 0; i < strLen && (pos + i) < bytes.length; i++) {
+          str += String.fromCharCode(bytes[pos + i]);
+        }
+        pos += strLen;
+        if (fieldNumber === 1) result.id = str;
+        else if (fieldNumber === 4) result.currency = str;
+        else if (fieldNumber === 5) result.exchange = str;
+      } else if (wireType === 1) { // 64-bit double
+        pos += 8;
+      } else {
+        break;
+      }
+    }
+    return result;
+  } catch (_) {
+    return null;
+  }
+}
+
+let yahooWs = null;
+let yahooWsSymbol = null;
+let yahooWsReconnectTimer = null;
+
+/** Connects to Yahoo WebSocket streamer for a single stock */
+function connectYahooStream(symbol) {
+  if (!symbol) return;
+  const symNs = (symbol.includes('.') || symbol.includes('^')) ? symbol.toUpperCase() : symbol.toUpperCase() + '.NS';
+
+  if (yahooWs && yahooWsSymbol === symNs && (yahooWs.readyState === WebSocket.OPEN || yahooWs.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+
+  if (yahooWs) {
+    try { yahooWs.close(); } catch (_) {}
+    yahooWs = null;
+  }
+
+  clearTimeout(yahooWsReconnectTimer);
+  yahooWsSymbol = symNs;
+
+  try {
+    yahooWs = new WebSocket('wss://streamer.finance.yahoo.com/');
+
+    yahooWs.onopen = () => {
+      yahooWs.send(JSON.stringify({ subscribe: [symNs] }));
+    };
+
+    yahooWs.onmessage = (event) => {
+      try {
+        const tick = decodeYahooProtobuf(event.data);
+        if (tick && tick.price != null && !isNaN(tick.price)) {
+          const roundedPrice = parseFloat(tick.price.toFixed(2));
+          state.liveWsPrice = {
+            symbol: symNs,
+            price: roundedPrice,
+            change: tick.change,
+            changePercent: tick.changePercent,
+            time: Date.now()
+          };
+          const live = store.get(LS_LIVE, null);
+          if (live && live.symbol) {
+            paintLive(live.symbol, live.entry, live.targetPct || 15, {
+              price: roundedPrice,
+              source: '⚡ Yahoo Live Stream'
+            }, null, live.capital);
+          }
+        }
+      } catch (_) {}
+    };
+
+    yahooWs.onerror = () => {};
+    yahooWs.onclose = () => {
+      yahooWs = null;
+      if (document.visibilityState === 'visible') {
+        const live = store.get(LS_LIVE, null);
+        if (live && live.symbol) {
+          yahooWsReconnectTimer = setTimeout(() => connectYahooStream(live.symbol), 5000);
+        }
+      }
+    };
+  } catch (_) {}
+}
+
 /** Classify a live price against the rotation target / stop. */
 function liveStatus(entry, cmp, targetPct, stopPct) {
   const t = targetPct / 100, s = (stopPct == null ? 6 : stopPct) / 100;
@@ -2447,7 +2598,13 @@ function liveStatus(entry, cmp, targetPct, stopPct) {
 
 async function fetchLiveQuote(symbol) {
   const sym = String(symbol || '').toUpperCase();
+  const symNs = sym.includes('.') || sym.includes('^') ? sym : sym + '.NS';
   const errors = [];
+
+  // 0) Yahoo WebSocket live tick cache (real-time sub-second streaming)
+  if (state.liveWsPrice && state.liveWsPrice.symbol === symNs && (Date.now() - state.liveWsPrice.time < 300000)) {
+    return { price: state.liveWsPrice.price, source: '⚡ Yahoo Live Stream' };
+  }
 
   // 1) Twelve Data — free key, browser-side, CORS-friendly.
   const key = store.get(LS_TD_KEY, '');
@@ -2468,7 +2625,6 @@ async function fetchLiveQuote(symbol) {
   if (proxy) {
     try {
       const base = String(proxy).replace(/\/+$/, '');
-      const symNs = sym.includes('.') ? sym : sym + '.NS';
       const res = await fetch(`${base}/?symbol=${encodeURIComponent(symNs)}`, { cache: 'no-store' });
       const json = await res.json();
       if (json && json.price != null && !isNaN(parseFloat(json.price))) {
@@ -2494,10 +2650,10 @@ async function fetchLiveQuote(symbol) {
   if (hit && hit.CMP) return { price: parseFloat(hit.CMP), source: 'Screen close' };
 
   throw new Error(errors.length ? errors[0]
-    : 'Set a free Twelve Data key or a Worker proxy URL for live quotes');
+    : 'Waiting for market stream or set a free Twelve Data / Worker proxy fallback');
 }
 
-function paintLive(sym, entry, targetPct, quote, err) {
+function paintLive(sym, entry, targetPct, quote, err, capital) {
   const body = document.getElementById('liveBody');
   const badge = document.getElementById('liveSourceBadge');
   if (!body) return;
@@ -2508,22 +2664,61 @@ function paintLive(sym, entry, targetPct, quote, err) {
   }
   const { status, pnlPct, toTarget, targetPrice, stopPrice } = liveStatus(entry, quote.price, targetPct);
   const badgeCls = { hit: 'badge--bull', near: 'badge--caution', stopped: 'badge--defensive', holding: 'badge--muted' }[status];
-  const badgeTxt = { hit: '✅ TARGET HIT', near: 'Approaching', stopped: 'Stopped out', holding: 'Holding' }[status];
-  if (badge) { badge.className = 'badge ' + badgeCls; badge.textContent = badgeTxt; }
+  let badgeTxt = { hit: '✅ TARGET HIT', near: 'Approaching', stopped: 'Stopped out', holding: 'Holding' }[status];
+  if (badge) {
+    if (quote.source && quote.source.includes('Yahoo Live')) {
+      badge.className = 'badge ' + (badgeCls === 'badge--muted' ? 'badge--bull' : badgeCls);
+      badge.textContent = `${badgeTxt} · ⚡ Live`;
+    } else {
+      badge.className = 'badge ' + badgeCls;
+      badge.textContent = badgeTxt;
+    }
+  }
+
+  const cap = parseFloat(capital) > 0 ? parseFloat(capital) : 0;
+  const shares = (cap > 0 && entry > 0) ? Math.floor(cap / entry) : 0;
+  const pnlINR = shares > 0 ? (quote.price - entry) * shares : null;
+  const curVal = shares > 0 ? quote.price * shares : null;
+
   const tone = pnlPct >= 0 ? 'pos' : 'neg';
+  const pnlDisp = pnlINR != null 
+    ? `<span class="num ${tone} live-pnl-inr">${pnlINR >= 0 ? '+' : ''}${fmtINR(pnlINR)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)</span>`
+    : `<span class="num ${tone}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>`;
+
   body.innerHTML = `
     <div class="live-hero">
       <span class="live-sym">${sym}</span>
       <span class="live-price">${fmtINR(quote.price)}</span>
-      <span class="num ${tone}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>
+      ${pnlDisp}
     </div>
     <div class="rotation-grid">
-      <div class="rstat"><span class="rstat__k">Target (+${targetPct}%)</span><span class="rstat__v">${fmtINR(targetPrice)}</span></div>
+      <div class="rstat"><span class="rstat__k">Target (+${targetPct}%)</span><span class="rstat__v tone-bull">${fmtINR(targetPrice)}</span></div>
       <div class="rstat"><span class="rstat__k">To target</span><span class="rstat__v ${toTarget <= 0 ? 'tone-bull' : ''}">${toTarget >= 0 ? '' : '+'}${toTarget.toFixed(2)}%</span></div>
-      <div class="rstat"><span class="rstat__k">Stop</span><span class="rstat__v">${fmtINR(stopPrice)}</span></div>
-      <div class="rstat"><span class="rstat__k">Entry</span><span class="rstat__v">${fmtINR(entry)}</span></div>
+      <div class="rstat"><span class="rstat__k">Stop</span><span class="rstat__v tone-bear">${fmtINR(stopPrice)}</span></div>
+      <div class="rstat"><span class="rstat__k">Entry fill</span><span class="rstat__v">${fmtINR(entry)}</span></div>
+      ${shares > 0 ? `
+      <div class="rstat"><span class="rstat__k">Position value</span><span class="rstat__v">${fmtINR(curVal)}</span></div>
+      <div class="rstat"><span class="rstat__k">Quantity &amp; capital</span><span class="rstat__v">${shares} shares (${fmtINR(cap)})</span></div>
+      ` : ''}
     </div>
-    <p class="live-meta">Source: ${quote.source} · updated ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>`;
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:12px;">
+      <p class="live-meta" style="margin:0;">Source: ${quote.source} · updated ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+      <button class="btn btn--primary btn--sm" id="btnLiveRecordExit">
+        <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg> Record trade exit
+      </button>
+    </div>`;
+
+  const exitBtn = document.getElementById('btnLiveRecordExit');
+  if (exitBtn) {
+    exitBtn.addEventListener('click', () => {
+      openExitModal({
+        symbol: sym,
+        entry: entry,
+        exit: quote.price,
+        shares: shares || 1
+      });
+    });
+  }
 }
 
 async function renderLiveTracker() {
@@ -2533,15 +2728,20 @@ async function renderLiveTracker() {
   if (!live || !live.symbol || !(live.entry > 0)) {
     const badge = document.getElementById('liveSourceBadge');
     if (badge) { badge.className = 'badge badge--muted'; badge.textContent = 'not configured'; }
-    body.innerHTML = '<p class="muted">No stock tracked yet. Enter the symbol you bought and its entry price, then tap <strong>Track this stock</strong>.</p>';
+    body.innerHTML = '<p class="muted">No stock tracked yet. Enter the symbol you bought (or want to paper trade) and its entry price, then tap <strong>Track this stock</strong>.</p>';
+    if (yahooWs) { try { yahooWs.close(); } catch (_) {} yahooWs = null; }
     return;
   }
+
+  // Connect live streaming WebSocket for the single portfolio stock
+  connectYahooStream(live.symbol);
+
   try {
     const quote = await fetchLiveQuote(live.symbol);
-    paintLive(live.symbol, live.entry, live.targetPct || 15, quote, null);
+    paintLive(live.symbol, live.entry, live.targetPct || 15, quote, null, live.capital);
   } catch (e) {
     // Still show the target/stop levels even without a price.
-    paintLive(live.symbol, live.entry, live.targetPct || 15, null, e.message || 'Live quote unavailable');
+    paintLive(live.symbol, live.entry, live.targetPct || 15, null, e.message || 'Live quote unavailable', live.capital);
   }
   const key = store.get(LS_TD_KEY, '');
   const keyInput = document.getElementById('liveApiKey');
@@ -2551,29 +2751,53 @@ async function renderLiveTracker() {
 function wireLiveTracker() {
   const symInput = document.getElementById('liveSymbol');
   const entryInput = document.getElementById('liveEntry');
+  const capInput = document.getElementById('liveCapital');
   const tgtInput = document.getElementById('liveTargetPct');
+
+  // Default capital to current account equity if not set
+  const base = store.get(LS.CAPITAL_BASE, DEFAULT_CAPITAL);
+  const currentCap = store.get(LS.CURRENT_CAPITAL, base);
 
   // Prefill from whatever is currently selected / tracked.
   const live = store.get(LS_LIVE, null);
   if (live) {
     if (symInput) symInput.value = live.symbol || '';
     if (entryInput) entryInput.value = live.entry || '';
+    if (capInput) capInput.value = live.capital || currentCap;
     if (tgtInput) tgtInput.value = live.targetPct || 15;
+  } else {
+    if (capInput && !capInput.value) capInput.value = currentCap;
   }
 
   const saveBtn = document.getElementById('btnLiveSave');
   if (saveBtn) saveBtn.addEventListener('click', () => {
     const symbol = (symInput && symInput.value || '').trim().toUpperCase();
     const entry = parseFloat(entryInput && entryInput.value);
+    const capital = parseFloat(capInput && capInput.value) || currentCap;
     const targetPct = parseFloat(tgtInput && tgtInput.value) || 15;
     if (!symbol || !(entry > 0)) { showToast('Enter a symbol and a valid entry price', 'error'); return; }
-    store.set(LS_LIVE, { symbol, entry, targetPct });
+    store.set(LS_LIVE, { symbol, entry, capital, targetPct });
     showToast(`Tracking ${symbol} at ${fmtINR(entry)}`, 'success', '🎯');
+    connectYahooStream(symbol);
+    renderLiveTracker();
+  });
+
+  const clearBtn = document.getElementById('btnLiveClear');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    store.remove(LS_LIVE);
+    if (yahooWs) { try { yahooWs.close(); } catch (_) {} yahooWs = null; }
+    if (symInput) symInput.value = '';
+    if (entryInput) entryInput.value = '';
+    showToast('Active position cleared', 'info');
     renderLiveTracker();
   });
 
   const refreshBtn = document.getElementById('btnLiveRefresh');
-  if (refreshBtn) refreshBtn.addEventListener('click', renderLiveTracker);
+  if (refreshBtn) refreshBtn.addEventListener('click', () => {
+    const l = store.get(LS_LIVE, null);
+    if (l && l.symbol) connectYahooStream(l.symbol);
+    renderLiveTracker();
+  });
 
   const proxyInput = document.getElementById('liveProxyUrl');
   if (proxyInput) { const p = store.get(LS_PROXY, ''); if (p) proxyInput.value = p; }
@@ -2588,6 +2812,41 @@ function wireLiveTracker() {
     showToast('Live-quote source saved', 'success');
     renderLiveTracker();
   });
+
+  // Reconnect stream when browser tab becomes active
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const current = store.get(LS_LIVE, null);
+      if (current && current.symbol && (!yahooWs || yahooWs.readyState !== WebSocket.OPEN)) {
+        connectYahooStream(current.symbol);
+      }
+    }
+  });
+
+  // 1-Tap quick track button from Signal execution ticket
+  const quickTrackBtn = document.getElementById('btnQuickTrack');
+  if (quickTrackBtn) {
+    quickTrackBtn.addEventListener('click', () => {
+      const leader = (state.signalData && state.signalData[0]) || (state.payload && state.payload.all_qualified && state.payload.all_qualified[0]);
+      if (!leader || !leader.SYMBOL) {
+        showToast('No active signal to track', 'info');
+        return;
+      }
+      const actualInput = document.getElementById('inputActualEntry');
+      const entryPrice = parseFloat(actualInput && actualInput.value) || parseFloat(leader.CMP);
+      const cap = store.get(LS.CURRENT_CAPITAL, base);
+      store.set(LS_LIVE, {
+        symbol: leader.SYMBOL,
+        entry: entryPrice,
+        capital: cap,
+        targetPct: 15
+      });
+      showToast(`Tracking ${leader.SYMBOL} in Portfolio`, 'success', '⚡');
+      connectYahooStream(leader.SYMBOL);
+      switchTab('Portfolio');
+      renderLiveTracker();
+    });
+  }
 
   renderLiveTracker();
   if (!state.liveTimer) {
