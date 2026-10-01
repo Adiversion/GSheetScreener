@@ -1950,7 +1950,9 @@ function renderAQSDiagnostics(h) {
   const ftfState = h.FTF_STATE || '';
   const isCoiling = ftfState === 'FTF_COILING' || ftfState === 'RESISTANCE_PROBE';
   const isConfirmedBreakout = ftfState === 'CONFIRMED_BREAKOUT';
-  const isPrime = grade === 'PRIME_ACCUMULATION' || (score >= 75 && !isTrap);
+  const isRetest = ftfState === 'POST_BREAKOUT_RETEST';
+  const isFailedBreakout = ftfState === 'FAILED_BREAKOUT';
+  const isPrime = grade === 'PRIME_ACCUMULATION' || (score >= 75 && !isTrap && !isFailedBreakout);
   const cr = parseFloat(h.CLOSING_RANGE);
   const crStatus = h.CR_STATUS || (cr >= 0.7 ? 'STRONG_BULL_CLOSE' : cr < 0.5 ? 'UPTHRUST_TRAP' : 'NEUTRAL_CLOSE');
   const volSurge = parseFloat(h.VOL_SURGE_RATIO) || parseFloat(h.VOL_RATIO) || 1.0;
@@ -1960,7 +1962,7 @@ function renderAQSDiagnostics(h) {
 
   if (badge) {
     badge.textContent = `${score != null ? score + '/100 ' : ''}${grade}`;
-    badge.className = 'badge ' + (isTrap ? 'badge--defensive' : (isConfirmedBreakout || isPrime) ? 'badge--bull' : 'badge--caution');
+    badge.className = 'badge ' + ((isTrap || isFailedBreakout) ? 'badge--defensive' : (isConfirmedBreakout || isPrime) ? 'badge--bull' : 'badge--caution');
   }
 
   let bannerHtml = '';
@@ -1975,6 +1977,20 @@ function renderAQSDiagnostics(h) {
       <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>
       <div><strong>🚀 CONFIRMED BREAKOUT EXPANSION</strong>
       <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">${h.FTF_DIAGNOSTIC || 'Cleared prior resistance peak on strong institutional volume surge.'}</p></div>
+    </div>`;
+  } else if (isRetest) {
+    bannerHtml = `<div class="aqs-banner aqs-banner--neutral" style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.35);color:var(--text)">
+      <div style="font-size:1.1rem;margin-right:6px">🔄</div>
+      <div><strong>🔄 POST-BREAKOUT RETEST / SUPPORT ACCEPTANCE</strong>
+      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">${h.FTF_DIAGNOSTIC || 'Post-breakout retest of prior cleared pivot. Testing support acceptance.'}</p>
+      ${h.FTF_TRIGGER ? `<div style="margin-top:5px;font-size:0.74rem;font-weight:600;color:var(--accent)">🎯 Actionable Trigger: ${h.FTF_TRIGGER}</div>` : ''}
+      </div>
+    </div>`;
+  } else if (isFailedBreakout) {
+    bannerHtml = `<div class="aqs-banner aqs-banner--trap" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);color:var(--text)">
+      <div style="font-size:1.1rem;margin-right:6px">❌</div>
+      <div><strong>❌ FAILED BREAKOUT / SUPPORT BROKEN</strong>
+      <p style="margin:2px 0 0;font-size:0.75rem;opacity:0.9">${h.FTF_DIAGNOSTIC || 'Breakout failed to hold cleared support; closed below pivot.'}</p></div>
     </div>`;
   } else if (isCoiling) {
     bannerHtml = `<div class="aqs-banner aqs-banner--neutral" style="background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:var(--text)">
