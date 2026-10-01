@@ -1422,117 +1422,6 @@ function onCapitalChange(newCapital) {
   }
 }
 
-function renderAllStocksTable(stocks, userCapital) {
-  const card = document.getElementById('allStocksCard');
-  const tbody = document.getElementById('allStocksBody');
-  const countBadge = document.getElementById('allStocksCountBadge');
-  if (!card || !tbody) return;
-
-  if (!stocks || !stocks.length) {
-    card.style.display = 'none';
-    return;
-  }
-  card.style.display = 'block';
-
-  let filtered = stocks.filter(s => {
-    if (currentSearch && !s.SYMBOL.toUpperCase().includes(currentSearch)) {
-      return false;
-    }
-    if (currentFilter === 'prime') {
-      return s.IS_PRIME === true || parseFloat(s.CMS_SCORE) >= 90;
-    }
-    if (currentFilter === 'sweet_rsi') {
-      const rsi = parseFloat(s.RSI_14);
-      return rsi >= 45 && rsi <= 75;
-    }
-    if (currentFilter === 'affordable') {
-      return parseFloat(s.CMP) <= (userCapital - 26);
-    }
-    return true;
-  });
-
-  if (countBadge) {
-    countBadge.textContent = `${filtered.length} / ${stocks.length} Leaders`;
-  }
-
-  tbody.innerHTML = '';
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr role="row">
-        <td role="cell" colspan="6" style="text-align:center; padding:24px 12px; color:var(--text-dim);">
-          🔍 No leaders match "${currentSearch || currentFilter}"
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  filtered.forEach((s, idx) => {
-    const cmp = parseFloat(s.CMP);
-    const affordable = cmp <= (userCapital - 26);
-    const shares = affordable ? Math.floor((userCapital - 26) / cmp) : 0;
-    const isSelected = state.activeStock && state.activeStock.SYMBOL === s.SYMBOL;
-    const rsi = parseFloat(s.RSI_14);
-    const rsiColor = (rsi < 45) ? 'var(--red)' : (rsi <= 82 ? 'var(--accent)' : 'var(--yellow)');
-
-    const tr = document.createElement('tr');
-    tr.className = `stock-table-row ${isSelected ? 'selected' : ''}`;
-    // Explicit roles keep the row/cell semantics when the phone card layout
-    // switches these elements from table display types to grid/block.
-    tr.setAttribute('role', 'row');
-    // Symbol on its own line, badges + size hint stacked below it: keeps the
-    // Security column narrow enough that the table does not overflow on laptops.
-    tr.innerHTML = `
-      <td class="cell-rank" role="cell">${idx + 1}</td>
-      <td class="cell-security" role="cell">
-        <div class="sec-head">
-          <strong class="sec-symbol">${s.SYMBOL}</strong>
-          ${s.IS_PRIME ? '<span class="meta-chip cms-chip sec-chip">PRIME</span>' : ''}
-          ${s.CIRCUIT_BAND ? `<span class="badge sec-chip">${s.CIRCUIT_BAND}%</span>` : ''}
-        </div>
-        <div class="sec-sub">
-          ${affordable ? `<span class="pos-text">✅ ${shares} ${shares === 1 ? 'Share' : 'Shares'}</span>` : `<span class="muted-text">Needs ₹${Math.ceil(cmp + 26)}</span>`}
-        </div>
-      </td>
-      <td class="cell-cmp" role="cell">${fmtINR(cmp)}</td>
-      <td class="cell-cms" role="cell"><span class="meta-chip cms-chip score-chip">${parseFloat(s.CMS_SCORE).toFixed(1)}</span></td>
-      <td class="cell-rsi" role="cell"><span style="color:${rsiColor};">${rsi.toFixed(1)}</span></td>
-      <td class="cell-action" role="cell">
-        <button class="btn-select-stock ${isSelected ? 'btn-active' : ''}"
-                title="${isSelected ? 'Active position — open in Trade Studio' : 'Inspect in Trade Studio'}"
-                aria-label="${isSelected ? 'Active position — open in Trade Studio' : 'Inspect in Trade Studio'}">
-          <span class="btn-select-label">${isSelected ? 'Active' : 'Inspect'}</span>
-          <span class="btn-select-icon" aria-hidden="true">${isSelected ? '✨' : '🎯'}</span>
-        </button>
-      </td>
-    `;
-    tr.onclick = () => selectStockForTrading(s, userCapital);
-    tbody.appendChild(tr);
-  });
-}
-
-function selectStockForTrading(s, userCapital) {
-  const stock = Object.assign({}, s);
-  const cmp = parseFloat(stock.CMP);
-  const shares = Math.max(Math.floor((userCapital - 26) / cmp), 1);
-  stock.SHARES = shares;
-  stock.CAPITAL_REQUIRED = shares * cmp;
-  stock.CAPITAL_BASE = userCapital;
-
-  const all = (state.payload && state.payload.all_qualified) || [];
-  const alts = all.filter(item => item.SYMBOL !== stock.SYMBOL).slice(0, 3);
-  const isDefensive = (state.payload && state.payload.regime && state.payload.regime.regime === 'DEFENSIVE_CASH') || (stock.STATUS === 'CASH');
-
-  renderActiveSignal(stock, alts, isDefensive);
-  showToast(`Loaded ${stock.SYMBOL} in Trade Studio`, 'success', '🎯');
-
-  renderAllStocksTable(all, userCapital);
-
-  const hero = document.getElementById('heroCard');
-  if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
 /* ══════════════════════════════════════════════════════
    ENTRY PRICE (GAP-UP) CONTROLLER
 ══════════════════════════════════════════════════════ */
@@ -1584,7 +1473,7 @@ function updateGapPillActive(gap) {
 }
 
 /* ══════════════════════════════════════════════════════
-   SESSION DATE SWITCHER
+   SESSION DATE SWITCHER & MARKET STATUS
 ══════════════════════════════════════════════════════ */
 
 function renderSessionSwitcher(manifest, currentTradeDate) {
@@ -1594,26 +1483,98 @@ function renderSessionSwitcher(manifest, currentTradeDate) {
   if (!sessionCard || !pillsContainer) return;
 
   if (!manifest || manifest.length <= 1) {
-    sessionCard.style.display = 'none';
+    sessionCard.hidden = true;
     return;
   }
-  sessionCard.style.display = 'block';
+  sessionCard.hidden = false;
 
-  if (state.payload && state.payload.bhavcopy_status === 'PREVIOUS_SESSION_FALLBACK') {
-    if (pendingNotice) pendingNotice.style.display = 'block';
-  } else {
-    if (pendingNotice) pendingNotice.style.display = 'none';
+  const isFallback = state.payload && state.payload.bhavcopy_status === 'PREVIOUS_SESSION_FALLBACK';
+  if (pendingNotice) {
+    pendingNotice.hidden = !isFallback;
   }
 
   pillsContainer.innerHTML = '';
-  manifest.slice(0, 5).forEach(m => {
+  manifest.forEach((m, idx) => {
     const btn = document.createElement('button');
-    const isActive = (m.date === (state.selectedDate || currentTradeDate));
-    btn.className = `pill-session ${isActive ? 'active' : ''}`;
-    btn.innerHTML = `${m.is_today ? '🟢' : '📅'} ${m.display_date || m.date}`;
+    const isSelected = (m.date === (state.selectedDate || currentTradeDate));
+    const isLatest = idx === 0;
+    btn.className = `pill-session ${isSelected ? 'active' : ''}`;
+    btn.innerHTML = `${isLatest ? '⚡' : '📅'} ${m.display_date || m.date}${isLatest ? ' <span class="tag-latest">Latest</span>' : ''}`;
+    btn.title = `${m.display_date}: ${m.total_qualified} qualified leaders`;
     btn.onclick = () => selectSessionDate(m.date);
     pillsContainer.appendChild(btn);
   });
+
+  updateMarketStatusBar(manifest, currentTradeDate);
+}
+
+function updateMarketStatusBar(manifest, currentTradeDate) {
+  const bar = document.getElementById('marketStatusBar');
+  const dot = document.getElementById('marketStatusDot');
+  const phase = document.getElementById('marketStatusPhase');
+  const todayEl = document.getElementById('marketStatusToday');
+  const desc = document.getElementById('marketStatusDesc');
+  const pill = document.getElementById('marketStatusActivePill');
+  const btnReturn = document.getElementById('btnReturnLatestSession');
+
+  if (!bar) return;
+
+  // Real-time IST calculation
+  const now = new Date();
+  const utcMs = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+  const istDate = new Date(utcMs + (5.5 * 60 * 60 * 1000));
+  const day = istDate.getDay(); // 0 Sun, 6 Sat
+  const hour = istDate.getHours();
+  const minute = istDate.getMinutes();
+
+  const isWeekday = day >= 1 && day <= 5;
+  const isMarketOpen = isWeekday && ((hour > 9 || (hour === 9 && minute >= 15)) && (hour < 15 || (hour === 15 && minute <= 30)));
+  const isCompilingBhavcopy = isWeekday && ((hour === 15 && minute > 30) || (hour >= 16 && hour < 17) || (hour === 17 && minute <= 30));
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const todayStr = `${String(istDate.getDate()).padStart(2, '0')}-${months[istDate.getMonth()]}-${istDate.getFullYear()}`;
+  if (todayEl) todayEl.textContent = `Today: ${todayStr}`;
+
+  const latestSession = (manifest && manifest.length > 0) ? manifest[0] : null;
+  const activeDate = state.selectedDate || currentTradeDate;
+  const isViewingLatest = !latestSession || (activeDate === latestSession.date);
+
+  if (pill) {
+    const activeItem = manifest ? manifest.find(m => m.date === activeDate) : null;
+    pill.textContent = `Session: ${activeItem ? (activeItem.display_date || activeItem.date) : activeDate}`;
+  }
+
+  if (!isViewingLatest) {
+    if (dot) dot.className = 'status-pulse-dot archive';
+    if (phase) phase.textContent = 'HISTORICAL SESSION ARCHIVE';
+    if (desc) desc.innerHTML = `Viewing historical session snapshot for <strong>${activeDate}</strong>. Data preserved for backtest and performance review.`;
+    if (btnReturn && latestSession) {
+      btnReturn.hidden = false;
+      btnReturn.textContent = `Back to Latest (${latestSession.display_date})`;
+      btnReturn.onclick = () => selectSessionDate(latestSession.date);
+    }
+    return;
+  }
+
+  if (btnReturn) btnReturn.hidden = true;
+
+  if (state.payload && state.payload.is_today) {
+    if (dot) dot.className = 'status-pulse-dot synced';
+    if (phase) phase.textContent = 'SESSION SYNCHRONIZED';
+    if (desc) desc.innerHTML = `Official NSE Bhavcopy for <strong>${todayStr}</strong> is verified and active.`;
+  } else if (isMarketOpen) {
+    if (dot) dot.className = 'status-pulse-dot live';
+    if (phase) phase.textContent = 'NSE LIVE SESSION (09:15 – 15:30 IST)';
+    if (desc) desc.innerHTML = `Today's official Bhavcopy releases post-market (~17:30 IST). Showing latest confirmed session: <strong>${latestSession ? latestSession.display_date : '30 Sep 2026'}</strong>.`;
+  } else if (isCompilingBhavcopy) {
+    if (dot) dot.className = 'status-pulse-dot compiling';
+    if (phase) phase.textContent = 'NSE COMPILING BHAVCOPY (Market Closed)';
+    if (desc) desc.innerHTML = `Exchange clearing & reconciliation in progress (releases ~17:30 IST). Showing latest confirmed session: <strong>${latestSession ? latestSession.display_date : '30 Sep 2026'}</strong>.`;
+  } else {
+    if (dot) dot.className = 'status-pulse-dot neutral';
+    if (phase) phase.textContent = 'MARKET CLOSED';
+    if (desc) desc.innerHTML = `Next session opens at 09:15 IST. Displaying confirmed session: <strong>${latestSession ? latestSession.display_date : '30 Sep 2026'}</strong>.`;
+  }
 }
 
 async function selectSessionDate(dateStr) {
@@ -2424,9 +2385,17 @@ function getTrackedStocks() {
     } else {
       list = [];
     }
-    store.set(LS_WATCHLIST, list);
   }
-  return list;
+  // Sanitize: remove any corrupted or oversized entries (e.g. pasted docs)
+  const valid = list.filter(item => {
+    if (!item || !item.symbol) return false;
+    const s = String(item.symbol).trim();
+    return s.length >= 1 && s.length <= 20 && !s.includes('\n') && !s.includes('#') && /^[A-Z0-9&\-_.]+$/i.test(s);
+  });
+  if (valid.length !== list.length) {
+    store.set(LS_WATCHLIST, valid);
+  }
+  return valid;
 }
 
 function saveTrackedStocks(list) {
@@ -2764,11 +2733,32 @@ function wireLiveTracker() {
 
   const saveBtn = document.getElementById('btnLiveSave');
   if (saveBtn) saveBtn.addEventListener('click', () => {
-    const symbol = (symInput && symInput.value || '').trim().toUpperCase();
-    const entry = parseFloat(entryInput && entryInput.value);
+    let symbol = (symInput && symInput.value || '').trim().toUpperCase();
+    symbol = symbol.replace(/^(NSE:|BOM:)/i, '').replace(/\.NS$/i, '');
+    let entry = parseFloat(entryInput && entryInput.value);
     const capital = parseFloat(capInput && capInput.value) || currentCap;
     const targetPct = parseFloat(tgtInput && tgtInput.value) || 15;
-    if (!symbol || !(entry > 0)) { showToast('Enter a symbol and a valid entry price', 'error'); return; }
+
+    // Strict validation
+    if (!symbol || !/^[A-Z0-9&\-_]{1,20}$/.test(symbol)) {
+      showToast('Enter a valid stock symbol (e.g. REDINGTON, CUPID)', 'error');
+      if (symInput) symInput.focus();
+      return;
+    }
+
+    // Auto-fill CMP from current screener payload if entry was left empty
+    if (!(entry > 0)) {
+      const all = (state.payload && state.payload.all_qualified) || [];
+      const match = all.find(s => s.SYMBOL.toUpperCase() === symbol);
+      if (match && parseFloat(match.CMP) > 0) {
+        entry = parseFloat(match.CMP);
+        showToast(`Auto-filled entry at CMP ₹${entry.toFixed(2)} for ${symbol}`, 'info');
+      } else {
+        showToast('Please enter an entry fill price (₹)', 'error');
+        if (entryInput) entryInput.focus();
+        return;
+      }
+    }
 
     const list = getTrackedStocks();
     const existing = list.findIndex(x => x.symbol.toUpperCase() === symbol);

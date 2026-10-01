@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T02:58:20Z",
+  "generated_at": "2026-10-01T05:42:32Z",
   "count": 46,
   "entries": [
     {
@@ -382,15 +382,15 @@
     {
       "symbol": "REDINGTON",
       "credible": false,
-      "score": 15.3,
+      "score": 15.2,
       "pace": "medium",
-      "target_hit_rate_pct": 27.4,
-      "stop_hit_rate_pct": 59.8,
-      "expectancy_pct": 0.56,
+      "target_hit_rate_pct": 27.3,
+      "stop_hit_rate_pct": 59.4,
+      "expectancy_pct": 0.43,
       "median_days_to_target": 11.0,
       "median_calendar_days_to_target": 15.0,
-      "avg_cycle_days": 9.8,
-      "total_return_pct": -6.63
+      "avg_cycle_days": 9.9,
+      "total_return_pct": -7.31
     },
     {
       "symbol": "TDPOWERSYS",

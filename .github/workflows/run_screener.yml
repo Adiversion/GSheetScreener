@@ -34,7 +34,7 @@ jobs:
         run: pip install -r nse-momentum-engine/requirements.txt
 
       - name: Run Quant Engine (DuckDB & Minervini SEPA)
-        run: python nse-momentum-engine/src/quant_engine.py 1000 --backfill 1
+        run: python nse-momentum-engine/src/quant_engine.py 1000 --backfill 4
 
       - name: Commit updated signal data
         run: |

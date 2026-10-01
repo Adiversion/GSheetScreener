@@ -247,6 +247,76 @@ code { font-family: var(--font-mono); font-size: .85em; background: var(--surfac
 .regime-bar.defensive .regime-bar__decision { color: var(--red); border-color: var(--red); background: var(--red-soft); }
 .regime-bar__bench { font-family: var(--font-mono); font-size: .72rem; color: var(--text-dim); white-space: nowrap; }
 
+/* ─────────────────────────── MARKET & BHAVCOPY SYNC STATUS BAR ─────────────────────────── */
+.market-status-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 7px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border-soft);
+  font-size: .76rem;
+  transition: background var(--t);
+  min-width: 0; max-width: 100%;
+}
+.market-status-bar__left {
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; min-width: 0;
+}
+.status-pulse-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0;
+}
+.status-pulse-dot.live {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(34, 192, 138, 0.7);
+  animation: pulse-dot 2.2s infinite ease-in-out;
+}
+.status-pulse-dot.compiling {
+  background: var(--yellow);
+  box-shadow: 0 0 8px rgba(227, 162, 60, 0.7);
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+.status-pulse-dot.synced {
+  background: var(--accent);
+}
+.status-pulse-dot.archive {
+  background: var(--brand);
+}
+.status-pulse-dot.neutral {
+  background: var(--text-dim);
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.85); }
+}
+.status-phase {
+  font-size: .74rem; font-weight: 700; letter-spacing: .02em; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.status-date {
+  font-size: .72rem; color: var(--text-muted); font-family: var(--font-mono); white-space: nowrap;
+}
+.market-status-bar__center {
+  flex: 1 1 240px; color: var(--text-muted); font-size: .74rem; line-height: 1.35;
+  min-width: 0; overflow-wrap: anywhere;
+}
+.market-status-bar__center strong {
+  color: var(--text);
+}
+.market-status-bar__right {
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.btn-return-latest {
+  font-size: .7rem; padding: 3px 9px; border-radius: 999px;
+  background: var(--brand-soft); color: #cfe0ff; border-color: var(--brand); cursor: pointer;
+  transition: background var(--t), color var(--t);
+}
+.btn-return-latest:hover {
+  background: var(--brand); color: #fff;
+}
+@media (max-width: 640px) {
+  .market-status-bar { padding: 6px 12px; gap: 6px; }
+  .market-status-bar__center { font-size: .7rem; flex-basis: 100%; }
+  .market-status-bar__right { width: 100%; justify-content: space-between; }
+}
+
 /* ─────────────────────────── MAIN / PANELS ─────────────────────────── */
 .app-main { flex: 1; width: 100%; }
 .tab-panel { display: none; }
@@ -337,15 +407,29 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 }
 .pane__title { display: flex; align-items: center; gap: 9px; margin-right: auto; }
 .pane__title h2 { font-size: .98rem; }
-.session-switch { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-.session-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.session-switch { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.session-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .pill-session {
-  padding: 4px 9px; border-radius: 999px; font-size: .72rem; font-weight: 550;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 999px; font-size: .72rem; font-weight: 550;
   background: var(--surface-2); border: 1px solid var(--border-soft); color: var(--text-muted);
+  cursor: pointer; transition: all var(--t);
 }
-.pill-session:hover { color: var(--text); }
-.pill-session.active { background: var(--brand-soft); color: #cfe0ff; border-color: var(--brand); }
-.bhav-pending { font-size: .7rem; color: var(--yellow); }
+.pill-session:hover { color: var(--text); border-color: var(--border); }
+.pill-session.active {
+  background: var(--brand-soft); color: #cfe0ff; border-color: var(--brand);
+  box-shadow: 0 0 10px rgba(76, 141, 255, 0.2); font-weight: 650;
+}
+.tag-latest {
+  display: inline-block; font-size: .6rem; font-weight: 700; text-transform: uppercase;
+  background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 999px;
+  letter-spacing: .02em;
+}
+.bhav-pending {
+  font-size: .7rem; color: var(--yellow); font-weight: 600;
+  background: var(--yellow-soft); padding: 3px 8px; border-radius: var(--radius-xs);
+  display: inline-flex; align-items: center; gap: 4px;
+}
 
 .capital-ctl { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
 .capital-ctl .field { width: 120px; }

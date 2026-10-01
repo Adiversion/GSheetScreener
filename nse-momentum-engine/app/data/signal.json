@@ -1670,6 +1670,26 @@
       "cms": 0,
       "total_qualified": 44,
       "regime": "DEFENSIVE_CASH"
+    },
+    {
+      "date": "2026-09-28",
+      "display_date": "28 Sep 2026",
+      "is_today": false,
+      "winner": "CASH",
+      "cmp": 0,
+      "cms": 0,
+      "total_qualified": 47,
+      "regime": "DEFENSIVE_CASH"
+    },
+    {
+      "date": "2026-09-25",
+      "display_date": "25 Sep 2026",
+      "is_today": false,
+      "winner": "CASH",
+      "cmp": 0,
+      "cms": 0,
+      "total_qualified": 58,
+      "regime": "DEFENSIVE_CASH"
     }
   ]
 }

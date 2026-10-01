@@ -13,7 +13,7 @@
   <title>NSE Momentum Terminal</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.svg" />
-  <link rel="stylesheet" href="css/style.css?v=13" />
+  <link rel="stylesheet" href="css/style.css?v=17" />
 </head>
 <body>
 
@@ -118,6 +118,22 @@
     <span class="regime-bar__bench" id="regimeBench"></span>
   </div>
 
+  <!-- ════════════════════ MARKET SESSION & BHAVCOPY SYNC STATUS BAR ════════════════════ -->
+  <aside class="market-status-bar" id="marketStatusBar" role="region" aria-label="Market and Bhavcopy Status">
+    <div class="market-status-bar__left">
+      <span class="status-pulse-dot live" id="marketStatusDot" aria-hidden="true"></span>
+      <strong class="status-phase" id="marketStatusPhase">NSE LIVE SESSION (09:15 – 15:30 IST)</strong>
+      <span class="status-date" id="marketStatusToday">Today: 01-Oct-2026</span>
+    </div>
+    <div class="market-status-bar__center" id="marketStatusDesc">
+      Official NSE Bhavcopy releases post-market (~17:30 IST). Showing latest confirmed session: <strong id="marketStatusActiveSession">30 Sep 2026</strong>
+    </div>
+    <div class="market-status-bar__right">
+      <span class="badge badge--brand" id="marketStatusActivePill">Session: 30 Sep 2026</span>
+      <button class="btn btn--sm btn--ghost btn-return-latest" id="btnReturnLatestSession" hidden title="Return to latest confirmed session">Return to Latest</button>
+    </div>
+  </aside>
+
   <!-- ════════════════════ MAIN ════════════════════ -->
   <main class="app-main">
 
@@ -151,7 +167,7 @@
               <div class="session-switch" id="sessionCard">
                 <span class="field-label">Session</span>
                 <div class="session-pills" id="sessionPills" role="group" aria-label="Trading session"></div>
-                <span id="bhavcopyPendingNotice" class="bhav-pending" hidden>Compiling bhavcopy — using previous session</span>
+                <span id="bhavcopyPendingNotice" class="bhav-pending" hidden title="Official NSE Bhavcopy publishes post-market clearing (~17:30 IST)">⏳ 01-Oct compiling · using 30-Sep</span>
               </div>
 
               <!-- Capital controller -->
@@ -427,7 +443,7 @@
           <div class="live-form">
             <div class="field">
               <label class="field-label" for="liveSymbol">Symbol</label>
-              <input type="text" class="num-input" id="liveSymbol" placeholder="e.g. CUPID or REDINGTON" autocomplete="off" />
+              <input type="text" class="num-input" id="liveSymbol" placeholder="e.g. CUPID or REDINGTON" autocomplete="off" maxlength="20" autocapitalize="characters" style="text-transform:uppercase;" />
             </div>
             <div class="field">
               <label class="field-label" for="liveEntry">Entry price (₹)</label>

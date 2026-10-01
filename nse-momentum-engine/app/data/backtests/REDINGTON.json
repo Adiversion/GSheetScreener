@@ -1,11 +1,12 @@
 {
   "symbol": "REDINGTON",
-  "generated_at": "2026-10-01T02:32:09Z",
+  "generated_at": "2026-10-01T05:38:51Z",
   "period": {
     "start": "2023-10-03",
-    "end": "2026-09-29",
-    "bars": 743
+    "end": "2026-10-01",
+    "bars": 744
   },
+  "pace": "medium",
   "params": {
     "capital": 1000.0,
     "target_pct": 15.0,
@@ -15,13 +16,13 @@
     "max_hold_days": 60
   },
   "study": {
-    "observations": 164,
+    "observations": 165,
     "target_hits": 45,
     "stop_hits": 98,
-    "timeouts": 21,
-    "target_hit_rate_pct": 27.4,
-    "stop_hit_rate_pct": 59.8,
-    "expectancy_pct": 0.56,
+    "timeouts": 22,
+    "target_hit_rate_pct": 27.3,
+    "stop_hit_rate_pct": 59.4,
+    "expectancy_pct": 0.43,
     "avg_hold_to_target_days": 10.7,
     "avg_hold_to_stop_days": 11.0,
     "median_return_pct": -7.0,
@@ -60,13 +61,13 @@
   },
   "simulation": {
     "cycles": 20,
-    "final_capital": 933.75,
-    "total_return_pct": -6.63,
-    "win_rate_pct": 45.0,
-    "profit_factor": 0.91,
+    "final_capital": 926.85,
+    "total_return_pct": -7.31,
+    "win_rate_pct": 40.0,
+    "profit_factor": 0.9,
     "max_drawdown_pct": -31.4,
-    "avg_cycle_days": 9.8,
-    "cagr_pct": -3.1,
+    "avg_cycle_days": 9.9,
+    "cagr_pct": -3.4,
     "target_exits": 8,
     "stop_exits": 11,
     "deadline_exits": 1,
@@ -301,21 +302,21 @@
       },
       {
         "entry_date": "2026-09-22",
-        "exit_date": "2026-09-29",
+        "exit_date": "2026-10-01",
         "entry_price": 394.0,
-        "exit_price": 405.45,
+        "exit_price": 402.0,
         "shares": 2,
-        "pnl": 5.37,
-        "pnl_pct": 0.68,
-        "hold_days": 5,
+        "pnl": -1.52,
+        "pnl_pct": -0.19,
+        "hold_days": 6,
         "reason": "deadline",
-        "capital_after": 933.75
+        "capital_after": 926.85
       }
     ]
   },
   "verdict": {
     "credible": false,
-    "score": 15.3,
-    "summary": "Weak: stops dominate (60% stopped, 27% reached target)."
+    "score": 15.2,
+    "summary": "Weak: stops dominate (59% stopped, 27% reached target)."
   }
 }
