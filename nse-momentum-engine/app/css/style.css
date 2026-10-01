@@ -869,6 +869,26 @@ body.modal-open { overflow: hidden; }
 .live-key .field { margin-top: 10px; }
 @media (max-width: 640px) { .live-form { grid-template-columns: minmax(0, 1fr); } }
 
+/* ─── Multi-Stock Watchlist Cards ─── */
+.watchlist-card {
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+  transition: border-color var(--t), background var(--t);
+}
+.watchlist-card:hover { border-color: var(--border-strong); }
+.watchlist-card__head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px; margin-bottom: 12px;
+}
+.watchlist-card__actions {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
+
 /* ─────────────────────────── ACCESSIBILITY ─────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }

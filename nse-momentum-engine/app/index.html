@@ -411,20 +411,23 @@
           </button>
         </header>
 
-        <!-- Active Position & Live Target Tracker (Paper or Real) -->
+        <!-- Active Positions & Multi-Stock Watchlist (Paper or Real) -->
         <div class="card" id="liveCard">
           <div class="card__head">
             <div style="display:flex;align-items:center;gap:8px;">
-              <h3>Active Position &amp; Live Tracker</h3>
+              <h3>Active Positions &amp; Watchlist</h3>
               <span class="badge badge--brand">⚡ Real-time</span>
             </div>
-            <span class="badge badge--muted" id="liveSourceBadge">not configured</span>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="badge badge--muted" id="liveCountBadge">0 tracked</span>
+              <span class="badge badge--bull" id="liveSourceBadge">⚡ Live stream</span>
+            </div>
           </div>
-          <p class="muted" style="margin-bottom:12px;">Real-time tick-by-tick market tracker for your active holding or paper trade. Tracks P&amp;L live without opening Zerodha.</p>
+          <p class="muted" style="margin-bottom:12px;">Real-time tick-by-tick streaming tracker for your active holdings, paper trades, and watchlist stocks. Tracks live P&amp;L without opening Zerodha.</p>
           <div class="live-form">
             <div class="field">
               <label class="field-label" for="liveSymbol">Symbol</label>
-              <input type="text" class="num-input" id="liveSymbol" placeholder="e.g. CUPID or TATAMOTORS" autocomplete="off" />
+              <input type="text" class="num-input" id="liveSymbol" placeholder="e.g. CUPID or REDINGTON" autocomplete="off" />
             </div>
             <div class="field">
               <label class="field-label" for="liveEntry">Entry price (₹)</label>
@@ -440,12 +443,12 @@
             </div>
           </div>
           <div class="btn-row">
-            <button class="btn btn--primary btn--sm" id="btnLiveSave"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Track this stock</button>
+            <button class="btn btn--primary btn--sm" id="btnLiveSave"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Add to watchlist</button>
             <button class="btn btn--secondary btn--sm" id="btnLiveRefresh"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg> Refresh now</button>
-            <button class="btn btn--ghost btn--sm" id="btnLiveClear" style="margin-left:auto;"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg> Clear</button>
+            <button class="btn btn--ghost btn--sm" id="btnLiveClear" style="margin-left:auto;"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg> Clear all</button>
           </div>
           <div class="live-body" id="liveBody">
-            <p class="muted">No stock tracked yet. Enter the symbol you bought and its entry price, then tap <strong>Track this stock</strong>.</p>
+            <p class="muted">No stocks in watchlist yet. Enter a symbol above or tap <strong>Track this stock</strong> on any leader in the Terminal to track it in real-time.</p>
           </div>
           <details class="live-key">
             <summary>Live quote settings &amp; fallbacks (optional)</summary>
@@ -458,7 +461,7 @@
               <input type="text" class="num-input" id="liveProxyUrl" placeholder="https://nse-quote.you.workers.dev" autocomplete="off" />
             </div>
             <button class="btn btn--secondary btn--sm" id="btnLiveSaveKey"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Save source</button>
-            <p class="muted">⚡ Real-time Yahoo WebSocket is active automatically (zero setup, 100% free). You can optionally configure a Twelve Data API key or Cloudflare Worker proxy above as a fallback.</p>
+            <p class="muted">⚡ Real-time Yahoo WebSocket is active automatically for both your stocks and the Nifty 500 benchmark (zero setup, 100% free).</p>
           </details>
         </div>
       </div>

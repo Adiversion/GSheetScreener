@@ -2399,51 +2399,104 @@ function decodeYahooProtobuf(base64Str) {
 }
 
 let yahooWs = null;
-let yahooWsSymbol = null;
 let yahooWsReconnectTimer = null;
+const LS_WATCHLIST = 'nse_portfolio_watchlist_v2';
 
-/** Connects to Yahoo WebSocket streamer for a single stock */
-function connectYahooStream(symbol) {
-  if (!symbol) return;
-  const symNs = (symbol.includes('.') || symbol.includes('^')) ? symbol.toUpperCase() : symbol.toUpperCase() + '.NS';
+function toYahooSymbol(sym) {
+  const s = String(sym || '').trim().toUpperCase();
+  if (!s) return '';
+  if (s.startsWith('^') || s.includes('.')) return s;
+  return s + '.NS';
+}
 
-  if (yahooWs && yahooWsSymbol === symNs && (yahooWs.readyState === WebSocket.OPEN || yahooWs.readyState === WebSocket.CONNECTING)) {
-    return;
+function getTrackedStocks() {
+  let list = store.get(LS_WATCHLIST, null);
+  if (!Array.isArray(list)) {
+    const legacy = store.get(LS_LIVE, null);
+    if (legacy && legacy.symbol && parseFloat(legacy.entry) > 0) {
+      list = [{
+        id: 'pos_' + Date.now(),
+        symbol: legacy.symbol.toUpperCase(),
+        entry: parseFloat(legacy.entry),
+        capital: parseFloat(legacy.capital) || 10000,
+        targetPct: parseFloat(legacy.targetPct) || 15
+      }];
+    } else {
+      list = [];
+    }
+    store.set(LS_WATCHLIST, list);
   }
+  return list;
+}
+
+function saveTrackedStocks(list) {
+  store.set(LS_WATCHLIST, list);
+  if (list.length > 0) {
+    store.set(LS_LIVE, list[0]);
+  } else {
+    store.remove(LS_LIVE);
+  }
+  syncAllStreams();
+}
+
+function getAllSubscribedSymbols() {
+  const set = new Set(['^CRSLDX']); // Benchmark always subscribed!
+  const list = getTrackedStocks();
+  for (const item of list) {
+    const ySym = toYahooSymbol(item.symbol);
+    if (ySym) set.add(ySym);
+  }
+  return Array.from(set);
+}
+
+function syncAllStreams() {
+  const symbols = getAllSubscribedSymbols();
+  if (yahooWs && yahooWs.readyState === WebSocket.OPEN) {
+    try {
+      yahooWs.send(JSON.stringify({ subscribe: symbols }));
+      return;
+    } catch (_) {}
+  }
+  connectYahooMultiStream();
+}
+
+function connectYahooMultiStream() {
+  clearTimeout(yahooWsReconnectTimer);
+  const symbols = getAllSubscribedSymbols();
 
   if (yahooWs) {
     try { yahooWs.close(); } catch (_) {}
     yahooWs = null;
   }
 
-  clearTimeout(yahooWsReconnectTimer);
-  yahooWsSymbol = symNs;
-
   try {
     yahooWs = new WebSocket('wss://streamer.finance.yahoo.com/');
 
     yahooWs.onopen = () => {
-      yahooWs.send(JSON.stringify({ subscribe: [symNs] }));
+      yahooWs.send(JSON.stringify({ subscribe: symbols }));
     };
 
     yahooWs.onmessage = (event) => {
       try {
         const tick = decodeYahooProtobuf(event.data);
-        if (tick && tick.price != null && !isNaN(tick.price)) {
-          const roundedPrice = parseFloat(tick.price.toFixed(2));
-          state.liveWsPrice = {
-            symbol: symNs,
-            price: roundedPrice,
-            change: tick.change,
-            changePercent: tick.changePercent,
-            time: Date.now()
-          };
-          const live = store.get(LS_LIVE, null);
-          if (live && live.symbol) {
-            paintLive(live.symbol, live.entry, live.targetPct || 15, {
-              price: roundedPrice,
-              source: '⚡ Yahoo Live Stream'
-            }, null, live.capital);
+        if (!tick || tick.price == null || isNaN(tick.price)) return;
+        const roundedPrice = parseFloat(tick.price.toFixed(2));
+        
+        if (!state.liveWsQuotes) state.liveWsQuotes = {};
+        state.liveWsQuotes[tick.id] = {
+          symbol: tick.id,
+          price: roundedPrice,
+          change: tick.change,
+          changePercent: tick.changePercent,
+          time: Date.now()
+        };
+
+        if (tick.id === '^CRSLDX' || tick.id === '^NSEI') {
+          handleBenchmarkTick(roundedPrice);
+        } else {
+          // Re-render live cards if on Portfolio tab
+          if (state.currentTab === 'Portfolio') {
+            renderLiveTracker();
           }
         }
       } catch (_) {}
@@ -2453,13 +2506,51 @@ function connectYahooStream(symbol) {
     yahooWs.onclose = () => {
       yahooWs = null;
       if (document.visibilityState === 'visible') {
-        const live = store.get(LS_LIVE, null);
-        if (live && live.symbol) {
-          yahooWsReconnectTimer = setTimeout(() => connectYahooStream(live.symbol), 5000);
-        }
+        yahooWsReconnectTimer = setTimeout(connectYahooMultiStream, 5000);
       }
     };
   } catch (_) {}
+}
+
+function handleBenchmarkTick(liveCmp) {
+  state.liveNiftyCmp = liveCmp;
+  const cmpStr = '₹' + Number(liveCmp).toLocaleString('en-IN');
+  const regime = (state.payload && state.payload.regime) || {};
+  regime.nifty_cmp = liveCmp;
+  const sma50 = regime.sma_50 || 23223.03;
+  const sma200 = regime.sma_200 || 22974.87;
+
+  let currentRegime = 'DEFENSIVE_CASH';
+  let isBull = false;
+  let isCaution = false;
+  if (liveCmp >= sma50) {
+    currentRegime = 'BULL_MARKET';
+    isBull = true;
+  } else if (liveCmp >= sma200) {
+    currentRegime = 'CORRECTION_WATCH';
+    isCaution = true;
+  }
+  regime.regime = currentRegime;
+  const stateWord = isBull ? 'bull' : isCaution ? 'caution' : 'defensive';
+
+  // Desktop header pill
+  const ticker = document.getElementById('headerRegimeTicker');
+  const tickerText = document.getElementById('headerRegimeText');
+  if (ticker && tickerText) {
+    ticker.className = 'header-regime is-active ' + stateWord;
+    tickerText.innerHTML = `NIFTY 500 ${cmpStr} · ${isBull ? 'BULL' : isCaution ? 'CORRECTION' : 'DEFENSIVE'} <span style="color:var(--accent);font-weight:700;margin-left:4px;font-size:0.72rem;">⚡ Live</span>`;
+  }
+
+  // Terminal regime banner
+  const title = document.getElementById('regimeTitle');
+  const badge = document.getElementById('regimeBadge');
+  const bar = document.getElementById('regimeBanner');
+  if (title) title.innerHTML = `Nifty 500 ${cmpStr} <span style="font-size:0.72rem;color:var(--accent);vertical-align:middle;margin-left:4px;">⚡ Live</span>`;
+  if (badge) {
+    badge.className = 'badge badge--' + stateWord;
+    badge.textContent = (isBull ? 'Bull market' : isCaution ? 'Correction watch' : 'Defensive cash') + ' · ⚡ Live';
+  }
+  if (bar) bar.className = 'regime-bar ' + stateWord;
 }
 
 /** Classify a live price against the rotation target / stop. */
@@ -2478,12 +2569,12 @@ function liveStatus(entry, cmp, targetPct, stopPct) {
 
 async function fetchLiveQuote(symbol) {
   const sym = String(symbol || '').toUpperCase();
-  const symNs = sym.includes('.') || sym.includes('^') ? sym : sym + '.NS';
+  const symNs = toYahooSymbol(sym);
   const errors = [];
 
   // 0) Yahoo WebSocket live tick cache (real-time sub-second streaming)
-  if (state.liveWsPrice && state.liveWsPrice.symbol === symNs && (Date.now() - state.liveWsPrice.time < 300000)) {
-    return { price: state.liveWsPrice.price, source: '⚡ Yahoo Live Stream' };
+  if (state.liveWsQuotes && state.liveWsQuotes[symNs] && (Date.now() - state.liveWsQuotes[symNs].time < 300000)) {
+    return { price: state.liveWsQuotes[symNs].price, source: '⚡ Live Stream' };
   }
 
   // 1) Twelve Data — free key, browser-side, CORS-friendly.
@@ -2533,109 +2624,130 @@ async function fetchLiveQuote(symbol) {
     : 'Waiting for market stream or set a free Twelve Data / Worker proxy fallback');
 }
 
-function paintLive(sym, entry, targetPct, quote, err, capital) {
+function renderLiveTracker() {
   const body = document.getElementById('liveBody');
-  const badge = document.getElementById('liveSourceBadge');
+  const countBadge = document.getElementById('liveCountBadge');
   if (!body) return;
-  if (err) {
-    if (badge) { badge.className = 'badge badge--muted'; badge.textContent = 'no live data'; }
-    body.innerHTML = `<p class="muted">${err}</p>`;
+
+  const list = getTrackedStocks();
+  if (countBadge) countBadge.textContent = `${list.length} tracked`;
+
+  if (!list.length) {
+    body.innerHTML = `
+      <div style="text-align:center;padding:24px 12px;" class="muted">
+        <svg class="ic ic--lg" style="margin-bottom:8px;opacity:0.5;" aria-hidden="true"><use href="#i-portfolio"/></svg>
+        <p>No stocks in watchlist yet. Enter a symbol above or tap <strong>Track this stock</strong> on any leader in the Terminal.</p>
+      </div>`;
+    syncAllStreams();
     return;
   }
-  const { status, pnlPct, toTarget, targetPrice, stopPrice } = liveStatus(entry, quote.price, targetPct);
-  const badgeCls = { hit: 'badge--bull', near: 'badge--caution', stopped: 'badge--defensive', holding: 'badge--muted' }[status];
-  let badgeTxt = { hit: '✅ TARGET HIT', near: 'Approaching', stopped: 'Stopped out', holding: 'Holding' }[status];
-  if (badge) {
-    if (quote.source && quote.source.includes('Yahoo Live')) {
-      badge.className = 'badge ' + (badgeCls === 'badge--muted' ? 'badge--bull' : badgeCls);
-      badge.textContent = `${badgeTxt} · ⚡ Live`;
-    } else {
-      badge.className = 'badge ' + badgeCls;
-      badge.textContent = badgeTxt;
+
+  const isDefensive = (state.payload && state.payload.regime && state.payload.regime.regime === 'DEFENSIVE_CASH');
+
+  body.innerHTML = list.map((item, idx) => {
+    const ySym = toYahooSymbol(item.symbol);
+    const cached = state.liveWsQuotes && state.liveWsQuotes[ySym];
+    let cmp = cached ? cached.price : null;
+    let source = cached ? '⚡ Live Stream' : 'Screen close';
+
+    if (cmp == null) {
+      const all = (state.payload && state.payload.all_qualified) || [];
+      const hit = all.find(s => String(s.SYMBOL).toUpperCase() === item.symbol.toUpperCase());
+      if (hit && hit.CMP) cmp = parseFloat(hit.CMP);
     }
-  }
+    if (cmp == null) {
+      cmp = item.entry;
+      source = 'Entry price';
+    }
 
-  const cap = parseFloat(capital) > 0 ? parseFloat(capital) : 0;
-  const shares = (cap > 0 && entry > 0) ? Math.floor(cap / entry) : 0;
-  const pnlINR = shares > 0 ? (quote.price - entry) * shares : null;
-  const curVal = shares > 0 ? quote.price * shares : null;
+    const targetPct = item.targetPct || 15;
+    const stopPct = isDefensive ? 4 : 6;
+    const { status, pnlPct, toTarget, targetPrice, stopPrice } = liveStatus(item.entry, cmp, targetPct, stopPct);
+    const badgeCls = { hit: 'badge--bull', near: 'badge--caution', stopped: 'badge--defensive', holding: 'badge--muted' }[status];
+    const badgeTxt = { hit: '✅ TARGET HIT', near: 'Approaching', stopped: 'Stopped out', holding: 'Holding' }[status];
 
-  const tone = pnlPct >= 0 ? 'pos' : 'neg';
-  const pnlDisp = pnlINR != null 
-    ? `<span class="num ${tone} live-pnl-inr">${pnlINR >= 0 ? '+' : ''}${fmtINR(pnlINR)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)</span>`
-    : `<span class="num ${tone}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>`;
+    const cap = parseFloat(item.capital) > 0 ? parseFloat(item.capital) : 0;
+    const shares = (cap > 0 && item.entry > 0) ? Math.floor(cap / item.entry) : 0;
+    const pnlINR = shares > 0 ? (cmp - item.entry) * shares : null;
+    const curVal = shares > 0 ? cmp * shares : null;
+    const tone = pnlPct >= 0 ? 'pos' : 'neg';
 
-  body.innerHTML = `
-    <div class="live-hero">
-      <span class="live-sym">${sym}</span>
-      <span class="live-price">${fmtINR(quote.price)}</span>
-      ${pnlDisp}
-    </div>
-    <div class="rotation-grid">
-      <div class="rstat"><span class="rstat__k">Target (+${targetPct}%)</span><span class="rstat__v tone-bull">${fmtINR(targetPrice)}</span></div>
-      <div class="rstat"><span class="rstat__k">To target</span><span class="rstat__v ${toTarget <= 0 ? 'tone-bull' : ''}">${toTarget >= 0 ? '' : '+'}${toTarget.toFixed(2)}%</span></div>
-      <div class="rstat"><span class="rstat__k">Stop</span><span class="rstat__v tone-bear">${fmtINR(stopPrice)}</span></div>
-      <div class="rstat"><span class="rstat__k">Entry fill</span><span class="rstat__v">${fmtINR(entry)}</span></div>
-      ${shares > 0 ? `
-      <div class="rstat"><span class="rstat__k">Position value</span><span class="rstat__v">${fmtINR(curVal)}</span></div>
-      <div class="rstat"><span class="rstat__k">Quantity &amp; capital</span><span class="rstat__v">${shares} shares (${fmtINR(cap)})</span></div>
-      ` : ''}
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:12px;">
-      <p class="live-meta" style="margin:0;">Source: ${quote.source} · updated ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
-      <button class="btn btn--primary btn--sm" id="btnLiveRecordExit">
-        <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg> Record trade exit
-      </button>
-    </div>`;
+    const pnlDisp = pnlINR != null 
+      ? `<span class="num ${tone} live-pnl-inr">${pnlINR >= 0 ? '+' : ''}${fmtINR(pnlINR)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)</span>`
+      : `<span class="num ${tone}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>`;
 
-  const exitBtn = document.getElementById('btnLiveRecordExit');
-  if (exitBtn) {
-    exitBtn.addEventListener('click', () => {
+    return `
+      <div class="watchlist-card" data-stock-id="${item.id || idx}">
+        <div class="watchlist-card__head">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <strong style="font-size:1.15rem;letter-spacing:0.02em;">${item.symbol}</strong>
+            <span class="badge ${badgeCls}">${badgeTxt}</span>
+            ${cached ? '<span class="badge badge--bull" style="font-size:0.65rem;">⚡ Live</span>' : ''}
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <span class="live-price" style="font-size:1.35rem;">${fmtINR(cmp)}</span>
+            ${pnlDisp}
+          </div>
+        </div>
+
+        <div class="rotation-grid">
+          <div class="rstat"><span class="rstat__k">Target (+${targetPct}%)</span><span class="rstat__v tone-bull">${fmtINR(targetPrice)}</span></div>
+          <div class="rstat"><span class="rstat__k">To target</span><span class="rstat__v ${toTarget <= 0 ? 'tone-bull' : ''}">${toTarget >= 0 ? '' : '+'}${toTarget.toFixed(2)}%</span></div>
+          <div class="rstat"><span class="rstat__k">Stop (${isDefensive ? '−4%' : '−6%'})</span><span class="rstat__v tone-bear">${fmtINR(stopPrice)}</span></div>
+          <div class="rstat"><span class="rstat__k">Entry fill</span><span class="rstat__v">${fmtINR(item.entry)}</span></div>
+          ${shares > 0 ? `
+          <div class="rstat"><span class="rstat__k">Position value</span><span class="rstat__v">${fmtINR(curVal)}</span></div>
+          <div class="rstat"><span class="rstat__k">Qty &amp; Capital</span><span class="rstat__v">${shares} sh (${fmtINR(cap)})</span></div>
+          ` : ''}
+        </div>
+
+        <div class="watchlist-card__actions">
+          <span class="live-meta">${source}</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn--primary btn--sm btn-card-exit" data-idx="${idx}">
+              <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg> Record exit
+            </button>
+            <button class="btn btn--ghost btn--sm btn-card-remove" data-idx="${idx}" title="Remove from watchlist">
+              <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Wire card buttons
+  body.querySelectorAll('.btn-card-exit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      const item = list[idx];
+      if (!item) return;
+      const ySym = toYahooSymbol(item.symbol);
+      const cached = state.liveWsQuotes && state.liveWsQuotes[ySym];
+      const exitPrice = cached ? cached.price : item.entry;
+      const cap = parseFloat(item.capital) || 0;
+      const shares = (cap > 0 && item.entry > 0) ? Math.floor(cap / item.entry) : 1;
       openExitModal({
-        symbol: sym,
-        entry: entry,
-        exit: quote.price,
-        shares: shares || 1
+        symbol: item.symbol,
+        entry: item.entry,
+        exit: exitPrice,
+        shares: shares
       });
     });
-  }
-}
+  });
 
-async function renderLiveTracker() {
-  const body = document.getElementById('liveBody');
-  if (!body) return;
-  const live = store.get(LS_LIVE, null);
-  if (!live || !live.symbol || !(live.entry > 0)) {
-    const badge = document.getElementById('liveSourceBadge');
-    if (badge) { badge.className = 'badge badge--muted'; badge.textContent = 'not configured'; }
-    body.innerHTML = '<p class="muted">No stock tracked yet. Enter the symbol you bought (or want to paper trade) and its entry price, then tap <strong>Track this stock</strong>.</p>';
-    if (yahooWs) { try { yahooWs.close(); } catch (_) {} yahooWs = null; }
-    return;
-  }
+  body.querySelectorAll('.btn-card-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      const item = list[idx];
+      if (!item) return;
+      list.splice(idx, 1);
+      saveTrackedStocks(list);
+      showToast(`Removed ${item.symbol} from watchlist`, 'info');
+      renderLiveTracker();
+    });
+  });
 
-  // Ensure form inputs remain populated from stored position
-  const symInput = document.getElementById('liveSymbol');
-  const entryInput = document.getElementById('liveEntry');
-  const capInput = document.getElementById('liveCapital');
-  const tgtInput = document.getElementById('liveTargetPct');
-  if (symInput && live.symbol && !symInput.value) symInput.value = live.symbol;
-  if (entryInput && live.entry && !entryInput.value) entryInput.value = live.entry;
-  if (capInput && live.capital && !capInput.value) capInput.value = live.capital;
-  if (tgtInput && live.targetPct && !tgtInput.value) tgtInput.value = live.targetPct;
-
-  // Connect live streaming WebSocket for the single portfolio stock
-  connectYahooStream(live.symbol);
-
-  try {
-    const quote = await fetchLiveQuote(live.symbol);
-    paintLive(live.symbol, live.entry, live.targetPct || 15, quote, null, live.capital);
-  } catch (e) {
-    // Still show the target/stop levels even without a price.
-    paintLive(live.symbol, live.entry, live.targetPct || 15, null, e.message || 'Live quote unavailable', live.capital);
-  }
-  const key = store.get(LS_TD_KEY, '');
-  const keyInput = document.getElementById('liveApiKey');
-  if (keyInput && !keyInput.value && key) keyInput.value = key;
+  syncAllStreams();
 }
 
 function wireLiveTracker() {
@@ -2644,20 +2756,11 @@ function wireLiveTracker() {
   const capInput = document.getElementById('liveCapital');
   const tgtInput = document.getElementById('liveTargetPct');
 
-  // Default capital to current account equity if not set
   const base = store.get(LS.CAPITAL_BASE, DEFAULT_CAPITAL);
   const currentCap = store.get(LS.CURRENT_CAPITAL, base);
 
-  // Prefill from whatever is currently selected / tracked.
-  const live = store.get(LS_LIVE, null);
-  if (live) {
-    if (symInput) symInput.value = live.symbol || '';
-    if (entryInput) entryInput.value = live.entry || '';
-    if (capInput) capInput.value = live.capital || currentCap;
-    if (tgtInput) tgtInput.value = live.targetPct || 15;
-  } else {
-    if (capInput && !capInput.value) capInput.value = currentCap;
-  }
+  if (capInput && !capInput.value) capInput.value = currentCap;
+  if (tgtInput && !tgtInput.value) tgtInput.value = 15;
 
   const saveBtn = document.getElementById('btnLiveSave');
   if (saveBtn) saveBtn.addEventListener('click', () => {
@@ -2666,26 +2769,37 @@ function wireLiveTracker() {
     const capital = parseFloat(capInput && capInput.value) || currentCap;
     const targetPct = parseFloat(tgtInput && tgtInput.value) || 15;
     if (!symbol || !(entry > 0)) { showToast('Enter a symbol and a valid entry price', 'error'); return; }
-    store.set(LS_LIVE, { symbol, entry, capital, targetPct });
-    showToast(`Tracking ${symbol} at ${fmtINR(entry)}`, 'success', '🎯');
-    connectYahooStream(symbol);
+
+    const list = getTrackedStocks();
+    const existing = list.findIndex(x => x.symbol.toUpperCase() === symbol);
+    if (existing >= 0) {
+      list[existing] = { id: list[existing].id || ('pos_' + Date.now()), symbol, entry, capital, targetPct };
+      showToast(`Updated ${symbol} in watchlist`, 'success', '🎯');
+    } else {
+      list.push({ id: 'pos_' + Date.now(), symbol, entry, capital, targetPct });
+      showToast(`Added ${symbol} to watchlist`, 'success', '🎯');
+    }
+    saveTrackedStocks(list);
+    if (symInput) symInput.value = '';
+    if (entryInput) entryInput.value = '';
     renderLiveTracker();
   });
 
   const clearBtn = document.getElementById('btnLiveClear');
   if (clearBtn) clearBtn.addEventListener('click', () => {
-    store.remove(LS_LIVE);
-    if (yahooWs) { try { yahooWs.close(); } catch (_) {} yahooWs = null; }
-    if (symInput) symInput.value = '';
-    if (entryInput) entryInput.value = '';
-    showToast('Active position cleared', 'info');
-    renderLiveTracker();
+    const list = getTrackedStocks();
+    if (!list.length) return;
+    if (confirm('Clear all stocks from your watchlist?')) {
+      saveTrackedStocks([]);
+      showToast('Watchlist cleared', 'info');
+      renderLiveTracker();
+    }
   });
 
   const refreshBtn = document.getElementById('btnLiveRefresh');
   if (refreshBtn) refreshBtn.addEventListener('click', () => {
-    const l = store.get(LS_LIVE, null);
-    if (l && l.symbol) connectYahooStream(l.symbol);
+    syncAllStreams();
+    showToast('Refreshing live stream…', 'info', '⚡');
     renderLiveTracker();
   });
 
@@ -2699,17 +2813,14 @@ function wireLiveTracker() {
     const proxy = (proxyInput && proxyInput.value || '').trim();
     store.set(LS_TD_KEY, key);
     store.set(LS_PROXY, proxy);
-    showToast('Live-quote source saved', 'success');
+    showToast('Live-quote settings saved', 'success');
     renderLiveTracker();
   });
 
   // Reconnect stream when browser tab becomes active
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      const current = store.get(LS_LIVE, null);
-      if (current && current.symbol && (!yahooWs || yahooWs.readyState !== WebSocket.OPEN)) {
-        connectYahooStream(current.symbol);
-      }
+      syncAllStreams();
     }
   });
 
@@ -2717,7 +2828,7 @@ function wireLiveTracker() {
   const quickTrackBtn = document.getElementById('btnQuickTrack');
   if (quickTrackBtn) {
     quickTrackBtn.addEventListener('click', () => {
-      const leader = (state.signalData && state.signalData[0]) || (state.payload && state.payload.all_qualified && state.payload.all_qualified[0]);
+      const leader = state.inspectedStock || (state.signalData && state.signalData[0]) || (state.payload && state.payload.all_qualified && state.payload.all_qualified[0]);
       if (!leader || !leader.SYMBOL) {
         showToast('No active signal to track', 'info');
         return;
@@ -2725,23 +2836,33 @@ function wireLiveTracker() {
       const actualInput = document.getElementById('inputActualEntry');
       const entryPrice = parseFloat(actualInput && actualInput.value) || parseFloat(leader.CMP);
       const cap = store.get(LS.CURRENT_CAPITAL, base);
-      store.set(LS_LIVE, {
-        symbol: leader.SYMBOL,
-        entry: entryPrice,
-        capital: cap,
-        targetPct: 15
-      });
-      showToast(`Tracking ${leader.SYMBOL} in Portfolio`, 'success', '⚡');
-      connectYahooStream(leader.SYMBOL);
+
+      const list = getTrackedStocks();
+      const existing = list.findIndex(x => x.symbol.toUpperCase() === leader.SYMBOL.toUpperCase());
+      if (existing >= 0) {
+        list[existing].entry = entryPrice;
+        list[existing].capital = cap;
+      } else {
+        list.push({
+          id: 'pos_' + Date.now(),
+          symbol: leader.SYMBOL,
+          entry: entryPrice,
+          capital: cap,
+          targetPct: 15
+        });
+      }
+      saveTrackedStocks(list);
+      showToast(`Tracking ${leader.SYMBOL} in Portfolio Watchlist`, 'success', '⚡');
       switchTab('Portfolio');
-      renderLiveTracker();
     });
   }
 
+  // Start always-on multi-stream
+  syncAllStreams();
   renderLiveTracker();
   if (!state.liveTimer) {
     state.liveTimer = setInterval(() => {
-      if (document.visibilityState === 'visible') renderLiveTracker();
+      if (document.visibilityState === 'visible') syncAllStreams();
     }, 60000);
   }
 }
