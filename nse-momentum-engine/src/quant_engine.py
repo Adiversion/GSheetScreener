@@ -290,7 +290,7 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
 
     cands_df = cands_df[~cands_df["SYMBOL"].apply(is_narrow_circuit_band)].copy()
     cands_df = cands_df.sort_values(by="TURNOVER", ascending=False)
-    dynamic_symbols = cands_df.head(300)["SYMBOL"].unique().tolist()
+    dynamic_symbols = cands_df.head(500)["SYMBOL"].unique().tolist()
     print(f"🔍 Discovered {len(dynamic_symbols)} high-liquidity, non-circuit-locked active equities.")
 
     # 5. Batch fetch 1-year historical daily bars
