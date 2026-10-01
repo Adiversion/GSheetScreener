@@ -12,6 +12,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.event_study_engine import extract_events_for_series
 
@@ -126,18 +129,18 @@ def run_study(data_parquet: Path, output_dir: Path):
     if len(probe_cb) > 0 and len(probe_fb) > 0:
         spread_20d = probe_cb["fwd_ret_20d"].mean() - probe_fb["fwd_ret_20d"].mean()
         spread_5d = probe_cb["fwd_ret_5d"].mean() - probe_fb["fwd_ret_5d"].mean()
-        print(f"\n🎯 CORE HYPOTHESIS ANSWER:")
+        print("\n[+] CORE HYPOTHESIS ANSWER:")
         print(f"1. Separation Spread at T+5 : {spread_5d:+.2f}%")
         print(f"2. Separation Spread at T+20: {spread_20d:+.2f}%")
-        print(f"   • Confirmed Breakouts deliver +{probe_cb['fwd_ret_20d'].mean():.2f}% (Win Rate: {(probe_cb['fwd_ret_20d'] > 0).mean()*100:.1f}%)")
-        print(f"   • Failed Breakouts deliver    {probe_fb['fwd_ret_20d'].mean():.2f}% (Win Rate: {(probe_fb['fwd_ret_20d'] > 0).mean()*100:.1f}%)")
+        print(f"   * Confirmed Breakouts deliver +{probe_cb['fwd_ret_20d'].mean():.2f}% (Win Rate: {(probe_cb['fwd_ret_20d'] > 0).mean()*100:.1f}%)")
+        print(f"   * Failed Breakouts deliver    {probe_fb['fwd_ret_20d'].mean():.2f}% (Win Rate: {(probe_fb['fwd_ret_20d'] > 0).mean()*100:.1f}%)")
 
     if len(cb_high_aqs) > 0 and len(cb_low_aqs) > 0:
         aqs_alpha = cb_high_aqs["fwd_ret_20d"].mean() - cb_low_aqs["fwd_ret_20d"].mean()
-        print(f"\n🚀 AQS VALUE-ADD ANSWER:")
-        print(f"   • High-AQS Breakouts (>=75) average : +{cb_high_aqs['fwd_ret_20d'].mean():.2f}% (PF: {compute_group_stats(cb_high_aqs, '')['fwd_ret_20d_pf']})")
-        print(f"   • Low-AQS Breakouts (<60) average   : +{cb_low_aqs['fwd_ret_20d'].mean():.2f}% (PF: {compute_group_stats(cb_low_aqs, '')['fwd_ret_20d_pf']})")
-        print(f"   • Net AQS Alpha Spread              : {aqs_alpha:+.2f}% extra gain per trade")
+        print("\n[+] AQS VALUE-ADD ANSWER:")
+        print(f"   * High-AQS Breakouts (>=75) average : +{cb_high_aqs['fwd_ret_20d'].mean():.2f}% (PF: {compute_group_stats(cb_high_aqs, '')['fwd_ret_20d_pf']})")
+        print(f"   * Low-AQS Breakouts (<60) average   : +{cb_low_aqs['fwd_ret_20d'].mean():.2f}% (PF: {compute_group_stats(cb_low_aqs, '')['fwd_ret_20d_pf']})")
+        print(f"   * Net AQS Alpha Spread              : {aqs_alpha:+.2f}% extra gain per trade")
 
 
 if __name__ == "__main__":
