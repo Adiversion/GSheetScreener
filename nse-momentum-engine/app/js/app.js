@@ -1908,6 +1908,10 @@ function renderActiveSignal(h, alts, isDefensive = false) {
   if (specTurnover) { const toCr = parseFloat(h.TURNOVER_CRORES); specTurnover.textContent = !isNaN(toCr) ? `₹${toCr.toFixed(1)} Cr` : '—'; }
   if (specATR) specATR.textContent = `${fmtINR(atr)} (${atrPct.toFixed(1)}%)`;
   if (specCircuit) specCircuit.textContent = `${h.CIRCUIT_BAND || '20'}%${h.CIRCUIT_RISK ? ' · risky' : ''}`;
+  const specAQS = document.getElementById('specAQS');
+  const specCR = document.getElementById('specCR');
+  if (specAQS) specAQS.textContent = h.AQS_SCORE != null ? `${h.AQS_SCORE} (${h.AQS_GRADE || 'AQS'})` : (h.INSTITUTIONAL_SCORE ? `${h.INSTITUTIONAL_SCORE}` : '—');
+  if (specCR) specCR.textContent = h.CLOSING_RANGE != null ? `${h.CLOSING_RANGE} (${h.CR_STATUS || ''})` : '—';
 
   renderGTT(h);
 }
@@ -1963,8 +1967,8 @@ function buildGridRow(s, idx, userCapital) {
   const volTitle = `Minervini volume surge: ${volSurge.toFixed(1)}x 20-day volume · VCP: ${s.VCP_RATIO || '1.0'}`;
   const pctCell = v => isNaN(v) ? '–' : `<span class="${v >= 0 ? 'pos' : 'neg'}">${v >= 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
 
-  const isTrap = s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP';
-  const isInstPrime = s.INSTITUTIONAL_GRADE === 'PRIME_INSTITUTIONAL';
+  const isTrap = s.IS_TRAP_VETO === true || s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP' || s.AQS_GRADE === 'TRAP_VETO';
+  const isAqsPrime = s.AQS_GRADE === 'PRIME_ACCUMULATION' || (parseFloat(s.AQS_SCORE) >= 75) || s.INSTITUTIONAL_GRADE === 'PRIME_INSTITUTIONAL';
 
   const tr = document.createElement('tr');
   tr.className = 'stock-table-row' + (isSelected ? ' selected' : '') + (isTrap ? ' row--trap' : '');
@@ -1976,9 +1980,9 @@ function buildGridRow(s, idx, userCapital) {
       <div class="sec-cell">
         <span class="sec-symbol">${s.SYMBOL}</span>
         <span class="sec-tags">
-          ${isInstPrime ? '<span class="tag tag--prime" style="background:rgba(34,197,94,0.18);color:#22c55e;border:1px solid rgba(34,197,94,0.4)">★ INST PRIME</span>' : ''}
-          ${isTrap ? '<span class="tag tag--risk" style="background:rgba(239,68,68,0.18);color:#ef4444;border:1px solid rgba(239,68,68,0.4)">⚠️ RETAIL TRAP</span>' : ''}
-          ${s.IS_PRIME && !isInstPrime ? '<span class="tag tag--prime">PRIME</span>' : ''}
+          ${isAqsPrime ? `<span class="tag tag--prime" style="background:rgba(34,197,94,0.18);color:#22c55e;border:1px solid rgba(34,197,94,0.4)" title="Accumulation Quality Score: ${s.AQS_SCORE || '75+'}">★ AQS ${s.AQS_SCORE ? Math.round(s.AQS_SCORE) : 'PRIME'}</span>` : ''}
+          ${isTrap ? '<span class="tag tag--risk" style="background:rgba(239,68,68,0.18);color:#ef4444;border:1px solid rgba(239,68,68,0.4)" title="Anti-Trap Veto: Wyckoff upthrust or distribution">⚠️ TRAP VETO</span>' : ''}
+          ${s.IS_PRIME && !isAqsPrime ? '<span class="tag tag--prime">PRIME</span>' : ''}
           <span class="tag">${band}% band</span>
           ${(s.CIRCUIT_RISK === true || band <= 5) ? '<span class="tag tag--risk">CIRCUIT RISK</span>' : ''}
         </span>
@@ -2025,7 +2029,7 @@ function renderAllStocksTable(stocks, userCapital) {
   };
 
   const q = (currentSearch || '').toUpperCase();
-  const labelMap = { all: 'All', prime: 'Prime', sweet_rsi: 'Sweet RSI', affordable: 'Affordable', circuit_safe: 'Circuit-safe', strong_trend: 'Strong trend' };
+  const labelMap = { all: 'All', aqs_prime: '⚡ AQS Prime (≥70)', prime: 'Prime', sweet_rsi: 'Sweet RSI', affordable: 'Affordable', circuit_safe: 'Circuit-safe', strong_trend: 'Strong trend' };
 
   const filtered = all.filter(s => {
     if (q && !String(s.SYMBOL).toUpperCase().includes(q)) return false;
@@ -2033,7 +2037,9 @@ function renderAllStocksTable(stocks, userCapital) {
     const cmp = parseFloat(s.CMP) || 0;
     const band = parseFloat(s.CIRCUIT_BAND) || 0;
     const to = parseFloat(s.TURNOVER_CRORES) || 0;
+    const aqs = parseFloat(s.AQS_SCORE) || parseFloat(s.INSTITUTIONAL_SCORE) || 0;
     switch (currentFilter) {
+      case 'aqs_prime':    return aqs >= 70 && !s.IS_TRAP_VETO;
       case 'prime':        return s.IS_PRIME === true || (parseFloat(s.CMS_SCORE) || 0) >= 90;
       case 'sweet_rsi':    return rsi >= 45 && rsi <= 75;
       case 'affordable':   return cmp <= (userCapital - 26);
@@ -2320,6 +2326,9 @@ function populateSettings() {
 
 /* ─── Backtest Research & Observation Laboratory ─── */
 async function renderResearch() {
+  if (typeof ResearchLab !== 'undefined' && ResearchLab.init) {
+    ResearchLab.init();
+  }
   const sel = document.getElementById('researchStockSelect');
   if (!sel) return;
 
@@ -2376,6 +2385,10 @@ function loadResearchReport(symbol) {
 
   const paint = (r) => {
     if (!r) {
+      if (typeof ResearchLab !== 'undefined' && ResearchLab.paint) {
+        ResearchLab.paint(symbol, null, false);
+        return;
+      }
       if (verdict) { verdict.className = 'badge'; verdict.textContent = 'no report'; }
       grid.innerHTML = '<div class="cred-item"><small>Status</small><span>No offline backtest report on disk</span></div>';
       if (foot) foot.textContent = `To generate a report for ${symbol}, run: python scripts/single_stock_backtest.py --symbol ${symbol}`;

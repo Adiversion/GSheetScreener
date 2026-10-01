@@ -1,1149 +1,499 @@
-Yes. I reviewed the specification as a **system-design / quantitative-trading ruleset**, focusing on internal consistency, mathematical definitions, implementation ambiguity, and places where the stated rationale does not actually follow from the rule.
+Based on the research, here's a structured debate of your playbook — validating what's academically sound, flagging what the evidence contradicts, and proposing concrete optimizations.
 
-## Overall assessment
+## ✅ What the Research Validates
 
-**Confidence: High** on the internal consistency findings; **Moderate** on whether individual thresholds are statistically useful, because that requires backtesting.
-
-The architecture is coherent at a high level: liquidity → market regime → trend → cross-sectional momentum → quality/trap filters → sizing → execution. The main problem is that several rules currently **look institutional but are not yet sufficiently rigorous to justify that characterization**.
-
-I would **not implement v2.4.0 exactly as written**. There are several important contradictions and a few mathematical problems that could materially change the live results.
+**Momentum works in India, but with caveats.** An 18-year NSE backtest found net CAGR after taxes and costs of 14.01% versus Nifty 50 benchmark 10.42%, representing +3.59% annual alpha. Your FIP (Frog-in-the-Pan) filter is also theoretically grounded — the original Da, Gurun & Warachka research found continuous information induces stronger and more persistent return continuation than discrete information, with price momentum increasing monotonically from 2.91% in the discrete information portfolio to 8.86% in the continuous information portfolio over six months.
 
 ---
 
-# 1. The biggest issue: Gate 1 contradicts itself
+## ⚠️ Where the Evidence Pushes Back
 
-At the pipeline level you state:
+### 1. Your Liquidity Floor May Be Filtering Out *Where the Alpha Actually Lives*
+This is the most important finding. A 19-year NSE study split momentum winners by turnover and found high-turnover momentum stocks returned just 8.51% CAGR — below Nifty 50 — while low-turnover momentum returned 19.43%. The researchers concluded Indian momentum alpha is not a behavioral effect — it is an illiquidity premium. Your Strategy 6 ₹5 Cr ADTV floor is prudent for execution safety, but it mechanically biases your universe toward the *lower-alpha* half of the momentum factor. **Optimization:** Instead of a flat floor, consider a tiered liquidity bucket — keep the ₹5 Cr floor as a hard safety gate, but within the passing universe, give a *CMS percentile bonus* to names closer to the floor (smaller/less crowded) rather than treating all qualifying names identically.
 
-> Turnover >= ₹5 Cr
+### 2. Your Macro Governor Is Binary — Research Favors Continuous Scaling
+Strategy 5's cash/invested switch is a blunt instrument. Daniel & Moskowitz's seminal work found momentum crashes are partly forecastable — they occur in panic states, following market declines and when market volatility is high, and that an implementable dynamic momentum strategy based on forecasts of momentum's mean and variance approximately doubles the alpha and Sharpe ratio of a static momentum strategy. Similarly, other research notes volatility scaling and dynamic risk controls can reduce drawdowns by roughly half, turning the strategy into a steadier long-term performer. **Optimization:** Replace the binary SMA200 cash trigger with a continuous volatility-targeting overlay — scale position *size* (not just stop width) inversely to realized Nifty 500 volatility, rather than waiting for a hard SMA200 breach.
 
-But the mathematical definition says:
+### 3. Gate-Stacking Risk: The System Can Go Silent
+A live backtest of a Minervini-style system found that over 26 years, strict snapshot+breakout gating produced a -7.22% return while every other trend strategy returned 1,680–3,675%; Minervini wasn't choosing badly, it barely traded — it made 18 entries in 26 years and was entirely in cash on 6,479 of 6,859 sessions (94%). Your Layers 3–6 stack six sequential disqualification gates (trend template → CMS → volume → VCR → FIP → extension). Each is individually reasonable, but their *conjunction* could silently collapse your tradeable universe to near-zero in exactly the markets where you most need deployed capital. **Optimization:** Instrument the pipeline to log pass-rates at each layer. If the combined pass-rate drops below some floor (e.g., <2% of universe) for multiple consecutive sessions, that itself becomes a diagnostic signal — either a genuine bear regime (good, Layer 2 should already have caught it) or an over-tuned gate stack (bad, needs relaxation).
 
-- Single-day turnover ≥ ₹2 Cr
-- 20-day ADTV ≥ ₹5 Cr INSTITUTIONAL_RULESET_SPEC
+### 4. Your 52-Week High Proximity Rule May Be Too Loose for Indian Mid/Smallcaps
+A practitioner analysis running the Minervini template specifically on NSE data noted: the 25% proximity-to-52-week-high criterion can be too loose for Indian midcaps in strong bull markets — many midcaps run 40%+ above their prior 52-week high during a trending move, and the filter will still flag these as valid even though risk-reward is diminished. The same source tightens the SMA200 slope lookback: Kasauti uses a stricter 63 trading-day lookback (approximately 3 months) instead of 22, to filter out stocks whose 200 DMA has only recently turned up, producing fewer but higher-quality results. **Optimization:** Consider widening your Rule 2 slope lookback from `t-22` to `t-63`, and adding a segment-specific extension ceiling (tighter for small/midcaps than largecaps) rather than one universal 25% band.
 
-Those are different filters.
+### 5. VCP Breakouts Can Be Late and False — Consider a Retest Confirmation Layer
+VCP critiques note two structural weaknesses: false breakouts can occur in choppy or low-activity conditions, and by the time the pattern confirms, much of the move may have already happened, hurting risk-reward. A large mechanical study of Minervini-style rules (44k+ graded breakouts, 1985–2026) found that the base pivot beats the 20-day-high entry causally (PF 1.91 vs 1.78), and that a specific confirmation pattern — a gap retest (4%+ gap on volume, close-based pullback holding the gap, first close above the prior high) scores PF 3.69 with 41% reaching +20%. The same study found relative-strength rank was the dominant lever: RS rank is the lever (PF 1.75 under RS 50 to 2.42 at 95+, every decade); a falling 200-day kills the trade. **Optimization:** Your CMS layer already computes a percentile-rank analog to RS — consider raising its weight (e.g., 0.70/0.30 instead of 0.60/0.40) given this is the single highest-value lever in the mechanical study, and add an optional "retest-confirmed" entry tier that waits for a shallow pullback-and-reclaim rather than chasing the first breakout bar.
 
-The actual implementation should probably be explicitly:
+### 6. Strategy 2's 100%-Into-One-Name Concentration Is a Real Tail-Risk Amplifier
+The Indian backtest data is sobering here: pure momentum in the 18-year NSE study suffered a -70.53% maximum drawdown with 65-month recovery, and a blended quality-momentum version still saw severe -62% drawdowns even while outperforming on CAGR. Strategy 2 concentrates this same factor-level tail risk into a *single stock*, which is strictly worse than a diversified factor portfolio exhibiting that drawdown. Momentum fund commentary in India echoes this: these strategies are high-risk, high-reward and best suited to long horizons, not single-name rotation. **Optimization:** Even in the sub-₹50k tier, consider a 2-leader 50/50 split instead of 100% single-stock concentration — this roughly halves idiosyncratic single-name gap risk (promoter fraud, regulatory action, order freeze) while only modestly diluting the compounding math (two uncorrelated +15% legs still compound similarly over cycles).
 
-```text
-Daily Turnover >= ₹2 Cr
-AND
-20D ADTV >= ₹5 Cr
-```
+### 7. FIP Effectiveness Is Regime-Dependent — Tie It to Your Macro Governor
+Recent research found information reaches investors with higher discreteness in DOWN than UP markets, consistent with the absence of momentum profitability in DOWN markets according to the FIP hypothesis. This means your FIP filter (Layer 5C) is doing more real work in bull/correction-watch regimes than in outright bear regimes — which is actually a good argument for *never relaxing* FIP thresholds even in the Correction Watch tier, since discrete/jumpy information is structurally more common exactly when the regime deteriorates.
 
-if that is what you intend.
-
-Otherwise change the pipeline diagram to match the mathematical definition.
-
-### More importantly
-
-A ₹5 Cr ADTV threshold is **not equivalent to institutional liquidity**. It is simply a liquidity filter.
-
-The specification currently moves from:
-
-> "Top Liquid Equities"
-
-to an implication of institutional suitability.
-
-Those aren't necessarily the same thing.
+### 8. Pair Momentum with Quality — Don't Run It Naked
+Multiple sources converge here. General factor research advises: momentum adds value when paired with value or quality factors, which tend to perform well in different environments. The Indian backtest confirms this empirically — quality momentum with a scaled-turnover filter reached 17.95% net CAGR vs. pure momentum's 14.01%, with better drawdown characteristics. **Optimization:** Add a lightweight fundamental quality gate (e.g., positive trailing EPS growth, debt/equity below sector median) as an optional Layer 3.5 — this would directly counter the illiquidity/pure-technical fragility noted in points 1 and 6.
 
 ---
 
-# 2. Circuit-band rule needs redesign
+## 🆕 Proposed New/Revised Strategies
 
-The rule says:
+| # | Strategy | Core Change | Evidence Basis |
+|---|---|---|---|
+| **S7** | **Volatility-Targeted Regime Overlay** | Replace binary SMA200 cash switch with continuous inverse-vol position scaling | Daniel-Moskowitz / Barroso-Santa Clara dynamic momentum research |
+| **S8** | **Quality-Momentum Composite Gate** | Add fundamental quality screen before CMS ranking | BacktestIndia quality-momentum vs. pure-momentum study |
+| **S9** | **Retest-Confirmed Entry Tier** | Optional entry mode waiting for gap-hold/pullback-reclaim instead of chasing first breakout bar | Mechanical Minervini-rules study (PF 3.69 retest vs 1.78–1.91 chase) |
+| **S10** | **Dual-Leader Retail Split** | Tier-1 micro accounts split 50/50 across top-2 CMS leaders instead of 100% single-name | Indian momentum drawdown data (-62% to -70% max DD) |
+| **S11** | **Liquidity-Tilted CMS Bonus** | Within the ADTV≥₹5Cr safety floor, award a ranking bonus to lower-turnover (but still liquid) names | Illiquidity-premium backtest findings |
 
-> 2% and 5% circuit bands are strictly disqualified; only ≥10% or dynamic F&O bands permitted. INSTITUTIONAL_RULESET_SPEC
+Your core architecture (SEPA + CANSLIM + FIP + VCR) is well-chosen and evidence-aligned in spirit — the main optimization opportunity is **softening binary gates into continuous/graded signals** (regime, liquidity tilt, entry timing) and **adding a quality/diversification counterweight** to the pure technical-momentum concentration that Indian backtests show is a major drawdown driver.
 
-The reasoning is understandable—lower circuit bands can make exits difficult—but the implementation has a conceptual problem.
 
-A stock's **current circuit band does not necessarily tell you whether your stop can execute during a gap or locked limit-down event**.
 
-A better risk model would distinguish:
 
-```text
-Circuit Band
-+
-Average daily turnover
-+
-Bid/ask liquidity
-+
-Historical gap frequency
-+
-Historical lower-circuit events
-+
-ATR
-+
-Position size / ADV
-```
 
-In other words, circuit band should be **one execution-risk variable**, not the primary safety mechanism.
+I'll research several areas where your spec can be stress-tested against the primary sources and current Indian market rules.Below is a research-backed audit of your two documents. I've organized it as (A) where the spec deviates from its own cited sources, (B) hard operational risks that the sources reveal, (C) a debate of the strategy logic, and (D) concrete new modules to add.
 
 ---
 
-# 3. Gate 2 has an important regime problem
+## A. Fidelity check against the primary sources
 
-Your regime:
+### A1. You dropped Minervini's most important criterion (RS ≥ 70)
 
-```text
-Bull:
-Nifty500 > SMA50 AND Nifty500 > SMA200
+Your Layer 3 reproduces seven of the eight Trend Template conditions correctly, but the eighth is missing. The original is (1) price above the 50-day moving average, (2) price above the 150-day moving average, (3) price above the 200-day moving average, (4) 50-day MA above the 150-day MA, (5) 150-day MA above the 200-day MA, (6) 200-day MA trending upward for at least one month, (7) price within 25% of the 52-week high, and (8) Relative Strength rating above 70 — ideally 90 or higher.
 
-Correction:
-SMA200 < Nifty500 <= SMA50
+Why it matters: This filter ensures you are looking at genuine market leaders, not just stocks that happen to be above their moving averages in a rising tide. Stocks that are just going up with the market but not outperforming it will fail criterion 8.
 
-Defensive:
-Nifty500 < SMA200
-```
+Your CMS does *not* substitute for this, because it percentile-ranks only within the pool that already passed Layers 1–3 — a relative rank among survivors, not against the full universe. A practical fix: As a proxy, filter for stocks whose 1-year price return is above the median of the screener universe — this approximates the top 30-30% cutoff. Better: compute 12-month return percentile across all ~2,600 NSE names (before any filters) and require ≥ 70 as a hard gate in Layer 3.
 
-leaves an edge case:
+Also note: the slope condition in the book is stricter than your 22-day lookback — The 200-day moving average is trending up and is higher than it was 30 days ago (ideally rising for four to five months or longer).
 
-```text
-Nifty500 = SMA200
-```
+### A2. Your FIP implementation is a loose reinterpretation of Da/Gurun/Warachka
 
-There is no regime defined for equality.
+The academic measure is defined as IDDGW = sign(PRET) ∗(%neg −%pos) where sign is the sign function, PRET is the cumulative return of the stock over the momentum strategy's formation period, and the percentages % neg and % pos are the rawterms percentages of negative and positive daily returns over the formation period. Two gaps in your version:
 
-That's easy to fix:
+1. **Window.** The paper measures this over the momentum formation period (months, not 40 days). Your 40-day window is noisy — a 20-day base inside a 40-day window can easily flip Smoothness below 50%.
+2. **Threshold.** "Smoothness ≥ 50%" is equivalent to ID ≤ 0 — i.e., merely "not discrete." The paper's edge lives in the extremes: Over a six-month holding period, momentum decreases monotonically from 8.86% for stocks with continuous information during their formation period to 2.91% for stocks with discrete information but similar cumulative formation-period returns. Because the relationship is monotonic, ID is far more valuable as a **ranking input inside CMS** than as a binary veto.
 
-```text
-Bull:
-Close > SMA50 AND Close > SMA200
+Your "Max 1D Gain Share" metric is your own invention, not from the paper — fine, but label it that way in the spec.
 
-Correction:
-Close <= SMA50 AND Close > SMA200
-
-Defensive:
-Close <= SMA200
-```
-
-But there's a deeper issue.
-
-You are using **one binary index state to determine whether every individual stock can be bought**.
-
-That may be intentionally conservative, but it can create a major opportunity-set discontinuity.
-
-For example:
-
-```text
-Nifty 500 falls below SMA200
-        ↓
-100% cash
-        ↓
-Even stocks with excellent Stage-2 structure are rejected
-```
-
-That is a **portfolio-level risk policy**, not an objective statement about individual-stock momentum.
-
-I would keep the regime governor, but consider separating:
-
-```text
-Market Regime
-        ↓
-Maximum Portfolio Exposure
-```
-
-from:
-
-```text
-Stock Quality
-        ↓
-Whether individual setup qualifies
-```
-
-That gives you more granular control.
+One finding that actually *supports* your architecture: a 2024 study found a monotonic negative relationship between information discreteness and momentum, consistent with the Frog in the Pan (FIP) hypothesis. This study shows that the relationship is exclusive to UP markets. Implication: the FIP filter only earns its keep when Layer 2 reads "Bull." In "Correction Watch" it's just noise, so don't let it veto your VCR ≤ 0.90 prime setups there.
 
 ---
 
-# 4. The Stage-2 implementation is reasonably structured
+## B. Hard operational risks the spec glosses over
 
-This is one of the stronger sections.
+### B1. GTT stops are not real stops
 
-You have:
+This is the most dangerous overstatement in the document. Your Strategy 2 runs 100% of capital in one stock with a GTT as the only defense. But per Zerodha's own terms: GTT triggers will be triggered only based on the live last traded price it is tracking on the exchange. When using GTT with limit price, there is no guaranteed execution as the LTP could have changed when the order is placed post trigger. Worse, Every GTT TSL is a one-time trigger; if it is sent to the exchange and fails to execute or gets rejected due to dynamic circuit limits, it will not reset or activate again.
 
-- price > 50 SMA > 150 SMA > 200 SMA
-- rising 200 SMA
-- proximity to 52-week high
-- distance from 52-week low
-- RSI constraint
-- short-term momentum retention INSTITUTIONAL_RULESET_SPEC
+Once triggered, it remains valid for the remainder of the trading day as a CNC (Longterm) limit order with Day validity. At the end of the day, the exchange treats it like any other normal day order and cancels it. So a gap-down through your stop can leave you with a cancelled order and a naked position: The GTT only sends a limit order at trigger, so in a violent gap the market can blow straight through your level and your order may not execute at all.
 
-That creates a fairly strict trend template.
+Additional gotchas: Zerodha does not verify Your account balance or available margin when you create a TSL order. Margins are checked only at the exact moment the order is triggered. And at some brokers, GTTs for shares having corporate actions like a bonus, dividend, stock split, rights, amalgamation, etc., having greater than 5% of market value are canceled on the ex-date/record date.
 
-However, this is **not exactly Minervini's original template** once you've added your own RSI/ROC conditions.
+**Required fixes:**
+- Stop GTTs must have the limit price set materially *below* the trigger (e.g., trigger −6%, limit −9% or lower) so the order is marketable after a gap.
+- Add a **daily reconciliation job**: for every open position, assert an active GTT exists; if a trigger fired and the order died at EOD, re-arm or market-exit at next open. This is a code-level invariant, not a nice-to-have.
+- Add a corporate-action calendar check so stops aren't silently cancelled on ex-dates.
+- Delete the phrase "zero slippage" from Strategy 6. ₹5 Cr ADTV does not guarantee that.
 
-That's completely fine.
+### B2. The ₹26 cost buffer is arithmetically wrong
 
-I'd rename it:
+Costs scale with trade value, not per order. Equity Delivery: 0.1% on buy value + 0.1% on sell value. Plus 0.015% on equity delivery buy orders stamp duty, and Zerodha charges ₹13 per scrip as DP (depository participant) charges on the sell side of every equity delivery trade — flat, regardless of quantity. Brokerage itself is zero: Equity delivery is zero-brokerage — you only pay statutory charges (STT, exchange fees, SEBI fee, stamp duty) and a small DP charge if you sell.
 
-> **Minervini-inspired Stage-2 Trend Template**
+On a ₹45,000 Tier-1 position, buy-side statutory cost alone is ≈ ₹52, already double your buffer. Round-trip friction is roughly 0.23–0.25% of notional. Replace `CMP ≤ Capital − ₹26` with `CMP × Q ≤ Capital × (1 − 0.0015)`.
 
-rather than presenting every condition as though it were directly part of the original framework.
+### B3. Momentum crash risk in India is larger than a 200-SMA filter handles
 
----
+Your Strategy 5 claims the regime filter "protects accumulated annual profits." The Indian evidence suggests you need more. The Nifty200 Momentum 30 index's recent drawdown ran 2024-09-27 · 2025-04-07 · - · -31.79% · 192 days, and historically, 2008 GFC : Nifty50 (-64.6%) | Nifty200M30 (-67.9%). A longer backtest found momentum delivered 14.01% CAGR compared to Nifty 50's 10.42%, but required surviving a catastrophic -70.53% drawdown during the 2008 crisis. As of late September 2026 the index shows a 1-year return around −1.85% and is still roughly 20% below its peak.
 
-# 5. Your "200 SMA slope" is not actually a slope
-
-You define:
-
-```text
-SMA200,t > SMA200,t-22
-```
-
-and call this:
-
-> 200 SMA slope
-
-Mathematically, that's a **directional change**, not a slope.
-
-A proper slope would be something like:
-
-```text
-Slope200 =
-(SMA200[t] - SMA200[t-N]) / N
-```
-
-or preferably a normalized version:
-
-```text
-Slope200Pct =
-((SMA200[t] / SMA200[t-22]) - 1) × 100
-```
-
-Why does this matter?
-
-Consider:
-
-```text
-SMA200 today      = ₹100
-SMA200 22d ago    = ₹99.99
-```
-
-Your rule passes.
-
-But:
-
-```text
-SMA200 today      = ₹100
-SMA200 22d ago    = ₹90
-```
-
-also passes.
-
-Those are completely different trend environments.
-
-### Better
-
-Use:
-
-```text
-SMA200[t] > SMA200[t-22]
-AND
-Slope200Pct >= minimum threshold
-```
-
-The threshold itself should be backtested rather than guessed.
+The problem: in Sept–Nov 2024 the momentum factor broke *before* Nifty 500 lost its 200 SMA. A single index-level SMA is a lagging governor for a leading-edge factor. See D2 below for additions.
 
 ---
 
-# 6. CMS is good conceptually, but percentile methodology must be specified
+## C. Debating the strategy logic
 
-You define:
+### C1. Strategy 2's +15% hard cap contradicts the entire thesis of Strategies 1 and 4
 
-```text
-CMS =
-0.60 × PercentileRank(ROC3M)
-+
-0.40 × PercentileRank(52W proximity)
-```
+You screen for FIP continuity, Stage-2 structure, and VCR coiling — all of which exist to find stocks that *keep going*. Then you sell 100% at +15%. The FIP paper's core result is that continuous information induces strong persistent return continuation that does not reverse in the long run. You are paying the full screening cost to find the right tail and then truncating it.
 
-INSTITUTIONAL_RULESET_SPEC
+The compounding math is also one-sided. 1.15⁵ = 2.011 assumes zero losers. With a −6% average stop and +15% target (2.5R), breakeven win rate before costs is 6/(15+6) ≈ 28.6%. At a realistic 45% win rate: expectancy ≈ 0.45(15) − 0.55(6) = +3.45% per trade, minus ~0.25% friction ≈ +3.2%. Doubling then takes ~22 trades, not 5 — and that's before STCG tax on every exit (20% post-Budget 2024, verify current rate), which at 15% gross gain costs another ~3% of capital per winning cycle.
 
-This is a sensible cross-sectional framework.
+And the tail: 100% in one stock + a GTT limit stop (B1) = one bad gap can cost 15–20% of the account.
 
-But you haven't specified:
+**Alternative for Tier 1:** keep single-name concentration if you must, but (a) sell 50% at +15% and trail the rest with the 20 EMA, (b) add a time stop (exit if +15% isn't hit within ~40 sessions — dead capital kills the rotation thesis), and (c) cap any single position at 85% so a losing gap can't impair the next cycle.
 
-### Universe
+### C2. State machine inconsistencies
 
-Is percentile calculated over:
+- **State 2 "≥ 3R / +22%":** with a −5% stop, 3R = +15% (collides with State 1); with −7%, 3R = +21%. Define it unambiguously, e.g., `State2 = max(+22%, Entry + 3R)`.
+- **State 3 trail `max(SMA50, EMA20)`:** in any uptrend EMA20 > SMA50, so this is effectively an EMA20 trail — tight for a "multibagger runner." Minervini/Weinstein hold runners on the 50-day / 30-week line. Suggest: EMA20 until +40%, then SMA50 (or 10-week) thereafter.
+- **Strategy 5** says tighten "from −6% to −4%" but State 0 is "bounded [−5%, −7%]." Pick one.
+- **Playbook v1.0** has no "Correction Watch" state; **Spec v2.5** does. Reconcile.
 
-```text
-all 2,600 stocks?
-```
+### C3. ATR ceiling vs. stop bound are mutually inconsistent
 
-or:
+Stop = 2×ATR₁₄ bounded to [−5%, −7%], but ATR% is allowed up to 6.5%. Any stock with ATR% > 3.5% gets a stop *tighter than* 2×ATR — i.e., inside noise. Either lower the ATR ceiling to ~3.5%, or let the stop float to 2×ATR and size the position down via Q_risk (which your Tier-2 formula already does; Tier 1 doesn't).
 
-```text
-Gate-1 survivors?
-```
+### C4. RSI 45–82 rejection
 
-or:
+Minervini doesn't use RSI; "RSI > 82 = blow-off" will reject the exact day a tight VCP breaks out on volume — which is your highest-quality entry. Consider replacing the upper bound with your existing 25%-above-SMA50 extension cap (which already does this job structurally).
 
-```text
-Gate-3 Stage-2 survivors?
-```
+### C5. Churn and tax drag
 
-The diagram suggests Stage-2 survivors, but the specification needs to say it explicitly.
+Even the index version is extremely high turnover: The portfolio turnover ratio of Nifty 200 Momentum 30 funds was a staggering 124.24 per annum as of May 31, 2025. Your system, with +15% exits and stop churn, will be several multiples of that. Model STCG explicitly in the backtest — it changes the optimal exit rule.
 
-I recommend:
+### C6. Overfitting exposure
 
-```text
-CMS percentile universe =
-all stocks passing Gates 1–3
-```
-
-Otherwise the score is not reproducible.
-
-### Percentile convention
-
-You should also define whether you're using:
-
-```text
-rank / N
-```
-
-or:
-
-```text
-rank / (N-1)
-```
-
-and how ties are handled.
-
-Small detail, but important for deterministic execution.
+I count ~25 free thresholds (0.75, 1.30, 45, 82, −3%, 0.60/0.40, 1.5/1.0/0.7, 0.90/1.05/1.25, 50%/55%/40%/25%, 25%, 6.5%, 1%/15%/1.5%, 15/22/25/1.5/10, etc.). Spec v2.5 has no walk-forward section. Add parameter-sensitivity sweeps (±20% on each threshold) and require that performance degrades smoothly, not cliff-wise.
 
 ---
 
-# 7. The VCP definition is the biggest conceptual weakness
+## D. New modules to add
 
-You define:
+**D1. Universe-wide RS Rank gate (Layer 3, criterion 8).** 12-month return percentile across all NSE cash equities ≥ 70; prefer ≥ 80. Also add Minervini's RS-line-at-new-high flag (stock/Nifty500 ratio at 52-week high) as a CMS bonus.
 
-```text
-VCP Ratio = ATR5 / ATR20
-```
+**D2. Three-signal regime governor (Layer 2 upgrade).** Keep Nifty 500 vs 200 SMA, but add:
+- *Breadth:* % of Nifty 500 constituents above their 50 DMA; below 40% → Correction Watch regardless of index level.
+- *Factor drawdown:* trailing 60-day drawdown of your own live/paper equity curve (or Nifty200 Momentum 30 as a proxy) > 12% → halve new-position size.
+- *Volatility targeting:* scale gross exposure by (target vol / realized 20-day portfolio vol), capped at 100%. This is the standard academic fix for momentum crashes (Barroso & Santa-Clara, 2015) and would have cut exposure in Oct 2024 well before the 200-SMA break.
 
-then call:
+**D3. Momentum horizon fix (Layer 4).** Your CMS uses 3M ROC. The academic sweet spot is intermediate: Novy-Marx (2012)shows that a past return with an intermediate horizon (measured over t-12 to t-7) moreaccurately predicts future returns than does a recent past. NSE's own momentum index uses a unique scoring system that considers both short-term (6-month) and long-term (12-month) returns. Suggested: `CMS = 0.35·Rank(12-1M) + 0.30·Rank(6M) + 0.20·Rank(CMP/52WH) + 0.15·Rank(−ID)`.
 
-```text
-<= 0.90 = Tight Coil
-0.90–1.05 = Normal Contraction
-```
+**D4. Event-risk gate.** No new entries within 3 sessions before scheduled quarterly results; positions in State 0 (not yet risk-free) through results get a pre-event size cut. This directly addresses the GTT gap-risk in B1.
 
-INSTITUTIONAL_RULESET_SPEC
+**D5. Surveillance exclusion (Layer 1).** Explicitly exclude any scrip on the NSE ASM/GSM lists. These can carry 5% bands, 100% margin, or trade-for-trade settlement — exactly the lockup risk your circuit-band rule is trying to avoid, but the band check alone won't catch names that get *added* to ASM mid-trade. (Verify current ASM/GSM stage rules on nseindia.com.)
 
-This is **not sufficient to identify a VCP**.
+**D6. Portfolio heat and sector concentration (Tier 2).** Cap total open risk (sum of distance-to-stop × size) at 5–6% of equity; max 2 positions per sector. Momentum crowds into sectors, so "20 diversified positions" can be one bet.
 
-ATR contraction merely tells you:
+**D7. Time stop.** Exit any State-0 position that hasn't reached +8% within 30 sessions. Minervini's winners typically move quickly out of a pivot; stale positions drain the rotation engine.
 
-> recent volatility is lower than longer-term volatility.
-
-A genuine VCP-style structure involves things such as:
-
-```text
-successive contractions
-+
-decreasing price ranges
-+
-decreasing volume
-+
-relatively tight consolidation
-+
-supportive price structure
-```
-
-Your metric can identify:
-
-> low recent volatility
-
-but not necessarily:
-
-> Volatility Contraction Pattern.
-
-So I would rename this metric:
-
-```text
-Volatility Contraction Ratio
-```
-
-rather than VCP Ratio.
-
-Then, if you actually want VCP detection, build a separate structural detector.
+**D8. GTT integrity invariants (Layer 7).** As per B1: wide limit offsets, daily "every position has a live stop" assertion, corporate-action calendar check, and a hard count against a maximum of 250 active GTTs simultaneously.
 
 ---
 
-# 8. There is a direct contradiction between Gate 5 and the regime rule
+## Priority order
 
-Correction regime says:
+1. Fix GTT stop semantics + reconciliation (B1) — this is a capital-loss bug, not an optimization.
+2. Add the universe-wide RS ≥ 70 gate (A1).
+3. Resolve the State-2 / stop-bound / ATR-ceiling inconsistencies (C2, C3).
+4. Replace the ₹26 constant with a percentage buffer (B2).
+5. Upgrade the regime governor with breadth + vol targeting (D2).
+6. Re-examine the +15% hard cap against a backtest that includes STCG (C1, C5).
+7. Convert FIP from a gate to a ranking factor and lengthen its window (A2).
 
-```text
-VCP <= 0.90
-```
+If you want, I can draft the revised Layer 2 governor logic and the GTT reconciliation pseudocode as a patch to `quant_engine.py`.
 
-INSTITUTIONAL_RULESET_SPEC
 
-But Gate 5 says:
 
-```text
-VCP <= 0.90 = tight coil
-0.90 < VCP <= 1.05 = normal contraction
-```
 
-That's okay mathematically, but it means Correction mode only allows the **most compressed subset**.
 
-That's an extremely aggressive reduction in candidate count.
+Good clarification — running this across the **full ~2,300+ NSE cash equity universe** (not a curated index subset) changes the risk/optimization calculus meaningfully. Let me pull more targeted research on full-universe momentum behavior in India, especially across market-cap segments, since small/micro-caps will dominate the raw count.Important context — thank you for clarifying. Scanning the **full ~2,300–2,700 stock NSE universe** (rather than a curated index subset) changes several structural assumptions in the playbook. Here's the full-universe-specific debate:
 
-You should explicitly determine whether that's intentional.
+## 1. Your Universe Actually Includes Two Structurally Different Boards
 
-For example:
+NSE's total listing count of roughly 2,780 as of early 2026 breaks down into mainboard and SME segments — as of 2 February 2026, the total number of companies registered on the NSE stood at 2,781, encompassing 534 companies listed on the Emerge SME platform. The NSE Emerge (SME) board has materially different circuit band rules, lower disclosure standards, and far thinner order books than mainboard equities. **Critical gap in your spec:** Layer 1 doesn't explicitly exclude the SME/Emerge series (SM, ST, SZ series codes). Even with your ₹5 Cr ADTV floor, a handful of thinly-traded SME names with volume spikes could slip through. **Fix:** Add an explicit series-code filter — only `EQ` series mainboard stocks (roughly ~2,100 of the ~2,780 total) should enter the pipeline at all.
 
-```text
-Bull:
-VCR <= 1.05
+## 2. The Full Universe Is Where Your Illiquidity-Premium Problem Gets *Worse*, Not Better
 
-Correction:
-VCR <= 0.90
-```
+This matters enormously now. Splitting Nifty 200 Momentum 30 by Scaled Turnover found high-turnover momentum returned just 8.51% CAGR — below Nifty 50 — while low-turnover momentum returned 19.43% CAGR. If the alpha is concentrated in illiquid names even *within* the already-large-cap-biased Nifty 200, then across your full 2,300-stock universe (which includes hundreds of genuinely obscure small/microcaps), your ₹5 Cr ADTV floor is almost certainly cutting off the highest-alpha segment of the momentum factor. This is a real tension in your design: Strategy 6's liquidity floor exists for *execution safety* (correct, non-negotiable for retail), but it mechanically caps your return potential below what backtests suggest is achievable in the less-liquid tail.
 
-could be a deliberate regime-dependent quality threshold.
+**Resolution, not elimination:** Keep the hard floor (safety > theoretical alpha for live capital), but consider a two-bucket output: "Core Liquid Leaders" (≥₹5 Cr ADTV, used for Strategy 2/3 full-size positions) vs. a separate "Satellite Watchlist" (₹2–5 Cr ADTV, smaller position caps only, manual confirmation required) to partially capture the illiquid-alpha tail without compromising GTT execution integrity.
 
-If so, document it as such.
+## 3. Small/Mid-Cap Dominance of Your Universe Means Momentum *Should* Outperform — But With Amplified Drawdowns
 
----
+Since mainboard alone is ~2,084 companies and most of NSE's listing growth has come from mid/small-cap additions, your scan universe is overwhelmingly mid/small/micro-cap by count. This aligns with mid-cap and small-cap focused indices tending to outperform large-cap counterparts across most timeframes, with NIFTY MIDCAP150 showing a 16.08% 7-year return versus NIFTY50's 11.93%. This is bullish for your strategy's return potential. However, it also means the -70.53% max drawdown and 65-month recovery time seen in momentum backtests are a *floor*, not a ceiling, for a full small/micro-cap-weighted universe — concentrated single-name strategies (your Strategy 2) will see materially worse tail outcomes than index-level momentum studies suggest.
 
-# 9. FIP implementation has a serious mathematical problem
+## 4. Survivorship Bias Is a Serious Threat to Any Backtest You Run on This Universe
 
-This is probably the most important quantitative issue.
+If you ever validate this playbook against historical NSE data using *today's* list of 2,300 stocks, you have a severe bias problem. A study on India's small-cap universe found that using only the current 252 constituents systematically excluded 1,185 stocks — 82.5% of all companies that were ever in the index — including bankruptcies, distressed acquisitions, and delisted names. Across a full 2,300-stock scan, this is even more dangerous because retail microcaps delist, get suspended, or go to zero far more often than index constituents. **Action item:** Any backtest validating this playbook must use a point-in-time universe reconstruction (what was actually listed and liquid on each historical date), not today's static 2,300-stock list projected backward.
 
-You define:
+## 5. Cross-Sectional Percentile Ranking (CMS) Is Statistically Stronger at This Scale — That's a Genuine Advantage
 
-```text
-Max 1D Jump Share =
-max(ΔPrice1D) / (Price_t - Price_t-40) × 100
-```
+One upside of the full-universe scope: your Layer 4 CMS percentile ranking becomes far more statistically robust with ~1,000+ candidates surviving Layers 1–3 (versus, say, only 200 Nifty-200 names). Percentile ranks computed over a broader, more heterogeneous pool reduce small-sample rank noise and give you genuinely differentiated top-decile leaders rather than artifacts of a narrow index membership list.
 
-INSTITUTIONAL_RULESET_SPEC
+## Revised Universe-Specific Recommendations
 
-The denominator is **net 40-day price change**.
+| Issue | Fix for 2,300-Stock Scope |
+|---|---|
+| SME/Emerge contamination | Hard-filter to `EQ` series only before Layer 1 |
+| Illiquidity-alpha tradeoff | Two-tier liquidity bucket (Core vs. Satellite) instead of single floor |
+| Drawdown amplification in small/micro-caps | Tighten Strategy 2's single-stock concentration (revisit the dual-leader idea even more strongly at this scale) |
+| Survivorship bias in backtesting | Require point-in-time historical universe reconstruction, not static current list |
+| CMS robustness | Keep/leverage — this is a genuine structural advantage of scanning the full universe rather than a narrow index |
 
-That can be problematic.
+The core architecture holds up well at full-universe scale — it's actually a more honest and statistically sound approach than restricting to Nifty 500 — but the liquidity floor and single-name concentration rules need to be more explicitly tiered given how much more heterogeneous (and risky) the tail of a 2,300-stock universe is compared to a curated index.
 
-Example:
 
-```text
-Price 40 days ago = 100
-Price today       = 110
-```
 
-Net gain = 10.
 
-Suppose one day the stock jumped from 100 → 108.
-
-Then:
-
-```text
-Max jump = 8
-Jump share = 8 / 10 = 80%
-```
-
-You reject it.
-
-But if the stock had:
-
-```text
-100 → 108
-108 → 105
-105 → 110
-```
-
-the 8% jump represents a large part of the net move even though the overall path could be perfectly legitimate.
-
-Worse, if the 40-day net return approaches zero:
-
-```text
-Price 40d = 100
-Price now = 101
-```
-
-the denominator becomes tiny and the metric becomes unstable.
-
-And if the 40-day return is negative, the metric can become negative.
-
-### This needs redesign.
-
-A more robust measure would compare the largest daily move against **total absolute movement**, e.g.:
-
-```text
-MaxJumpShare =
-max(|daily return|)
-/
-Σ |daily return|
-```
-
-or use a dedicated return-discreteness statistic.
-
-That would be much more stable.
+Understood — that actually sharpens several of my points rather than changing them. Let me check a couple of universe-level facts first.Good — that clarification actually strengthens several points from the audit and adds a few new ones. Scanning the full NSE universe rather than a curated index is the right design for a Minervini/O'Neil system (leaders usually emerge from outside the Nifty 500), but it changes the risk profile of the bottom half of the universe materially. Here's what changes.
 
 ---
 
-# 10. "Institutional buying" cannot be inferred from these metrics alone
+## 1. "2,300 stocks" needs a precise series definition — it's not one universe
 
-The document repeatedly uses terms like:
+As of 2 February 2026, the total number of companies registered on the NSE stood at 2,781. This figure encompasses 534 companies listed on the Emerge SME platform. The breakdown by series: there were 2,104 companies registered on the NSE under the EQ series, plus BE · Equity (T2T) · 102, BZ · Equity (T2T) · 41, ... SM · Equity (SME) · 459, ST · Equity (T2T) · 73.
 
-> institutional surge  
-> institutional accumulation  
-> institutional base  
-> retail fakeout
+Your "2,300" figure is roughly EQ + BE + BZ + ST. That's a problem: BE/BZ/ST are trade-for-trade series where intraday squaring is impossible and bands are typically 5%. **Spec change for Layer 1:** hard-code `series == 'EQ'` from the bhavcopy. Everything else is auto-rejected before any indicator is computed. That alone removes ~200 of the most dangerous names and makes your 2%/5% band rule partly redundant (which is good — defence in depth).
 
-For example, the volume rule labels 1.5× volume an **"INSTITUTIONAL SURGE"**. INSTITUTIONAL_RULESET_SPEC
-
-But:
-
-```text
-Volume / average volume = 1.5
-```
-
-doesn't identify the participant.
-
-It tells you there was unusually high trading activity.
-
-That activity could result from:
-
-- institutional buying
-- institutional selling
-- retail buying
-- retail selling
-- news
-- index rebalancing
-- block transactions
-- corporate events
-- derivatives hedging
-- other flows
-
-Therefore I'd change the terminology.
-
-Instead of:
-
-```text
-INSTITUTIONAL SURGE
-```
-
-use:
-
-```text
-HIGH VOLUME CONFIRMATION
-```
-
-And instead of:
-
-```text
-institutional base
-```
-
-use:
-
-```text
-VOLATILITY-COMPRESSED BASE
-```
-
-This makes the specification scientifically defensible.
+Also handle SME migrants: List of Companies Migrated to Main Board : 165 from Emerge, with several in 2026 alone. These arrive in EQ with a lot-size-distorted volume history and often < 200 sessions of mainboard data. Add: **minimum 260 mainboard trading days** before eligibility. Your SMA200 and 52W-high calcs need this anyway; make it explicit so a half-year-old migrant with a spurious "52-week high" doesn't rank #1.
 
 ---
 
-# 11. Volume thresholds have an unexplained gap
+## 2. Full-universe scope makes the missing RS gate (A1) *more* important, not less
 
-You define:
-
-```text
->= 1.50 → surge
-1.00–1.50 → confirmed
-< 0.70 → disqualified
-```
-
-But:
-
-```text
-0.70–1.00
-```
-
-is undefined.
-
-What happens?
-
-Presumably it fails, but deterministic systems shouldn't rely on implication.
-
-Make it explicit:
-
-```text
-< 0.70       → Reject: low volume
-0.70–1.00    → Reject: insufficient confirmation
-1.00–1.50    → Pass
->= 1.50      → Strong pass
-```
-
-or whatever behavior your intended engine uses.
+In a Nifty 500 universe, the Trend Template alone keeps you in reasonably institutional names. Across 2,100 EQ stocks, the Stage-2 template will pass hundreds of micro-caps in a bull phase, and your CMS then ranks among survivors only. The 12-month RS percentile across the **full EQ universe** (computed before liquidity filtering, so the percentile is stable day to day) is the filter that separates a genuine leader from a ₹60 stock that merely drifted above its moving averages. Require ≥ 70, prefer ≥ 80 for Tier 1.
 
 ---
 
-# 12. VCP also has an undefined zone
+## 3. ASM/GSM ingestion becomes mandatory, not optional (upgrades D5)
 
-You define:
+Across the whole universe you will constantly screen names that are in or about to enter surveillance. The mechanics matter for your stop logic:
 
-```text
-<= 0.90
-0.90–1.05
-> 1.25
-```
+- Long-term ASM: Stage 2: The price band goes down to the next lower level (for example, from 20% to 10%); Stage 3: ... the price band is lowered even more, say from 10% to 5%. Stage 4: The stock is moved to trade-for-trade settlement with a 5% price band and a 100% margin. Intraday trading is blocked across all LT-ASM stages. Minimum 90 days in the framework before exit.
+- GSM: A price band of 5% or lower applies across all GSM stages. Stage III: Trading is permitted once a week, normally every Monday or on the first trading day of the week. Buyers must deposit an ASD equal to 100% of the trade value.
 
-But:
+The key point: a stock can pass your 10%-band check at entry and be pushed to a 5% band or T2T *while you hold it*. ASM selection is price/volume-driven — ASM focuses on trading activity - sudden price spikes, unusual volume, concentrated buying by a few clients, or low delivery percentage — which is exactly what a momentum breakout looks like. Your system is structurally biased toward buying future ASM candidates.
 
-```text
-1.05–1.25
-```
-
-is undefined.
-
-Again, the engine needs an explicit result.
+**Spec changes:**
+- Layer 1: reject anything on the LT-ASM, ST-ASM, GSM or ESM lists (NSE publishes these daily).
+- Layer 7: if an *open position* is added to LT-ASM Stage ≥ 2 or any GSM stage, treat it as a regime event: exit at next open regardless of P&L state. A 5% band with a GTT limit order is a lockup waiting to happen.
+- Read the price band from the daily NSE security-wise band file rather than caching it — bands are revised.
 
 ---
 
-# 13. Over-extension rule contradicts its own stated threshold
+## 4. New India-specific filter: delivery percentage (institutional footprint proxy)
 
-You define:
+Your volume-ratio filter (Strategy 4.1) treats all volume as accumulation. In the small-cap half of the universe, a 2× volume day is frequently intraday operator churn, not delivery buying. NSE publishes security-wise delivery data in the bhavcopy, so you already have it.
 
-```text
-Distance to 50 SMA > 25%
-```
+Suggested gate alongside `Ratio_Vol`:
+- `DelivPct_latest ≥ 35%` AND `DelivPct_20D_avg ≥ 30%` → pass.
+- Volume surge ≥ 1.5× with delivery % < 25% → **CHURN TRAP** (disqualify). High volume + low delivery is literally one of the ASM triggers quoted above, so this filter also pre-empts item 3.
 
-as overextended. INSTITUTIONAL_RULESET_SPEC
-
-Then the explanation says:
-
-> refuses to deploy into over-extended leaders (+30%+ above 50 SMA)
-
-That's inconsistent.
-
-The actual rule is **>25%**, not +30%.
-
-Pick one.
-
-I would trust the mathematical rule and change the prose to:
-
-> refuses deployment when price is more than 25% above the 50 SMA.
+This is a cheaper and more India-native institutional-accumulation test than anything in CANSLIM.
 
 ---
 
-# 14. Position sizing has an important liquidity-unit issue
+## 5. Tier-1 (100% single-name) should *not* run on the full universe
 
-You define:
+Combining the two documents: a < ₹50k account puts 100% into Leader #1, Leader #1 is chosen from 2,100 stocks including ₹50 micro-caps with ₹5 Cr ADTV, and the only exit is a GTT limit order. This is the single highest-risk configuration in the system.
 
-```text
-Q_liquidity =
-floor(ADTV20 × 0.015 / CMP)
-```
-
-INSTITUTIONAL_RULESET_SPEC
-
-This is dimensionally correct **if ADTV20 is rupee turnover**.
-
-For example:
-
-```text
-ADTV = ₹10 crore
-1.5% = ₹15 lakh
-CMP = ₹500
-
-Q = 15,00,000 / 500
-  = 3,000 shares
-```
-
-Good.
-
-But there is a hidden question:
-
-### Is 1.5% of daily turnover appropriate for a single retail order?
-
-You don't need to assume it is.
-
-It should be treated as a configurable execution constraint and backtested against:
-
-```text
-spread
-slippage
-market impact
-time of execution
-order type
-```
-
-The formula itself is fine; the 1.5% threshold is an empirical assumption.
+Recommendation: Tier 1 draws from a **restricted sub-universe** — e.g., ADTV₂₀ ≥ ₹25 Cr *and* market cap ≥ ₹1,000 Cr *and* 20% band or F&O — while Tier 2 (which has Q_liquidity and 1% risk sizing) can use the full EQ universe. Same screener, two eligibility masks.
 
 ---
 
-# 15. The ₹1,000 account example exposes a practical problem
+## 6. Breadth becomes free — use it (upgrades D2)
 
-You state:
+Since you compute SMA50/SMA200 for all 2,100 names every evening anyway, universe breadth costs nothing:
+- `% of EQ universe above SMA50` and `above SMA200`
+- `52W new highs − new lows` count
+- `% of universe passing the Stage-2 template` (your own "leader count")
 
-> initial ₹1,000 retail compounding accounts
-
-and then reserve ₹26 for charges. INSTITUTIONAL_RULESET_SPEC
-
-This creates an unusually large cost percentage:
-
-```text
-₹26 / ₹1,000 = 2.6%
-```
-
-More importantly, the system simultaneously has:
-
-```text
-1% portfolio risk
-+
-15% maximum position exposure
-```
-
-So a ₹1,000 account can theoretically allocate only:
-
-```text
-₹150
-```
-
-to one position.
-
-That makes the stated ₹26 buffer potentially disproportionate.
-
-The micro-account section should therefore be treated as a **separate execution mode**, not merely a scaled-down version of the institutional model.
+A Nifty 500 index above its 200 SMA while < 40% of the universe is above its 50 DMA is the classic narrow-market warning that preceded the Oct 2024 momentum break. Governor rule: Bull regime requires *both* index > SMA200 *and* breadth > 40%.
 
 ---
 
-# 16. State 1 has an obvious wording contradiction
+## 7. Backtest integrity at 2,300-stock scale
 
-You say:
-
-```text
-+15% gain
-Ratchet stop to +1.5%
-Update GTT trigger to breakeven
-```
-
-INSTITUTIONAL_RULESET_SPEC
-
-These are not the same thing.
-
-A:
-
-```text
-+1.5% stop
-```
-
-is **not breakeven**.
-
-It is a profitable stop.
-
-You need to decide whether the intended rule is:
-
-```text
-Entry +15%
-→ stop = Entry
-```
-
-or:
-
-```text
-Entry +15%
-→ stop = Entry +1.5%
-```
-
-Given the stated rationale of covering costs, the second appears to be the intended rule—but the wording must be corrected.
+This is where full-universe systems usually fail quietly:
+- **Survivorship:** You need point-in-time constituent lists including delisted, suspended and SME-migrated names. Testing on today's 2,100 EQ names is heavily biased — every delisted pump-and-dump is missing from the loser sample.
+- **Corporate-action adjustment:** Across 2,300 names, unadjusted bonus/split prints will generate fake "−50% stops" and fake "+100% breakouts." Verify adjusted volume too — a 1:1 bonus halves price but should double historic volume, otherwise your ADTV and volume-ratio filters break.
+- **Point-in-time bands and ASM status:** Store historical ASM/GSM list membership so the backtest rejects names the live system would have rejected.
+- **Capacity:** Even at Tier 2, your 1.5% participation cap on a ₹5 Cr ADTV name is ₹7.5 lakh. Fine for retail; just note that the strategy's edge in the bottom third of the universe doesn't scale and don't extrapolate those returns to a larger account.
 
 ---
 
-# 17. "3R" needs a precise definition
+## 8. Practical candidate-count expectations
 
-State 2 says:
-
-> Sell 40% position at ≥3R. INSTITUTIONAL_RULESET_SPEC
-
-But because the initial stop is:
-
-```text
-2 × ATR14
-bounded -5% to -7%
-```
-
-you need to define:
-
-```text
-R = Entry Price - Initial Stop Price
-```
-
-and then:
-
-```text
-3R target = Entry + 3R
-```
-
-Otherwise someone implementing the system could interpret 3R differently.
+Rough funnel in a bull regime (you should log this daily to catch drift):
+- 2,781 listed → ~2,100 EQ → ~1,000–1,200 after ₹5 Cr ADTV and ₹50 floor → ~250–450 Stage-2 passes → ~100–180 after RS ≥ 70 → ~30–60 after anti-trap triad + delivery % → **5–15 after over-extension and VCR prime.** If your Layer 5 output is regularly > 50 names, the filters are too loose for this universe; if it's < 3 in a Bull regime, something is broken upstream.
 
 ---
 
-# 18. State 2 has another sizing issue
+## Revised priority list (full-universe version)
 
-Suppose:
+1. Series = EQ only, plus daily ASM/GSM/ESM exclusion with in-trade monitoring (items 1, 3).
+2. GTT stop semantics + daily reconciliation (unchanged from B1 — even more critical in small caps).
+3. Universe-wide 12M RS ≥ 70 gate (item 2).
+4. Delivery-percentage churn filter (item 4).
+5. Restrict Tier 1 to a liquid sub-universe (item 5).
+6. Breadth-augmented regime governor (item 6).
+7. Point-in-time, survivorship-free backtest infrastructure before trusting any threshold (item 7).
 
-```text
-Initial position = 100 shares
-```
+If you want, I can write the Layer 1 eligibility mask as pseudocode (series / band / ASM / delivery / history-length checks against the bhavcopy and NSE surveillance files) so it slots straight in ahead of `quant_engine.py`.
 
-At +22%:
 
-```text
-Sell 40 shares
-Keep 60
-```
 
-Fine.
 
-But what happens if:
 
-- the stock gaps through the 22% level?
-- it gaps directly from +18% to +30%?
-- the GTT cannot execute at the exact trigger?
-- the position is partially filled?
+Great question — this is exactly the right place to focus, since a 50-stock screener output is only as good as its final trap filter. Let me research additional institutional-grade and India-specific techniques (including ICT/Smart Money Concepts, Wyckoff, and NSE-specific data points) that go beyond what Minervini/CANSLIM alone capture.Yes — there are exactly the frameworks you're thinking of, plus one India-specific data source that's arguably more powerful than either for your use case. Here's what the research surfaces and how to bolt it onto your existing 7-layer pipeline as a final "genuine vs. trap" discriminator.
 
-The state machine needs **event-driven execution rules**, not only price milestones.
+## 1. NSE Delivery Percentage — Your Single Best India-Specific Trap Filter
 
----
+This is the most underused tool in your current spec, and it's unique to Indian exchanges. Delivery percentage measures what fraction of a stock's total traded volume on NSE actually resulted in delivery — shares that moved from one demat account to another rather than being squared off intraday. A high delivery percentage — typically above 60-65% — signals that a disproportionate chunk of the day's activity came from buyers and sellers with genuine conviction: institutions, HNIs, mutual funds, and long-term positional traders who are not reversing positions by 3:30 PM. Conversely, low delivery percentage indicates the day's volume was dominated by intraday operators and algo scalpers with no directional commitment.
 
-# 19. State 3 creates a potentially dangerous ambiguity
+Two important nuances from the research:
+- Narrow this to mid-cap and large-cap names above ₹2,000 crore market cap, since small-cap delivery data is easily distorted by thin float and a handful of bulk deals.
+- Delivery % is descriptive, not predictive — a high reading confirms that today's move had real participation behind it, but it is not a forecast that the move continues. There's no universal threshold, but a jump in a stock's own delivery % versus its own historical norm is usually more telling than the absolute level.
 
-You write:
+**Why this matters for your 50-candidate problem:** it's a free, objective, NSE-published number (in the daily bhavcopy) that directly separates "real buyers took the stock home" from "day-traders flipped it." This is more diagnostic than almost any price-pattern rule because it's a participation fact, not an inference.
 
-```text
-Trailing stop: 50 SMA / 20 EMA
-```
+## 2. Bulk & Block Deals — Naming the Buyer
 
-and:
+Your current spec doesn't use this at all, and it should. A bulk deal happens when the quantity bought or sold is more than 0.5% of the total equity shares of a listed company in a single trading day, and these transactions are reported to the exchange and made public. A block deal is one trade of at least ₹25 crore in a separate window, and block deals must end in delivery while bulk deals can be reversed the same day.
 
-```text
-trail below 20 EMA
-```
+The trap here: not all "deals" are bullish signals. A large, detailed analysis found 72% of NSE bulk deals since 2023 were same-day round trips, mostly by trading firms, with bulk deals clustering in small companies while large stakes change hands through block deals. And crucially, a block deal doesn't automatically mean bullish or bearish, because it can be a stake transfer between institutions, and similarly a bulk deal can be part of rebalancing rather than a directional bet.
 
-INSTITUTIONAL_RULESET_SPEC
+**Practical rule:** Don't treat any single bulk/block deal as confirmation. Instead, track repeated bulk purchases across several sessions, since multiple bulk buys over several days may indicate institutional accumulation — this repeat-buyer pattern is far more reliable than a one-off print, and directly filters out the 72% round-trip noise.
 
-What does:
+## 3. Wyckoff Spring / Upthrust — The Classic Structural Trap Detector
 
-```text
-50 SMA / 20 EMA
-```
+This predates both Minervini and ICT and is directly applicable to your daily-bar screener. The core mechanism: an upthrust is the bearish mirror of the spring — price pushes above the resistance of a trading range, finds no real demand, and falls back inside; the pop above the highs fills resting buy stops and attracts breakout buyers, and its swift failure shows that higher prices could not be sustained.
 
-mean?
+The key diagnostic is volume-vs-close behavior: an upthrust is an effort vs result statement — volume expands into new highs yet the bar closes back inside the range, effort with no upward result. Wyckoff's own framing makes clear this is exactly a bull trap: a UT or UTAD is a price move above trading-range resistance that quickly reverses and closes in the range — a test of remaining demand, and also a bull trap that appears to signal resumption of the uptrend but is intended to wrong-foot uninformed breakout traders.
 
-Possible interpretations:
+The distinguishing test between a real breakout and a trap is the close and retest, not the wick: a push above resistance that holds and builds acceptance is a breakout, not an upthrust, and the difference is often clear only from the close and the behavior on the retest.
 
-```text
-min(50SMA, 20EMA)
-max(50SMA, 20EMA)
-whichever is closer
-whichever is lower
-50SMA initially → 20EMA later
-```
+**Direct rule for your screener:** For every one of your 50 candidates, check 2-3 days *after* the breakout bar — did the close hold above the prior resistance/pivot, or did price wick through and fall back inside the base? This single rule eliminates a large share of mechanical false breakouts that a same-day volume/RSI/VCR filter cannot see, because traps only reveal themselves on the *following* session's close.
 
-You need an explicit state rule.
+## 4. ICT / Smart Money Concepts (Liquidity Sweeps) — Useful Concept, Limited Direct Fit
 
----
+ICT is real and widely used, built on the idea that retail stop losses are institutional entry liquidity — when a long position gets stopped out, that selling is being bought by an institution using the stop loss as its entry. The mechanism: a liquidity sweep happens when smart money briefly pushes price beyond a key liquidity level to trigger retail stop orders before reversing the market.
 
-# 20. The GTT section needs a corporate-action/data-quality layer
+**Important caveat for your use case:** ICT/SMC is predominantly an intraday/lower-timeframe (forex, futures, crypto) methodology built around session opens, order blocks, and fair value gaps — concepts like the opening-range sweep in the first 30-60 minutes of the New York session don't map cleanly onto an EOD (15:30 IST) swing/positional screener running on daily bars. The *conceptual* takeaway is directly usable, though — Wyckoff's spring/upthrust and ICT's liquidity sweep are the same phenomenon described by different schools, and other frameworks describe the same footprint as a sweep of buy-side liquidity or a false breakout of the range highs. For your daily-bar system, Wyckoff's framing (point 3 above) is the directly applicable version of this idea; full ICT entry mechanics (order blocks, FVGs, session-based sweeps) are generally overkill/mismatched for an EOD NSE cash equity screener.
 
-A production system needs explicit handling for:
+## 5. Proposed Addition: "Layer 8 — Genuine Breakout Confirmation Gate"
 
-- stock splits
-- bonuses
-- rights issues
-- dividends
-- mergers
-- symbol changes
-- suspended securities
-- newly listed stocks
-- stale OHLC data
-- missing volume
-- abnormal volume
-- corporate announcements
+Combine the above into a scoring overlay applied *after* your existing 7 layers produce the 50 candidates, converting your output from a flat list into three tiers:
 
-Otherwise your:
-
-```text
-52W high
-SMA
-ATR
-ROC
-position stop
-```
-
-can become mathematically correct but economically meaningless.
-
-This is particularly important for automated execution.
-
----
-
-# 21. "Zero Manual Reporting Guarantee" is too broad
-
-The specification says:
-
-> 100% Deterministic Code Execution  
-> No Agent Discretion  
-> Neither AI agent nor human operators manually select or override signals. INSTITUTIONAL_RULESET_SPEC
-
-The deterministic part is good.
-
-But **deterministic ≠ correct**.
-
-A better architecture is:
-
-```text
-Raw market data
-      ↓
-Data validation
-      ↓
-Deterministic feature calculation
-      ↓
-Deterministic screening
-      ↓
-Deterministic risk engine
-      ↓
-Execution safety checks
-      ↓
-Order
-```
-
-You need a **kill switch / safety layer** even if there is no discretionary stock selection.
-
-For example:
-
-```text
-Data stale → NO TRADE
-Data missing → NO TRADE
-Price gap abnormal → NO TRADE
-Broker API error → NO TRADE
-Duplicate order detected → NO TRADE
-Position mismatch → NO TRADE
-Corporate action unresolved → NO TRADE
-```
-
-That's still deterministic.
-
----
-
-# 22. The architecture is missing backtesting methodology
-
-This is the biggest missing section if this is intended to become a real trading engine.
-
-Before calling the rules "institutional", you need:
-
-### Walk-forward testing
-
-```text
-Train / parameter selection
-        ↓
-Out-of-sample period
-        ↓
-Roll forward
-        ↓
-Repeat
-```
-
-### Include
-
-```text
-Brokerage
-STT
-exchange charges
-GST
-SEBI charges
-stamp duty
-slippage
-gap execution
-partial fills
-corporate actions
-survivorship bias
-delisted stocks
-```
-
-And especially:
-
-### Avoid look-ahead bias
-
-For an EOD system:
-
-```text
-15:30 close
-     ↓
-calculate indicators
-     ↓
-generate signal
-     ↓
-earliest realistic execution = next session
-```
-
-You cannot use information that only became available after the decision timestamp.
-
----
-
-# 23. The system should separate three different concepts
-
-Right now the specification mixes them:
-
-### A. Alpha
-
-```text
-ROC
-52W proximity
-trend
-momentum
-FIP
-```
-
-### B. Risk
-
-```text
-ATR
-stop
-portfolio risk
-position exposure
-regime
-```
-
-### C. Execution
-
-```text
-turnover
-circuit bands
-ADTV
-slippage
-GTT
-```
-
-I'd restructure the system around these three layers.
-
-That would make the architecture substantially easier to test.
-
----
-
-# Recommended v3 architecture
-
-I would redesign the specification approximately like this:
-
-```text
-                MARKET DATA
-                    │
-                    ▼
-             DATA VALIDATION
-                    │
-                    ▼
-          ┌───────────────────┐
-          │  MARKET REGIME    │
-          │ Nifty 500         │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ┌───────────────────┐
-          │ UNIVERSE FILTER   │
-          │ Liquidity         │
-          │ Price             │
-          │ Circuit           │
-          │ Data quality      │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ┌───────────────────┐
-          │ TREND ENGINE      │
-          │ Stage-2 structure │
-          │ SMA relationships │
-          │ 52W position      │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ┌───────────────────┐
-          │ MOMENTUM ENGINE    │
-          │ ROC                │
-          │ Cross-sectional    │
-          │ percentile         │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ┌───────────────────┐
-          │ QUALITY ENGINE     │
-          │ Volume             │
-          │ Volatility         │
-          │ FIP                │
-          │ Base structure     │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ┌───────────────────┐
-          │ EXTENSION FILTER   │
-          │ SMA distance       │
-          │ ATR/CMP            │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ┌───────────────────┐
-          │ RISK ENGINE        │
-          │ 1% risk            │
-          │ 15% exposure       │
-          │ liquidity cap      │
-          └─────────┬─────────┘
-                    │
-                    ▼
-          ┌───────────────────┐
-          │ EXECUTION ENGINE   │
-          │ GTT                │
-          │ slippage           │
-          │ partial fills      │
-          │ broker state       │
-          └─────────┬─────────┘
-                    │
-                    ▼
-              ORDER / NO ORDER
-```
-
----
-
-# My priority list
-
-If you're going to turn this into actual code, I would fix these **before writing more implementation**:
-
-| Priority | Issue | Action |
+| Check | Pass Condition | Data Source |
 |---|---|---|
-| 🔴 | FIP denominator | Redesign |
-| 🔴 | VCP = ATR ratio | Rename or build actual VCP detector |
-| 🔴 | State 1 +1.5% vs breakeven | Resolve |
-| 🔴 | Undefined threshold ranges | Define every range |
-| 🔴 | 200 SMA "slope" | Define mathematically |
-| 🔴 | Backtesting methodology | Add |
-| 🔴 | Data/corporate-action handling | Add |
-| 🟠 | Gate 1 diagram vs equations | Reconcile |
-| 🟠 | Circuit-band logic | Rework as execution-risk feature |
-| 🟠 | Institutional terminology | Make claims more precise |
-| 🟠 | State 3 trailing rule | Define exact algorithm |
-| 🟠 | 3R definition | Formalize |
-| 🟡 | Micro-account mode | Separate from normal sizing |
-| 🟡 | Percentile methodology | Specify |
-| 🟡 | Regime equality cases | Define |
+| **Delivery % Confirmation** | Breakout-day delivery % ≥ 1.3–1.5× the stock's own 20-day average delivery % (not absolute level) | NSE bhavcopy (free, daily) |
+| **Bulk/Block Deal Consistency** | No single-session bulk deal flagged as same-day buy+sell by same client name (round-trip); prefer repeat buyer names across ≥2 sessions | NSE Bulk/Block Deal disclosure |
+| **Close-Based Retest Hold** | On T+1/T+2, closing price holds above the breakout pivot (no close back inside prior base) | Your existing daily OHLC feed |
+| **Volume-Effort-vs-Result** | Reject if breakout bar shows volume ≥1.5× average but closes in the bottom half of its daily range (upthrust signature) | Your existing OHLC/volume feed |
 
-### Bottom line
+**Tiering logic for the 50 candidates:**
+- **Tier 1 (Prime/Genuine):** Passes all 4 checks → highest conviction, eligible for full Strategy 2/3 sizing.
+- **Tier 2 (Watch/Provisional):** Passes 2-3 checks → eligible only after T+1 retest confirmation (don't chase day-1).
+- **Tier 3 (Trap Risk):** Fails delivery % or shows upthrust signature → auto-excluded regardless of passing Layers 1-6.
 
-The **architecture is worth developing**, but v2.4.0 should be treated as a **research specification rather than a validated trading strategy**. The most important distinction is that the document currently gives several heuristic indicators institutional-sounding interpretations that the formulas themselves don't establish.
+This turns your current single-day mechanical gate stack into a **two-day confirmation discipline** — which directly addresses your core question: the 50 names are candidates, but genuine leaders are the ones where *tomorrow's* delivery data and close behavior confirm today's breakout, not the breakout bar itself.
 
-The next useful step would be to turn this into a **v2.5 "implementation-grade specification"** where every rule has:
 
-```text
-Input
-→ Formula
-→ Valid range
-→ Pass/Fail condition
-→ Edge cases
-→ Data dependency
-→ Execution behavior
-→ Test case
-```
 
-That would make it directly usable for your Python quant engine without leaving ambiguous decisions for the developer.
+I'll research what the leading practitioners and studies actually use to separate a genuine breakout from a trap.Short version first: **nobody can separate them with certainty, and the people you named don't claim to.** Even in Minervini's own method, roughly half of all breakouts fail. So the real question is two-part: (1) which signals shift the odds that your current filters don't capture, and (2) how to make the failures cheap. I researched Minervini (VCP), Morales & Kacher (pocket pivots/VDU — O'Neil's former portfolio managers), Kristjan Qullamaggie (tight flags), Wyckoff (springs/upthrusts — the original "trap" theory from 1930s), ICT (as you asked), plus India-specific delivery/bulk-deal data. Here's what separates genuine from trap, and how to code it.
+
+---
+
+## 1. Why your 50 "prime" names all look identical
+
+Your Layers 3–6 measure **state** (price above MAs, RSI in a band, ATR5/ATR20 ratio). None of them measure **sequence** — how the base was built — or the **character of the breakout bar itself**. That's exactly where every practitioner I researched finds the trap/genuine distinction. Your VCR ratio ≤ 0.90 is a one-number proxy for what Minervini actually describes as a multi-stage structure: three or more contractions where each pullback measures smaller than the previous—typically 18% → 12% → 6%—before explosive breakouts on expanding volume. Volume dries up during contractions (supply exhausting) and surges 40-50% above average on breakout (institutional buying confirmed).
+
+A stock can pass VCR ≤ 0.90 with a wide, loose, V-shaped base and no volume dry-up — which is a textbook trap.
+
+---
+
+## 2. The seven "genuineness" tests (codeable from EOD data)
+
+### Test A — Base geometry: successive contractions + higher lows
+Minervini: each contraction must be smaller than the one before it. If C2 is larger than C1, volatility is *expanding*, not contracting — the pattern fails, and the setup should be abandoned. Qullamaggie wants the same thing from a different angle: higher lows are particularly important because they indicate that buyers are entering at progressively higher prices. He also notes many high-quality setups produce one or more inside days immediately before the breakout, showing that price has become compressed into an exceptionally narrow range.
+
+**Code:** detect swing lows over the last 40–65 sessions (zigzag with ~3% threshold). Require: depth(C_n) < depth(C_{n−1}) for each leg; final contraction depth ≤ 8%; last 5-day high-low range ≤ 1.5× ATR₁₄. Veto V-shaped bases — Morales/Kacher: Do not buy pocket pivots if the stock formed a 'V' where it sells off hard down through the 10dma or 50dma then shoots straight back up in a 'V' formation. Such formations are failure prone.
+
+### Test B — Volume dry-up (VDU) *before* the breakout
+This is arguably the single most important thing your spec lacks. You check volume on the breakout day, but not that supply dried up before it. A stock showing perfect progressive contractions but with high volume on pullbacks signals continued selling pressure - not accumulation completion. Volume dry-up confirms what price structure suggests. The visual tell: volume bars so low in that final contraction that you wonder if there was a trading halt or half-day session.
+
+**Code:** `VDU = mean(Vol, last 5 sessions before breakout) / SMA(Vol, 50) ≤ 0.60`. Also: mean volume on down days inside the base < mean volume on up days inside the base (accumulation signature).
+
+### Test C — Breakout bar character (the trap detector)
+Three sub-tests, each from a different school, all pointing the same way:
+
+1. **Closing range.** Strong breakouts close near the high of the day, demonstrating sustained buying pressure rather than intraday reversal. Wyckoff defines the trap as the mirror image — an Upthrust: Move above resistance on low volume, weak close - Look for: Low volume, close in lower half of bar. **Code:** `(Close − Low)/(High − Low) ≥ 0.70` to pass; `< 0.50` = Upthrust veto.
+
+2. **Pocket-pivot volume test** (Morales & Kacher). Rather than comparing to a 20-day average, compare to recent *selling*: an up day, inside or emerging from a constructive base, whose volume exceeds the largest down-day volume of the previous ten trading sessions. The idea is that institutional buying leaves a volume footprint that stands taller than any recent selling. This is smarter than your 1.5× rule because it calibrates the footprint test to the stock's own recent selling: a quiet base needs only a modest print to qualify, while a volatile one demands real participation. **Code:** `Vol_today > max(Vol on down-close days, last 10 sessions)`.
+
+3. **Benchmark period.** Use the 50-day average, not 20-day. Minervini's minimum is Breakout-day volume must be at least this multiple of the 50-day average. 1.4 = 40% above average (Minervini's minimum). A 20-day average inside a quiet base is artificially low, so your 1.5× threshold is easier to pass than it looks.
+
+### Test D — Distance from *pivot*, not from SMA50
+Your over-extension gate (25% above SMA50) is far too loose for entry timing. Minervini's scanners block entry when price is already too far above the pivot (no chasing). One implementation sets Breakout only when, on the snapshot session itself, the close is 0–3% above the pivot and that day's volume is at least 1.5× average. Qullamaggie's version: Avoid buying when stock is up more than ATR: Wait for pullbacks or consolidation before entering.
+
+**Code:** `Pivot = max(High, final contraction)`. Deployable only if `0% ≤ (Close − Pivot)/Pivot ≤ 5%`. Beyond that → "Extended — wait for pullback to 10/20 EMA" (which is a *different*, valid entry; see Wyckoff LPS below).
+
+### Test E — RS line at new high (true leadership)
+I flagged this in the previous audit as the missing Trend Template criterion; the research reinforces it: Minervini says to look for stocks already demonstrating leadership — VCPs forming in weak stocks fail at a significantly higher rate than those forming in market leaders. Qullamaggie's 5-star setup explicitly requires RS at new high (market leader). **Code:** `RS_line = Close / Nifty500_close`. Pass if RS_line is at a 60-day high on or before the price breakout. RS line making a new high *before* price does is the strongest tell.
+
+### Test F — Prior power move (the "something is happening" test)
+Qullamaggie wants a stock already up 30 to 100% or more over the past one to three months, because the premise is that whatever caused that move has not finished playing out. Your Stage-2 rule (≥30% above 52-week low) is a weak version of this — a stock can be 30% above a low from 11 months ago and be dead. **Code:** `max(ROC_1M, ROC_2M, ROC_3M) ≥ 30%` as a scoring bonus, *then* tight base.
+
+### Test G — Post-breakout confirmation (the cheapest trap filter of all)
+The first day or two after breakout proves critical. The stock should hold gains and potentially continue advancing. If price immediately reverses back below the pivot point on heavy volume, the breakout likely fails. Most retail traps resolve within 1–3 sessions. The fix is not a filter but an **execution change**: enter 50% on the breakout-day signal, add 50% only if the stock closes above pivot for 2 consecutive sessions; exit everything on a close back below pivot regardless of your −5/−7% stop. This cuts the average loss on traps roughly in half.
+
+---
+
+## 3. The "trap school": Wyckoff and ICT
+
+You asked about ICT, so a direct assessment. Wyckoff is the origin of all trap theory. The two mirror-image events:
+
+- **Spring** (bullish): False breakdown below support - Look for: Low volume, quick reversal, close above support. Then confirmation: Wyckoff practice waits for confirmation: a quiet test that holds above the spring low, then a sign of strength on expanding volume. If price later closes back below the spring low, the accumulation read is invalidated.
+- **Upthrust / UTAD** (bull trap): a false breakout *above* resistance that fails and reverses, the exact mirror of the accumulation Spring. Where a Spring traps sellers before markup, a UTAD traps buyers before markdown.
+
+The textbook Wyckoff entry is actually *not* the breakout — it's the pullback after it: LPS—last point of support, the low point of a reaction or pullback after a SOS. Backing up to an LPS means a pullback to support that was formerly resistance, on diminished spread and volume. This is directly useful for your "Extended" bucket: instead of discarding a stock that broke out 8% above pivot, watch for the low-volume pullback to the pivot/20 EMA and enter there with a stop under the pullback low.
+
+**ICT (Inner Circle Trader)** — my honest take: it is an intraday forex/index-futures framework (liquidity sweeps, order blocks, fair value gaps, "kill zones") built around session timing that doesn't map onto NSE EOD swing trading, and there's no independent evidence base for it. The one concept worth stealing is the "buy-side liquidity sweep," which is Wyckoff's upthrust renamed: price runs the obvious high (where retail stops and breakout orders cluster), fills institutional sells, and closes back below. The practical rule it gives you is a **"burnt pivot" veto**: if in the last 10 sessions the stock already closed above the pivot and then closed back below it, that pivot has been swept — demand a new base before re-entry. Skip order blocks and FVGs; they add nothing on daily bars that a VDU and closing-range test don't already capture.
+
+---
+
+## 4. India-specific institutional footprint (your biggest untapped edge)
+
+### Delivery percentage — relative to the stock's own baseline
+Everyone cites delivery %, but the right use is the anomaly, not the absolute: This screen specifically isolates stocks where delivery percentage has spiked significantly above their own 10 or 20-day average delivery percentage — not just high in absolute terms, but anomalously high relative to that stock's historical norm. Baselines differ hugely by segment: Speculative micro-caps typically run 10–20%, average mid-caps 30–45%, large-cap blue chips like HDFC Bank and TCS sit between 40–60%, and stocks under serious accumulation cross 60%. Since you scan all 2,300 names, an absolute 35% threshold would pass every large cap and fail every small cap.
+
+**Code:** `DelivZ = (Deliv%_today − mean(Deliv%, 60d)) / std(Deliv%, 60d)`. On the breakout day, require `DelivZ ≥ +1.0` and `Deliv%_today ≥ 30%`. Hard veto: `Vol_ratio ≥ 1.5 AND Deliv% < 20%` — high volume with low delivery is the classic operator/retail-churn signature. Also track the trend: if a stock's average creeps up over *two to three months*, you're watching genuine investor accumulation. One caveat — a single bulk deal can distort one day's figure, so use the z-score over 60 days, not one print.
+
+### Bulk and block deals — mostly noise unless you net them
+This one surprised me. A 90,000-row analysis found that In 72% of bulk deals, the same client bought and sold the same stock on the same day. The structural difference: Block deals must end in delivery; bulk deals can be reversed the same day. So raw "bulk deal buying" is nearly worthless as a signal. What works is netting out round-trips and counting distinct buyers: stocks where at least four distinct entities bought, buyers outnumbered sellers, and the disclosed deals were net buying by both value and quantity. Conversely, a single seller distributing a large block to many smaller buyers scores well on headcount while actually being an exit.
+
+**Code:** from the NSE bulk-deal file, compute per (date, symbol, client) net value; drop rows where |net| < 20% of gross. Score +1 if ≥ 3 distinct net buyers in the last 20 sessions; veto if a single entity appears on both sides repeatedly (operator signature).
+
+### Shareholding pattern (quarterly, from your own knowledge check)
+Not from the search results, but standard practice: FII + DII holding rising QoQ, promoter holding flat or rising, promoter pledge < 20%. A stock whose promoters are pledging or selling into a "breakout" is distribution dressed as accumulation.
+
+### Fundamental catalyst — your spec has zero
+Your whole stack is technical. Minervini's isn't: Minervini's own data reveals he prefers 25%+ earnings growth for his highest conviction setups. The mechanism matters for trap detection: technical-only traders identify a perfect VCP pattern on a stock with deteriorating earnings, wondering why the breakout fails immediately. The answer: institutions were exiting (creating the volume dry-up) rather than accumulating, because the fundamental story had weakened. Even a crude gate — latest quarter EPS or sales growth > 15% YoY, from any screener feed — will remove a meaningful fraction of the 50.
+
+---
+
+## 5. Assembling it: a Genuineness Score to rank the 50
+
+Hard vetoes first (any one kills the candidate):
+
+| Veto | Source |
+|---|---|
+| Closing range < 50% on breakout day | Wyckoff upthrust |
+| Volume surge ≥ 1.5× with Deliv% < 20% | India churn trap |
+| Volume ≤ largest down-day volume of last 10 sessions | Pocket-pivot fail |
+| Any contraction larger than the previous one / V-shaped base | Minervini, Morales-Kacher |
+| Close > 5% above pivot | Chasing |
+| Pivot already swept and failed in last 10 sessions | Wyckoff/ICT |
+| Single-entity two-sided bulk deals in last 20 sessions | Operator signature |
+
+Then score survivors (0–100):
+
+| Component | Weight | Pass condition |
+|---|---|---|
+| VDU before breakout | 20 | 5-day vol ≤ 0.6× 50-day avg |
+| Closing range | 15 | ≥ 0.70 |
+| Delivery z-score | 15 | ≥ +1.0 and ≥ 30% |
+| RS line at 60-day high | 15 | yes, bonus if before price |
+| Base geometry (contractions shrinking, final ≤ 8%, inside days) | 15 | all true |
+| Prior power move ≥ 30% in 1–3M | 10 | yes |
+| Fundamental growth > 15% YoY | 10 | yes |
+
+Deploy only ≥ 70, and only the top 3–5 by score. Keep everything 50–70 on a "watch for LPS pullback" list.
+
+---
+
+## 6. The part no article will tell you
+
+Every threshold above comes from US practitioners or Indian bloggers, not from your universe. The only way to know which tests actually work on NSE is to **log every component for every one of the 50 candidates daily, then measure 10- and 20-day forward returns per component after 3–6 months.** You will likely find that two or three tests (my guess: VDU, delivery z-score, closing range) carry most of the discrimination and the rest are decoration. That empirical pass is worth more than any further rule I can give you — and it's the step every "quant momentum system" skips.
+
+If you want, I can write the base-geometry detector (swing-low zigzag → contraction depths → VDU) as pseudocode next, since that's the one component that isn't a one-liner.

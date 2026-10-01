@@ -23,6 +23,9 @@ if SRC_DIR not in sys.path:
 
 from momentum_quality import (
     compute_true_range,
+    compute_closing_range,
+    compute_up_down_volume_ratio,
+    compute_volume_dry_up,
     compute_vcp_ratio,
     compute_volume_confirmation,
     compute_frog_in_the_pan,
@@ -97,11 +100,67 @@ class TestMomentumQuality(unittest.TestCase):
         res_jump = compute_frog_in_the_pan(df_jump)
         self.assertEqual(res_jump["fip_status"], "DISCRETE_JUMP_RISK")
 
+    def test_closing_range(self):
+        # Strong bull close (close near high: CR >= 0.70)
+        df_strong = self.df.copy()
+        df_strong.iloc[-1, df_strong.columns.get_loc("High")] = 110.0
+        df_strong.iloc[-1, df_strong.columns.get_loc("Low")] = 100.0
+        df_strong.iloc[-1, df_strong.columns.get_loc("Close")] = 108.5  # CR = 8.5 / 10 = 0.85
+        res_strong = compute_closing_range(df_strong)
+        self.assertTrue(res_strong["is_strong_close"])
+        self.assertEqual(res_strong["cr_status"], "STRONG_BULL_CLOSE")
+        self.assertAlmostEqual(res_strong["closing_range"], 0.85, places=2)
+
+        # Upthrust trap (close in bottom half: CR < 0.50)
+        df_trap = self.df.copy()
+        df_trap.iloc[-1, df_trap.columns.get_loc("High")] = 110.0
+        df_trap.iloc[-1, df_trap.columns.get_loc("Low")] = 100.0
+        df_trap.iloc[-1, df_trap.columns.get_loc("Close")] = 102.0  # CR = 2.0 / 10 = 0.20
+        res_trap = compute_closing_range(df_trap)
+        self.assertTrue(res_trap["is_upthrust_trap"])
+        self.assertEqual(res_trap["cr_status"], "UPTHRUST_TRAP")
+
+    def test_up_down_volume_ratio(self):
+        # Heavy up volume
+        df_acc = self.df.copy()
+        for i in range(-50, 0):
+            df_acc.iloc[i, df_acc.columns.get_loc("Close")] = 100.0 + (i * 0.5)
+            df_acc.iloc[i, df_acc.columns.get_loc("Volume")] = 1000000.0
+        res_acc = compute_up_down_volume_ratio(df_acc)
+        self.assertTrue(res_acc["is_accumulating"])
+        self.assertGreater(res_acc["up_down_vol_ratio"], 1.0)
+
+    def test_volume_dry_up(self):
+        df_vdu = self.df.copy()
+        # Set 50-day average volume to 1,000,000
+        df_vdu.iloc[-50:, df_vdu.columns.get_loc("Volume")] = 1000000.0
+        # Set 5 bars before breakout to 400,000 (0.4x -> dry)
+        df_vdu.iloc[-6:-1, df_vdu.columns.get_loc("Volume")] = 400000.0
+        res_vdu = compute_volume_dry_up(df_vdu)
+        self.assertTrue(res_vdu["is_dry"])
+        self.assertEqual(res_vdu["vdu_status"], "VDU_CONFIRMED")
+
+    def test_wyckoff_upthrust_trap_veto(self):
+        df_trap = self.df.copy()
+        # Heavy volume surge (2.5x)
+        df_trap.iloc[-1, df_trap.columns.get_loc("Volume")] = df_trap["Volume"].tail(20).mean() * 2.5
+        # Weak close in lower half (CR = 0.20)
+        df_trap.iloc[-1, df_trap.columns.get_loc("High")] = 120.0
+        df_trap.iloc[-1, df_trap.columns.get_loc("Low")] = 100.0
+        df_trap.iloc[-1, df_trap.columns.get_loc("Close")] = 103.0
+        res = evaluate_institutional_quality(df_trap)
+        self.assertTrue(res["is_trap_veto"])
+        self.assertEqual(res["grade"], "TRAP_VETO")
+        self.assertLessEqual(res["quality_score"], 35.0)
+
     def test_evaluate_institutional_quality(self):
         res = evaluate_institutional_quality(self.df)
         self.assertIn("grade", res)
         self.assertIn("quality_score", res)
         self.assertIn("is_institutional_grade", res)
+        self.assertIn("is_trap_veto", res)
+        self.assertIn("closing_range", res)
+        self.assertIn("up_down_vol_ratio", res)
         self.assertIn("warnings", res)
 
     def test_short_dataframe_graceful(self):

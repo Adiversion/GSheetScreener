@@ -1,36 +1,10 @@
 /**
- * yahoo-proxy.js — Free Cloudflare Worker: CORS proxy for a single Yahoo quote
- * =========================================================================
- * Why this exists
- * ---------------
- * The PWA is a static site. Browsers block direct calls to Yahoo Finance (and
- * NSE) because those servers don't send `Access-Control-Allow-Origin`. This tiny
- * Worker runs server-side (where CORS does not apply), fetches the quote, and
- * returns it with CORS headers so the app can read it.
- *
- * It is **keyless** and runs on Cloudflare's free tier (100,000 requests/day) —
- * no cron, no GitHub Actions minutes, no market-data signup.
- *
- * NOTE: do not point the app at a public CORS proxy. A public proxy sees every
- * request you make, gets rate-limited, and disappears without warning. Host your
- * own copy — it takes ~5 minutes and then it's yours.
- *
- * Deploy (free, ~5 minutes)
- * -------------------------
- *  1. Create a free account at https://dash.cloudflare.com
- *  2. Workers & Pages → Create → Create Worker → give it a name (e.g. nse-quote)
- *  3. Replace the default code with this file, then Deploy.
- *  4. Copy the URL: https://nse-quote.<your-subdomain>.workers.dev
- *  5. Paste that URL into the app: Portfolio → Live target tracker →
- *     "Live-quote key (free)" → Proxy URL.
- *
- * Usage
- * -----
- *   GET https://<your-worker>.workers.dev/?symbol=CUPID.NS
- *   → { "symbol": "CUPID.NS", "price": 123.45, "currency": "INR", "asOf": 1690000000 }
- *
- * Only Yahoo's chart endpoint is proxied, and only for GET — it is not an open
- * relay.
+ * yahoo-proxy.js — Free Cloudflare Worker: CORS proxy for Yahoo quotes & historical candles
+ * =========================================================================================
+ * Cloudflare's free tier (100,000 requests/day) keyless CORS proxy.
+ * Supports:
+ *   1. Real-time quotes: ?symbol=CUPID.NS (default range=1d)
+ *   2. 365-day candles for backtests: ?symbol=CUPID.NS&range=1y&interval=1d
  */
 
 const YAHOO_HOST = 'query1.finance.yahoo.com';
@@ -56,16 +30,17 @@ export default {
     if (!symbol) return json({ error: 'missing_symbol', hint: 'pass ?symbol=CUPID.NS' }, 400);
     if (!symbol.includes('.')) symbol += '.NS';   // default to NSE
 
-    // Only allow safe ticker characters — this is not an open proxy.
     if (!/^[A-Z0-9&.\-^]{1,24}$/.test(symbol)) return json({ error: 'bad_symbol' }, 400);
 
-    const target = `https://${YAHOO_HOST}/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+    const range = (url.searchParams.get('range') || '1d').toLowerCase();
+    const interval = (url.searchParams.get('interval') || '1d').toLowerCase();
+    const target = `https://${YAHOO_HOST}/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`;
 
     let upstream;
     try {
       upstream = await fetch(target, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; nse-quote-worker/1.0)' },
-        cf: { cacheTtl: 30, cacheEverything: true },
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        cf: { cacheTtl: range === '1d' ? 30 : 3600, cacheEverything: true },
       });
     } catch (err) {
       return json({ error: 'upstream_unreachable', message: String(err) }, 502);
@@ -80,16 +55,52 @@ export default {
       return json({ error: 'bad_upstream_json' }, 502);
     }
 
-    const meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
+    const res0 = data?.chart?.result?.[0];
+    const meta = res0?.meta;
     if (!meta || meta.regularMarketPrice == null) return json({ error: 'no_price', symbol }, 404);
+
+    // 1) Single quote response for live tracking
+    if (range === '1d') {
+      return json({
+        symbol,
+        price: meta.regularMarketPrice,
+        previousClose: meta.chartPreviousClose ?? meta.previousClose ?? null,
+        currency: meta.currency || 'INR',
+        marketState: meta.marketState || null,
+        asOf: meta.regularMarketTime || null,
+      });
+    }
+
+    // 2) Historical candles for backtesting
+    const timestamps = res0.timestamp || [];
+    const quote = (res0.indicators?.quote?.[0]) || {};
+    const opens = quote.open || [];
+    const highs = quote.high || [];
+    const lows = quote.low || [];
+    const closes = quote.close || [];
+    const volumes = quote.volume || [];
+
+    const candles = [];
+    for (let i = 0; i < timestamps.length; i++) {
+      const c = closes[i];
+      if (c != null && !isNaN(c) && c > 0) {
+        candles.push({
+          date: new Date(timestamps[i] * 1000).toISOString().split('T')[0],
+          time: timestamps[i],
+          open: opens[i] != null && !isNaN(opens[i]) ? opens[i] : c,
+          high: highs[i] != null && !isNaN(highs[i]) ? highs[i] : c,
+          low: lows[i] != null && !isNaN(lows[i]) ? lows[i] : c,
+          close: c,
+          volume: volumes[i] || 0,
+        });
+      }
+    }
 
     return json({
       symbol,
-      price: meta.regularMarketPrice,
-      previousClose: meta.chartPreviousClose ?? meta.previousClose ?? null,
-      currency: meta.currency || 'INR',
-      marketState: meta.marketState || null,
-      asOf: meta.regularMarketTime || null,
+      range,
+      count: candles.length,
+      candles,
     });
   },
 };

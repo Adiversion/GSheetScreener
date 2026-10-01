@@ -207,6 +207,7 @@
 
               <div class="filter-chips" id="screenerFilterChips" role="group" aria-label="Quick filters">
                 <button class="chip filter-chip active" data-filter="all">All</button>
+                <button class="chip filter-chip" data-filter="aqs_prime">⚡ AQS Prime</button>
                 <button class="chip filter-chip" data-filter="prime">Prime</button>
                 <button class="chip filter-chip" data-filter="sweet_rsi">Sweet RSI</button>
                 <button class="chip filter-chip" data-filter="affordable">Affordable</button>
@@ -305,6 +306,8 @@
                       <div class="spec"><dt>20d turnover</dt><dd id="specTurnover">–</dd></div>
                       <div class="spec"><dt>Daily ATR</dt><dd id="specATR">–</dd></div>
                       <div class="spec"><dt>Circuit band</dt><dd id="specCircuit">–</dd></div>
+                      <div class="spec"><dt>AQS (Anti-trap)</dt><dd id="specAQS">–</dd></div>
+                      <div class="spec"><dt>Closing Range</dt><dd id="specCR">–</dd></div>
                     </dl>
                   </div>
                 </div>
@@ -488,12 +491,26 @@
 
         <div class="card" style="margin-bottom:18px;">
           <div class="card__head">
-            <h3>Historical Research &amp; Observation</h3>
-            <span class="badge badge--muted">Observation Lab Only</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <h3>Stage-2 Research &amp; Backtest Lab</h3>
+              <span class="badge badge--brand">⚡ Live 365d Engine</span>
+            </div>
+            <span class="badge badge--muted">1-Year Window</span>
           </div>
-          <p class="muted" style="margin-bottom:14px;">Live investing decisions in the Terminal follow the canonical institutional ruleset (Regime, Turnover, VCP, Volume Surge, Over-Extension). Use this lab purely to study historical trade distributions, hold times, and cycle drawdowns across individual securities.</p>
-          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-            <label for="researchStockSelect" style="font-weight:600;font-size:0.85rem;">Select Security:</label>
+          <p class="muted" style="margin-bottom:14px;">Type any NSE ticker to run a live forward-outcome backtest on the past 365 days of price action directly in your browser (no server, ₹0 cost), or pick a pre-analyzed leader from the archive.</p>
+
+          <!-- Live on-demand ticker input -->
+          <div class="research-input-row" style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:220px;">
+              <input type="text" id="researchCustomTicker" class="num-input" placeholder="Enter ANY NSE ticker (e.g. INFY, ZOMATO, CUPID)" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;width:100%;font-weight:600;" />
+            </div>
+            <button class="btn btn--primary" id="btnRunLiveBacktest">
+              <svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg> Run 365-Day Backtest
+            </button>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:12px;">
+            <label for="researchStockSelect" style="font-weight:600;font-size:0.85rem;color:var(--text-muted);">Or pick from screener archive:</label>
             <select id="researchStockSelect" class="field-select" style="min-width:240px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text);border:1px solid var(--border);">
               <option value="">Select a security…</option>
             </select>
@@ -836,6 +853,8 @@
 <!-- ════════════════════ TOASTS ════════════════════ -->
 <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
 
-<script src="js/app.js?v=15"></script>
+<script src="js/research-engine.js?v=1"></script>
+<script src="js/research-lab.js?v=1"></script>
+<script src="js/app.js?v=16"></script>
 </body>
 </html>

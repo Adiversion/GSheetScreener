@@ -317,6 +317,24 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
 
     stage2_candidates = []
 
+    # Calculate Universe 12-Month Performance & Relative Strength (RS Rating 0-99)
+    perf_12m = {}
+    for sym in dynamic_symbols:
+        tick = f"{sym}.NS"
+        if tick in batch_data:
+            df_sym = batch_data[tick].dropna(subset=["Close"])
+            if len(df_sym) >= 120:
+                p_curr = float(df_sym["Close"].iloc[-1])
+                p_past = float(df_sym["Close"].iloc[-min(len(df_sym), 250)])
+                if p_past > 0:
+                    perf_12m[sym] = (p_curr / p_past - 1.0) * 100.0
+
+    rs_ratings = {}
+    if perf_12m:
+        s_perf = pd.Series(perf_12m)
+        s_rank = (s_perf.rank(pct=True) * 99.0).round(1)
+        rs_ratings = s_rank.to_dict()
+
     for sym in dynamic_symbols:
         tick = f"{sym}.NS"
         if tick not in batch_data:
@@ -436,6 +454,16 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
             "CIRCUIT_DIAG": circuit_diag,
             "IS_PRIME": is_prime,
             "SETUP_QUALITY": setup_quality,
+            "AQS_SCORE": inst_quality["quality_score"],
+            "AQS_GRADE": inst_quality["grade"],
+            "IS_TRAP_VETO": inst_quality["is_trap_veto"],
+            "CLOSING_RANGE": inst_quality["closing_range"],
+            "CR_STATUS": inst_quality["cr_status"],
+            "UP_DOWN_VOL": inst_quality["up_down_vol_ratio"],
+            "UD_STATUS": inst_quality["ud_status"],
+            "VDU_RATIO": inst_quality["vdu_ratio"],
+            "VDU_STATUS": inst_quality["vdu_status"],
+            "RS_12M": rs_ratings.get(sym, 50.0),
             "INSTITUTIONAL_GRADE": inst_quality["grade"],
             "INSTITUTIONAL_SCORE": inst_quality["quality_score"],
             "VCP_RATIO": inst_quality["vcp_ratio"],
@@ -515,6 +543,16 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
                 "M3_RUNNER_RULE": "Power Runner: Dynamic 50 SMA / 20 EMA / Blow-off trail (Ceiling removed)",
                 "SIZING_META": size_meta,
                 "CIRCUIT_RISK": row["CIRCUIT_DIAG"]["execution_risk_flag"],
+                "AQS_SCORE": row["AQS_SCORE"],
+                "AQS_GRADE": row["AQS_GRADE"],
+                "IS_TRAP_VETO": row["IS_TRAP_VETO"],
+                "CLOSING_RANGE": row["CLOSING_RANGE"],
+                "CR_STATUS": row["CR_STATUS"],
+                "UP_DOWN_VOL": row["UP_DOWN_VOL"],
+                "UD_STATUS": row["UD_STATUS"],
+                "VDU_RATIO": row["VDU_RATIO"],
+                "VDU_STATUS": row["VDU_STATUS"],
+                "RS_12M": row["RS_12M"],
                 "INSTITUTIONAL_GRADE": row["INSTITUTIONAL_GRADE"],
                 "INSTITUTIONAL_SCORE": row["INSTITUTIONAL_SCORE"],
                 "VCP_RATIO": row["VCP_RATIO"],
@@ -527,12 +565,23 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
                 "IS_INSTITUTIONAL": row["IS_INSTITUTIONAL"],
             })
 
-    # Sort: Institutional Grade first (PRIME_INSTITUTIONAL > MODERATE > LOW_PROB > RETAIL_TRAP),
-    # then Prime low-risk setups, then sorted by CMS descending
-    grade_weights = {"PRIME_INSTITUTIONAL": 3, "MODERATE_CONVICTION": 2, "LOW_PROBABILITY": 1, "RETAIL_TRAP": 0}
+    # Sort: Anti-Trap Vetoes suppressed, then AQS Grade, then AQS Score, then CMS
+    grade_weights = {
+        "PRIME_ACCUMULATION": 5,
+        "CONFIRMED_DEMAND": 4,
+        "PRIME_INSTITUTIONAL": 4,
+        "MODERATE_CONVICTION": 3,
+        "NEUTRAL_QUALITY": 2,
+        "LOW_PROBABILITY": 1,
+        "SPECULATIVE_CHURN": 0,
+        "TRAP_VETO": -1,
+        "RETAIL_TRAP": -1
+    }
     qualified_stocks.sort(
         key=lambda x: (
-            grade_weights.get(x.get("INSTITUTIONAL_GRADE", ""), 0),
+            not x.get("IS_TRAP_VETO", False),
+            grade_weights.get(x.get("AQS_GRADE", ""), 0),
+            x.get("AQS_SCORE", 0.0),
             x["IS_PRIME"],
             x["CMS_SCORE"]
         ),
