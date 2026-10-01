@@ -2108,6 +2108,10 @@ function buildGridRow(s, idx, userCapital) {
   const isTrap = s.IS_TRAP_VETO === true || s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP' || s.AQS_GRADE === 'TRAP_VETO';
   const isAqsPrime = s.AQS_GRADE === 'PRIME_ACCUMULATION' || (parseFloat(s.AQS_SCORE) >= 75) || s.INSTITUTIONAL_GRADE === 'PRIME_INSTITUTIONAL';
 
+  const aqs = parseFloat(s.AQS_SCORE) || parseFloat(s.INSTITUTIONAL_SCORE);
+  const aqsClass = aqs >= 75 ? 'hi' : aqs >= 55 ? 'mid' : 'lo';
+  const aqsTitle = `AQS: ${isNaN(aqs) ? '–' : Math.round(aqs)} (${s.AQS_GRADE || s.INSTITUTIONAL_GRADE || 'AQS'}) · CR: ${s.CLOSING_RANGE || '–'} · U/D Vol: ${s.UP_DOWN_VOL || '–'}`;
+
   const tr = document.createElement('tr');
   tr.className = 'stock-table-row' + (isSelected ? ' selected' : '') + (isTrap ? ' row--trap' : '');
   tr.setAttribute('role', 'row');
