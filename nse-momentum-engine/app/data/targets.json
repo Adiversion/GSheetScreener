@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-10-01T18:04:28Z",
+  "source": "none",
+  "default_target_pct": 15.0,
+  "default_stop_pct": 6.0,
+  "summary": {
+    "count": 0,
+    "hit": 0,
+    "near": 0,
+    "holding": 0,
+    "stopped": 0
+  },
+  "entries": []
+}
