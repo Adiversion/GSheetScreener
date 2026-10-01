@@ -1,0 +1,568 @@
+I researched **MANINDS (Man Industries India Ltd.)** from my side and compared the historical price/volume structure with the signal you supplied.
+
+The important finding is: **MANINDS is not the same pattern as TDPOWERSYS or WELSPUNLIV.** Your new engine's AQS/ECS separation is useful here, but the specific **FTF_COILING interpretation around ₹944 needs scrutiny**.
+
+## 1. First: the historical structure
+
+The key NSE sequence is:
+
+| Date | Close | High | Low | Volume |
+|---|---:|---:|---:|---:|
+| 10-Sep | ₹876.45 | **₹944.00** | ₹772.65 | **8.84M** |
+| 11-Sep | ₹866.10 | ₹904.00 | ₹819.10 | 4.53M |
+| 15-Sep | ₹808.20 | ₹866.65 | ₹802.60 | 1.03M |
+| 16-Sep | ₹790.30 | ₹808.55 | ₹745.00 | 2.08M |
+| 17-Sep | ₹823.00 | ₹836.00 | ₹785.80 | 1.09M |
+| 18-Sep | ₹851.55 | ₹860.50 | ₹822.35 | 1.17M |
+| 23-Sep | ₹986.70 | **₹1,005.00** | ₹866.25 | **10.69M** |
+| 24-Sep | ₹962.85 | ₹990.90 | ₹956.55 | 1.42M |
+| 25-Sep | ₹1,020.35 | **₹1,039.70** | ₹955.20 | 1.76M |
+| 28-Sep | ₹953.35 | ₹1,030.90 | ₹943.70 | 1.29M |
+| 29-Sep | ₹959.60 | ₹970.20 | ₹900.15 | 1.00M |
+| 30-Sep | ₹907.35 | ₹992.95 | ₹898.25 | 1.07M |
+
+The NSE historical series supports these figures. [StockAnalysis.com](https://stockanalysis.com/quote/nse/MANINDS/history/?utm_source=chatgpt.com)
+
+And this produces a **very important observation**:
+
+### ₹944 was NOT an unresolved resistance anymore.
+
+The stock subsequently went:
+
+```text
+10-Sep rejection
+₹944
+    ↓
+23-Sep
+₹1,005 high
+    ↓
+25-Sep
+₹1,039.70 high
+```
+
+So the stock **already cleared ₹944 decisively**.
+
+That changes the interpretation substantially.
+
+---
+
+# 2. This is the biggest issue with the current MANINDS signal
+
+Your engine says:
+
+> Prior rejection at ₹944 absorbed. Floor ₹772.65 held. Retesting resistance.
+
+That statement would have been reasonable **before 23-Sep**.
+
+But on 23-Sep:
+
+```text
+High = ₹1,005
+Close = ₹986.70
+Volume = 10.69M
+```
+
+The stock had already moved **above ₹944 by ~6.5% intraday** and closed ~4.5% above it.
+
+Then on 25-Sep:
+
+```text
+High = ₹1,039.70
+Close = ₹1,020.35
+```
+
+So ₹944 transitioned from:
+
+> **rejection pivot**
+
+to:
+
+> **previously cleared level / potential support**
+
+It should not remain the primary resistance pivot indefinitely.
+
+This is a **state-machine issue**, not an AQS issue.
+
+---
+
+# 3. What actually happened?
+
+The more accurate sequence is:
+
+```text
+                    MANINDS
+
+10 Sep
+Huge volume
+₹944 high
+₹876 close
+     │
+     │ rejection
+     ▼
+11–22 Sep
+recovery / stabilization
+     │
+     ▼
+23 Sep
+₹1,005 high
+₹986.70 close
+10.69M volume
+     │
+     │ genuine breakout
+     ▼
+25 Sep
+₹1,039.70 ATH/52W high
+₹1,020 close
+     │
+     ▼
+28 Sep
+₹1,030.90 high
+₹953 close
+     │
+     ▼
+29 Sep
+₹970 high
+₹959.60 close
+     │
+     ▼
+30 Sep
+₹992.95 high
+₹907.35 close
+```
+
+This is **not simply “old resistance is being tested on dry volume.”**
+
+It is:
+
+### **Breakout → new high → rejection/volatility → pullback toward the prior breakout zone.**
+
+That's a materially different state.
+
+---
+
+# 4. And 30-Sep is especially important
+
+30-Sep:
+
+```text
+Open  ₹962.00
+High  ₹992.95
+Low   ₹898.25
+Close ₹907.35
+Volume ~1.07M
+```
+
+The candle closed near the lower end of its range.
+
+Calculate:
+
+```text
+CR = (907.35 - 898.25)
+     --------------------
+     (992.95 - 898.25)
+
+   ≈ 9.6%
+```
+
+That's a **very weak closing location**.
+
+Compare that with your supplied MANINDS signal:
+
+> CR = 0.86 STRONG_BULL_CLOSE
+
+If that 0.86 is intended to describe **1-Oct's intraday candle**, that's fine as a live snapshot.
+
+But if the engine is using 30-Sep as the prior structural candle, then 30-Sep is decidedly **not** a strong bullish close.
+
+This is exactly the type of distinction your TDPOWERSYS fix was designed to enforce.
+
+---
+
+# 5. Now look at 1-Oct
+
+At the time of the supplied snapshot:
+
+```text
+CMP ≈ ₹921.55
+```
+
+and the engine apparently had:
+
+```text
+CR = 0.86
+Volume = 0.49×
+```
+
+Intraday sources confirm that MANINDS traded around ₹920 during the morning and had reached ₹930.50, with the day's low around ₹906.10 at one point. [Choice India](https://choiceindia.com/stocks/man-industries-india-ltd-share-price?utm_source=chatgpt.com)
+
+So **if this was a live snapshot**, we should not interpret its CR as an EOD candle.
+
+The final/current historical feed subsequently showed 1-Oct trading substantially differently; StockAnalysis reported:
+
+```text
+Open  ₹907.05
+High  ₹930.50
+Low   ₹870.40
+Close ₹879.45
+Volume 632,787
+```
+
+as of its latest update. [StockAnalysis.com](https://stockanalysis.com/quote/nse/MANINDS/history/?utm_source=chatgpt.com)
+
+That means the live ₹921.55 snapshot was **not the final session outcome**.
+
+And this is exactly why your TDPOWERSYS discovery was so important.
+
+---
+
+# 6. MANINDS gives us another test of the intraday-lookahead problem
+
+At ₹921.55:
+
+```text
+looks like:
+recovery
++
+strong closing position
++
+dry volume
+```
+
+But later the session deteriorated dramatically.
+
+Final reported close:
+
+**₹879.45**
+
+So the same-day state went approximately:
+
+```text
+₹921.55 live
+      ↓
+apparently bullish
+      ↓
+₹930.50 intraday high
+      ↓
+selling intensifies
+      ↓
+₹870.40 low
+      ↓
+₹879.45 close
+```
+
+That's an **excellent example of why a live CR must never be treated as a finalized CR**.
+
+In fact, this is arguably an even stronger architectural test than TDPOWERSYS.
+
+---
+
+# 7. So is MANINDS a trap?
+
+Here is where I would be precise.
+
+### At the ₹921.55 snapshot:
+
+I would **not call it a confirmed trap**.
+
+But I also would **not call it clean FTF coiling**.
+
+The correct state is closer to:
+
+> **POST-BREAKOUT PULLBACK / ACCEPTANCE TEST**
+
+because ₹944 had already been broken.
+
+Then the question becomes:
+
+```text
+Does ₹900–₹944 become support?
+```
+
+rather than:
+
+```text
+Will ₹944 finally break?
+```
+
+That's the key distinction.
+
+---
+
+# 8. Your current FTF engine has a potential conceptual bug here
+
+Your FTF logic says:
+
+```text
+Prior rejection peak = ₹944
+Floor = ₹772.65
+Current price ≈ ₹921
+        ↓
+Resistance probe
+```
+
+But history says:
+
+```text
+₹944
+ ↓
+BROKEN
+ ↓
+₹1,005
+ ↓
+₹1,039.70
+```
+
+Therefore the state machine needs **pivot lifecycle management**.
+
+A resistance pivot should not remain a resistance pivot forever after it has been decisively cleared.
+
+I'd implement:
+
+```text
+PIVOT_944
+   │
+   ├── rejected → RESISTANCE
+   │
+   ├── cleared + accepted → BROKEN_RESISTANCE
+   │
+   └── later retest → SUPPORT_RETEST
+```
+
+So MANINDS should have become:
+
+### `SUPPORT_RETEST`
+
+rather than:
+
+### `RESISTANCE_PROBE`
+
+after the 23-Sep breakout.
+
+---
+
+# 9. This is a very useful evolution of the architecture
+
+Your current ECS states:
+
+```text
+CONFIRMED_BREAKOUT
+FTF_COILING
+RESISTANCE_PROBE
+TRAP_CONFIRMED
+```
+
+I think MANINDS reveals that you need one additional state:
+
+# `POST_BREAKOUT_RETEST`
+
+The state transition becomes:
+
+```text
+RESISTANCE
+    │
+    │ breakout + acceptance
+    ▼
+CONFIRMED_BREAKOUT
+    │
+    │ pullback
+    ▼
+POST_BREAKOUT_RETEST
+    │
+    ├── support holds
+    │      ↓
+    │  CONTINUATION_READY
+    │
+    └── support fails
+           ↓
+       FAILED_BREAKOUT
+```
+
+This is much more powerful than continually treating the original resistance as an entry trigger.
+
+---
+
+# 10. The 10-Sep event itself is interesting
+
+MAN Industries announced approximately **₹600 crore of new domestic and international orders on 10-Sep**, with deliveries scheduled over six to nine months. Zerodha's market page reproduces the company/Reuters announcement and reports an unexecuted order book of approximately ₹4,100 crore at that point. [Zerodha](https://zerodha.com/markets/stocks/NSE/MANINDS/?utm_source=chatgpt.com)
+
+And look at the same day's market data:
+
+```text
+10-Sep
+High ₹944
+Close ₹876.45
+Volume 8.84M
+```
+
+That is a huge price/volume event.
+
+So we should **not automatically interpret the 10-Sep candle as pure technical supply**.
+
+There was a material corporate information event that day.
+
+That's another reason the engine should store:
+
+```text
+EVENT_FLAG = TRUE
+EVENT_DATE = 10-Sep
+```
+
+rather than attributing the entire candle mechanically to "Wyckoff supply."
+
+---
+
+# 11. Fundamentals also provide context
+
+MAN Industries reported strong Q1 FY27 operating numbers.
+
+The company reported consolidated revenue around **₹1,065 crore**, up about 37.7% YoY, consolidated EBITDA of ₹155 crore, up 92.6%, and PAT of ₹61 crore. Its consolidated order book was reported around **₹3,600 crore**, with a bid pipeline around ₹24,000 crore. [FinancialFilings](https://financialfilings.com/filings/man-industries-india-ltd/earnings-release/2026/55908044/?utm_source=chatgpt.com)
+
+There were also later corporate/investor-related filings in September, including investor-meet announcements. [The Economic Times](https://economictimes.indiatimes.com/man-industries-india-ltd/stocksupdate/companyid-11357.cms?from=mdr\&utm_source=chatgpt.com)
+
+These facts don't tell us whether the stock will rise.
+
+But they matter because **the extreme price/volume events are occurring in a stock with material contemporaneous company information**, so a pure Wyckoff interpretation should be treated cautiously.
+
+---
+
+# 12. AQS = 60 doesn't bother me nearly as much as ECS
+
+Your signal:
+
+```text
+AQS = 60
+CONFIRMED_DEMAND
+```
+
+is plausible as a structural score.
+
+And:
+
+```text
+50D U/D = 3.11
+```
+
+is consistent with a stock that has had strong positive-volume asymmetry under your definition.
+
+The bigger question is the **entry state**.
+
+I would therefore represent MANINDS like this:
+
+| Dimension | Assessment |
+|---|---|
+| Stage-2 | ✅ Strong |
+| 1M momentum | ✅ Strong |
+| 2M momentum | ✅ Strong |
+| 3M momentum | ✅ Strong |
+| Price vs SMA50 | ✅ Strong |
+| Price vs SMA200 | ✅ Strong |
+| Liquidity | ✅ Strong |
+| Historical U/D | ✅ Strong |
+| 10-Sep event | ⚠️ Important |
+| 23-Sep breakout | ✅ Significant |
+| 25-Sep new high | ✅ Significant |
+| 28-30 Sep pullback | ⚠️ Important |
+| 30-Sep candle | ⚠️ Weak |
+| 1-Oct live candle | **Must remain provisional** |
+| ₹944 resistance | ❌ Stale as primary resistance |
+| ₹944 support/retest | ✅ More appropriate |
+| Trap confirmed | ❌ Not from the live snapshot |
+| Post-breakout retest | **Most relevant state** |
+
+---
+
+# 13. And there's a major difference from TDPOWERSYS
+
+### TDPOWERSYS
+
+At the time we examined it:
+
+```text
+resistance ≈ 817.55
+price ≈ 809
+```
+
+and it had **not yet decisively cleared the 52W high**.
+
+So:
+
+`RESISTANCE_PROBE`
+
+was appropriate.
+
+### MANINDS
+
+MANINDS:
+
+```text
+₹944 resistance
+      ↓
+₹1,005
+      ↓
+₹1,039.70
+```
+
+It **already cleared the resistance**.
+
+Therefore:
+
+`RESISTANCE_PROBE`
+
+is no longer the best description.
+
+It should be:
+
+# `POST_BREAKOUT_RETEST`
+
+That distinction is important for your engine.
+
+---
+
+# 14. The final 1-Oct result is actually a valuable test case
+
+The latest historical data shows:
+
+```text
+1-Oct
+Open  ₹907.05
+High  ₹930.50
+Low   ₹870.40
+Close ₹879.45
+Volume 632,787
+``` :chatgpt-content-reference{index="6"}
+
+
+So the intraday signal at ₹921.55 eventually failed to hold.
+
+That doesn't automatically mean the **stock** was a trap.
+
+Instead, it suggests:
+
+> **The live entry snapshot was not sufficient confirmation, and the post-breakout pullback had not yet demonstrated support acceptance.**
+
+That's exactly the behavior your new ECS architecture is supposed to distinguish.
+
+---
+
+## My verdict on MANINDS
+
+**Structural quality:** strong.
+
+**Historical momentum:** strong.
+
+**Historical accumulation/volume asymmetry:** strong according to your supplied AQS metrics.
+
+**10-Sep event:** important confounder; it coincided with a large price/volume expansion and a disclosed ₹600 crore order announcement. :chatgpt-content-reference{index="7"}
+
+**₹944 FTF pivot:** **needs correction in the state machine** because the stock subsequently broke ₹944 and reached ₹1,039.70.
+
+**1-Oct ₹921.55 live signal:** **not a confirmed trap**, but also **not sufficient evidence of a new breakout**.
+
+**Best architectural state:**  
+### `POST_BREAKOUT_RETEST / SUPPORT_ACCEPTANCE_TEST`
+
+And the biggest lesson for USER_V25 is:
+
+> **Once a resistance pivot has been decisively broken and accepted, the engine must promote that pivot from RESISTANCE → BROKEN_RESISTANCE → SUPPORT_RETEST. It must not continue treating the old pivot as an unbroken resistance indefinitely.**
+
+That is the next architectural issue I'd fix **before adding any new scoring features**.

@@ -1,16 +1,4 @@
-"""
-failure_to_fail.py — Pure Domain Module for Multi-Day "Failure-to-Fail" (FTF) Engine
-===================================================================================
-Analyzes multi-day price-volume memory to distinguish:
-  1. Low-volume supply test / absorption (FTF_COILING)
-  2. Confirmed demand expansion (CONFIRMED_BREAKOUT)
-  3. Genuine distribution failure (TRAP_CONFIRMED)
-
-Strictly adheres to AGENTS.md:
-  - 100% pure functions (no network/DOM/global mutation)
-  - Under 300 lines limit
-  - Strictly observable language
-"""
+"""failure_to_fail.py — Pure Domain Module for Multi-Day Failure-to-Fail (FTF) Engine (AGENTS.md)."""
 
 import math
 from typing import Dict, Any, List, Optional
@@ -46,7 +34,7 @@ def compute_failure_to_fail(
     l = df["Low"].astype(float)
     o = df["Open"].astype(float)
     v = df["Volume"].astype(float)
-    dates = df["Date"].astype(str) if "Date" in df.columns else [str(i) for i in df.index]
+    dates = df["Date"].astype(str).tolist() if "Date" in df.columns else [str(idx) for idx in range(len(df))]
 
     vol_sma = v.rolling(volume_sma_period).mean()
 
@@ -167,10 +155,60 @@ def compute_failure_to_fail(
     rej_idx = rejection["idx"]
     inter_closes = c.iloc[rej_idx + 1:curr_idx] if curr_idx > rej_idx + 1 else pd.Series([curr_c])
     inter_lows = l.iloc[rej_idx + 1:curr_idx] if curr_idx > rej_idx + 1 else pd.Series([curr_l])
+    inter_highs = h.iloc[rej_idx + 1:curr_idx] if curr_idx > rej_idx + 1 else pd.Series([curr_h])
     min_inter_close = float(inter_closes.min()) if len(inter_closes) > 0 else curr_c
     min_inter_low = float(inter_lows.min()) if len(inter_lows) > 0 else curr_l
+    max_inter_high = float(inter_highs.max()) if len(inter_highs) > 0 else curr_h
     p_low = rejection["low"]
     p_high = rejection["high"]
+
+    # Pivot Lifecycle Management:
+    # If price already broke out decisively above p_high, p_high is promoted to cleared support.
+    already_cleared = max_inter_high >= p_high * 1.025
+    if already_cleared:
+        new_peak = round(max_inter_high, 2)
+        if curr_c < p_high * 0.97:
+            return {
+                "state": "FAILED_BREAKOUT",
+                "is_ftf_coiling": False,
+                "is_resistance_probe": False,
+                "is_confirmed_breakout": False,
+                "pivot_resistance": new_peak,
+                "downside_floor": round(p_high * 0.96, 2),
+                "rejection_date": rejection["date"],
+                "rejection_high": p_high,
+                "rejection_low": p_low,
+                "rejection_vol_ratio": rejection["vol_ratio"],
+                "floor_held": False,
+                "downside_retention_pct": round(((curr_c - p_high) / p_high) * 100.0, 1),
+                "proximity_to_peak_pct": round(((new_peak - curr_c) / new_peak) * 100.0, 1),
+                "intermediate_vol_ratio": 1.0,
+                "current_vol_ratio": curr_vol_ratio,
+                "current_cr": curr_cr,
+                "trigger_guidance": None,
+                "diagnostic": f"Breakout above {p_high} reached {new_peak} but failed to hold support at {p_high}. Closed at {curr_c:.2f}."
+            }
+        else:
+            return {
+                "state": "POST_BREAKOUT_RETEST",
+                "is_ftf_coiling": False,
+                "is_resistance_probe": False,
+                "is_confirmed_breakout": False,
+                "pivot_resistance": new_peak,
+                "downside_floor": round(p_high * 0.97, 2),
+                "rejection_date": rejection["date"],
+                "rejection_high": p_high,
+                "rejection_low": p_low,
+                "rejection_vol_ratio": rejection["vol_ratio"],
+                "floor_held": True,
+                "downside_retention_pct": round(((curr_c - p_high) / p_high) * 100.0, 1),
+                "proximity_to_peak_pct": round(((new_peak - curr_c) / new_peak) * 100.0, 1),
+                "intermediate_vol_ratio": 1.0,
+                "current_vol_ratio": curr_vol_ratio,
+                "current_cr": curr_cr,
+                "trigger_guidance": f"Buy Stop @ INR {(new_peak * 1.002):.2f} on Volume >= 1.5x",
+                "diagnostic": f"Post-breakout retest of prior cleared pivot ({p_high}). High reached {new_peak}. Testing support acceptance."
+            }
 
     # Downside Retention: Following welspun.txt Section 2:
     # ForwardDownside = Close[t] - minimum(Close[t+1:t+3]).
