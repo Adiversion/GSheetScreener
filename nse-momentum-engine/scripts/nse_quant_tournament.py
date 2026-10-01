@@ -238,6 +238,7 @@ def add_indicators(g: pd.DataFrame) -> pd.DataFrame:
     g["atr5"] = atr(g, 5)
     g["atr14"] = atr(g, 14)
     g["atr20"] = atr(g, 20)
+    g["ema20"] = c.ewm(span=20, adjust=False).mean()
     g["vcr"] = g["atr5"] / g["atr20"]
 
     g["vol20"] = g["volume"].rolling(20).mean()
@@ -264,6 +265,7 @@ def add_indicators(g: pd.DataFrame) -> pd.DataFrame:
 
     # Independent momentum score components
     g["mom6m"] = c / c.shift(126) - 1.0
+    g["roc6m"] = g["mom6m"]
     g["mom12m"] = c / c.shift(252) - 1.0
     g["vol63"] = daily_ret.rolling(63).std() * np.sqrt(252)
     g["mom6_vol_adj"] = g["mom6m"] / g["vol63"].replace(0, np.nan)
@@ -273,7 +275,8 @@ def add_indicators(g: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_indicators(stocks: pd.DataFrame) -> pd.DataFrame:
-    return stocks.groupby("symbol", group_keys=False).apply(add_indicators).reset_index(drop=True)
+    groups = [add_indicators(g) for _, g in stocks.groupby("symbol")]
+    return pd.concat(groups, ignore_index=True)
 
 
 # ---------------------------------------------------------------------------
@@ -298,6 +301,8 @@ def universe_filter(day: pd.DataFrame) -> pd.DataFrame:
     x = x[x["close"] >= CFG.price_min]
     x = x[x["turnover"] >= CFG.daily_turnover_min]
     x = x[x["adtv20"] >= CFG.adtv20_min]
+    if x.empty:
+        return x
     if "price_band" in x.columns:
         x = x[x["price_band"].map(band_allowed)]
     if "series" in x.columns:
@@ -449,6 +454,56 @@ def nse_momentum_candidates(day: pd.DataFrame) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
+# STRATEGY BENCHMARK SUITE
+# ---------------------------------------------------------------------------
+
+BENCHMARK_STRATEGIES = [
+    "NIFTY500_BH",
+    "MOM_6M",
+    "MOM_6_12_VOL",
+    "MOM_6_12_REGIME",
+    "STAGE2_CMS",
+    "USER_V25_NO_VCR",
+    "USER_V25_NO_FIP",
+    "USER_V25_NO_VOLUME",
+    "USER_V25",
+]
+
+def strategy_candidates(day: pd.DataFrame, regime: str, strategy: str) -> pd.DataFrame:
+    x = universe_filter(day)
+    if x.empty: return x
+    if strategy == "MOM_6M":
+        x = x.dropna(subset=["roc6m"]).copy(); x["score"] = x["roc6m"]
+        return x.sort_values("score", ascending=False).head(CFG.independent_top_n)
+    if strategy in {"MOM_6_12_VOL", "MOM_6_12_REGIME"}:
+        x = x.dropna(subset=["mom6_vol_adj", "mom12_vol_adj"]).copy()
+        x["score"] = 0.50*x["mom6_vol_adj"] + 0.50*x["mom12_vol_adj"]
+        return x.sort_values("score", ascending=False).head(CFG.independent_top_n)
+    x = x[stage2_mask(x).fillna(False)].copy()
+    if x.empty: return x
+    x = add_cross_sectional_scores(x)
+    if strategy == "STAGE2_CMS":
+        return x.sort_values("cms", ascending=False).head(CFG.independent_top_n)
+    vol = x["vol_ratio"] >= CFG.volume_pass
+    vcr = x["vcr"] <= CFG.vcr_reject
+    fip = (x["fip_smoothness"] >= CFG.fip_smooth_min) & (x["fip_max_gain_share"] <= CFG.fip_jump_share_max)
+    ext = extension_mask(x)
+    if strategy == "USER_V25_NO_VCR": keep = vol & fip & ext
+    elif strategy == "USER_V25_NO_FIP": keep = vol & vcr & ext
+    elif strategy == "USER_V25_NO_VOLUME": keep = vcr & fip & ext
+    elif strategy == "USER_V25": keep = vol & vcr & fip & ext
+    else: raise ValueError(strategy)
+    if regime == "CORRECTION": keep &= x["vcr"] <= CFG.vcr_prime
+    if regime == "DEFENSIVE": keep &= False
+    return x[keep].sort_values("cms", ascending=False).head(CFG.independent_top_n)
+
+def strategy_target_n(strategy: str, regime: str) -> int:
+    if strategy == "NIFTY500_BH": return 0
+    if strategy in {"USER_V25", "USER_V25_NO_VCR", "USER_V25_NO_FIP", "USER_V25_NO_VOLUME", "MOM_6_12_REGIME"}:
+        return CFG.max_positions if regime == "BULL" else (max(1, CFG.max_positions//2) if regime == "CORRECTION" else 0)
+    return CFG.max_positions
+
+# ---------------------------------------------------------------------------
 # BACKTEST ENGINE
 # ---------------------------------------------------------------------------
 
@@ -576,7 +631,7 @@ class Backtester:
                     open_px = float(row["open"]) * (1 + CFG.slippage_bps / 10000.0)
 
                     if order["side"] == "BUY":
-                        if self.strategy == "USER_V25":
+                        if self.strategy in {"USER_V25", "USER_V25_NO_VCR", "USER_V25_NO_FIP", "USER_V25_NO_VOLUME"}:
                             qty, stop = self.sizing_user(row, open_px)
                             if qty > 0:
                                 initial_r = open_px - stop
@@ -608,7 +663,7 @@ class Backtester:
 
                 gain = float(row["close"]) / p.entry - 1
 
-                if self.strategy == "USER_V25":
+                if self.strategy in {"USER_V25", "USER_V25_NO_VCR", "USER_V25_NO_FIP", "USER_V25_NO_VOLUME"}:
                     if p.state == 0 and gain >= 0.15:
                         p.stop = p.entry * 1.015
                         p.state = 1
@@ -634,15 +689,15 @@ class Backtester:
             self.mark_to_market(day)
 
             # Generate next-day signal.
-            if i >= len(self.dates) - 1:
+            if i < CFG.warmup_days or i >= len(self.dates) - 1:
                 continue
 
             regime = "UNKNOWN"
             if date in self.bench.index:
                 regime = str(self.bench.loc[date, "regime"])
 
-            if self.strategy == "USER_V25":
-                candidates = user_v25_candidates(day, regime)
+            if self.strategy in BENCHMARK_STRATEGIES:
+                candidates = strategy_candidates(day, regime, self.strategy)
             elif self.strategy == "INDEPENDENT":
                 candidates = independent_candidates(day, regime)
             elif self.strategy == "NSE_MOMENTUM_PROXY":
@@ -653,17 +708,8 @@ class Backtester:
             # Avoid repeatedly buying held names.
             candidates = candidates[~candidates["symbol"].isin(self.positions.keys())]
 
-            if self.strategy == "USER_V25":
-                # User's regime exposure:
-                if regime == "BULL":
-                    target_n = CFG.max_positions
-                elif regime == "CORRECTION":
-                    target_n = max(1, CFG.max_positions // 2)
-                else:
-                    target_n = 0
-                candidates = candidates.head(target_n)
-            else:
-                candidates = candidates.head(CFG.max_positions)
+            target_n = strategy_target_n(self.strategy, regime)
+            candidates = candidates.head(target_n)
 
             pending = [{"symbol": s, "side": "BUY"} for s in candidates["symbol"].tolist()]
 
@@ -822,26 +868,31 @@ def main():
     print("Running portfolio backtests...")
     all_metrics = []
 
-    for strategy in ["USER_V25", "INDEPENDENT", "NSE_MOMENTUM_PROXY"]:
+    for strategy in BENCHMARK_STRATEGIES + ["INDEPENDENT", "NSE_MOMENTUM_PROXY"]:
         print(f"  {strategy}")
-        bt = Backtester(stocks, bench, strategy)
-        result = bt.run()
+        if strategy == "NIFTY500_BH":
+            b = bench.reset_index()[["date", "close"]].dropna().sort_values("date")
+            eq = CFG.initial_capital * b["close"] / b["close"].iloc[0]
+            peak = eq.cummax(); dd = eq/peak - 1; dr = eq.pct_change().dropna()
+            years = max((b["date"].iloc[-1]-b["date"].iloc[0]).days/365.25, 1/365.25)
+            cagr = (eq.iloc[-1]/eq.iloc[0])**(1/years)-1
+            sharpe = dr.mean()/dr.std()*np.sqrt(252) if dr.std()>0 else np.nan
+            down = dr[dr<0].std(); sortino = dr.mean()/down*np.sqrt(252) if pd.notna(down) and down>0 else np.nan
+            result = {"equity": pd.DataFrame({"date":b["date"],"equity":eq,"peak":peak,"drawdown":dd}), "trades":pd.DataFrame(), "metrics":{"initial_capital":CFG.initial_capital,"final_equity":float(eq.iloc[-1]),"CAGR_pct":cagr*100,"max_drawdown_pct":dd.min()*100,"Sharpe":sharpe,"Sortino":sortino,"profit_factor":np.nan,"win_rate_pct":np.nan,"expectancy_per_trade":np.nan,"trades":0,"avg_holding_days":np.nan}}
+        else:
+            result = Backtester(stocks, bench, strategy).run()
         save_results(out_dir, strategy, result)
-        m = dict(result["metrics"])
-        m["strategy"] = strategy
-        all_metrics.append(m)
+        all_metrics.append({"strategy":strategy, **result["metrics"]})
 
     print("Running signal-level ablation...")
     abl = ablation_snapshot(stocks, bench)
     abl.to_csv(out_dir / "USER_V25_ablation.csv", index=False)
 
     comparison = pd.DataFrame(all_metrics)
-    comparison = comparison[
-        ["strategy", "CAGR_pct", "max_drawdown_pct", "Sharpe", "Sortino",
-         "profit_factor", "win_rate_pct", "expectancy_per_trade",
-         "trades", "avg_holding_days"]
-    ]
+    comparison["Calmar"] = comparison["CAGR_pct"] / comparison["max_drawdown_pct"].abs().replace(0,np.nan)
+    comparison = comparison[["strategy","CAGR_pct","max_drawdown_pct","Calmar","Sharpe","Sortino","profit_factor","win_rate_pct","expectancy_per_trade","trades","avg_holding_days"]]
     comparison.to_csv(out_dir / "COMPARISON.csv", index=False)
+    comparison.sort_values("CAGR_pct", ascending=False).to_csv(out_dir / "COMPARISON_BY_CAGR.csv", index=False)
 
     print("\n=== STRATEGY COMPARISON ===")
     print(comparison.to_string(index=False))
