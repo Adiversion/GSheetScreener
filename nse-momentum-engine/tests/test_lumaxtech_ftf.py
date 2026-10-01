@@ -70,7 +70,10 @@ class TestLumaxtechStructure(unittest.TestCase):
         print("=" * 65)
 
         self.assertTrue(aqs_01["is_trap_veto"], "01-Oct must trigger TRAP_VETO on heavy volume drop near session lows!")
-        self.assertLessEqual(aqs_01["quality_score"], 35.0, "Quality score must be capped at 35 on trap veto")
+        self.assertEqual(aqs_01["grade"], "TRAP_VETO", "Grade must be TRAP_VETO")
+        self.assertEqual(ftf_01["floor_status"], "BROKEN", "Floor must be identified as BROKEN")
+        self.assertEqual(ftf_01["state"], "TRAP_CONFIRMED", "State must be TRAP_CONFIRMED")
+        self.assertFalse(aqs_01["is_institutional_grade"], "Must not be institutional grade when trapped")
 
 
 if __name__ == "__main__":

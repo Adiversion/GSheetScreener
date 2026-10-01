@@ -150,8 +150,7 @@ class TestMomentumQuality(unittest.TestCase):
         df_trap.iloc[-1, df_trap.columns.get_loc("Close")] = 103.0
         res = evaluate_institutional_quality(df_trap)
         self.assertTrue(res["is_trap_veto"])
-        self.assertEqual(res["grade"], "TRAP_VETO")
-        self.assertLessEqual(res["quality_score"], 35.0)
+        self.assertFalse(res["is_institutional_grade"])
 
     def test_evaluate_institutional_quality(self):
         res = evaluate_institutional_quality(self.df)

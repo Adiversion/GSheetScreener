@@ -246,20 +246,20 @@ def evaluate_institutional_quality(df: pd.DataFrame) -> Dict[str, Any]:
     if vdu["is_dry"]:
         score = min(100.0, score + 5.0)
 
-    if is_trap_veto:
-        grade = "TRAP_VETO"
-        score = min(score, 35.0)
-    elif score >= 80.0:
-        grade = "PRIME_ACCUMULATION"
+    if score >= 80.0:
+        structural_grade = "PRIME_ACCUMULATION"
     elif score >= 60.0:
-        grade = "CONFIRMED_DEMAND"
+        structural_grade = "CONFIRMED_DEMAND"
     elif score >= 45.0:
-        grade = "NEUTRAL_QUALITY"
+        structural_grade = "NEUTRAL_QUALITY"
     else:
-        grade = "SPECULATIVE_CHURN"
+        structural_grade = "SPECULATIVE_CHURN"
+
+    grade = "TRAP_VETO" if is_trap_veto else structural_grade
 
     return {
         "grade": grade,
+        "structural_grade": structural_grade,
         "quality_score": round(score, 1),
         "is_institutional_grade": score >= 65.0 and not is_trap_veto,
         "is_trap_veto": is_trap_veto,

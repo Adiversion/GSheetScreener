@@ -481,6 +481,7 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
             "FTF_DIAGNOSTIC": ftf_state.get("diagnostic"),
             "PIVOT_RESISTANCE": ftf_state.get("pivot_resistance"),
             "DOWNSIDE_FLOOR": ftf_state.get("downside_floor"),
+            "FLOOR_STATUS": ftf_state.get("floor_status", "INTACT"),
         })
 
     # 7. Cross-Sectional Percentile Normalization for CMS Score
@@ -575,6 +576,7 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
                 "FTF_DIAGNOSTIC": str(row["FTF_DIAGNOSTIC"]) if pd.notna(row["FTF_DIAGNOSTIC"]) else None,
                 "PIVOT_RESISTANCE": float(row["PIVOT_RESISTANCE"]) if pd.notna(row["PIVOT_RESISTANCE"]) else None,
                 "DOWNSIDE_FLOOR": float(row["DOWNSIDE_FLOOR"]) if pd.notna(row["DOWNSIDE_FLOOR"]) else None,
+                "FLOOR_STATUS": str(row["FLOOR_STATUS"]) if pd.notna(row.get("FLOOR_STATUS")) else "INTACT",
             })
 
     # Sort: Anti-Trap Vetoes suppressed, then AQS Grade, then AQS Score, then CMS

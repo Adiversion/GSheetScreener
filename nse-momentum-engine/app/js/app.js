@@ -2086,7 +2086,7 @@ function renderAQSDiagnostics(h) {
           </td>
           <td class="stat-val" style="color:${h.FTF_STATE === 'CONFIRMED_BREAKOUT' ? 'var(--accent)' : h.FTF_STATE === 'FTF_COILING' ? '#eab308' : 'var(--yellow)'}">
             ${h.FTF_STATE}
-            <div style="font-size:0.68rem;font-weight:normal;color:var(--text-dim)">Pivot: ${h.PIVOT_RESISTANCE ? '₹' + h.PIVOT_RESISTANCE : '—'} · Floor: ${h.DOWNSIDE_FLOOR ? '₹' + h.DOWNSIDE_FLOOR : '—'}</div>
+            <div style="font-size:0.68rem;font-weight:normal;color:var(--text-dim)">Pivot: ${h.PIVOT_RESISTANCE ? '₹' + h.PIVOT_RESISTANCE : '—'} · Floor: ${h.DOWNSIDE_FLOOR ? '₹' + h.DOWNSIDE_FLOOR + (h.FLOOR_STATUS ? ' (' + h.FLOOR_STATUS + ')' : '') : '—'}</div>
           </td>
         </tr>` : ''}
       </tbody>

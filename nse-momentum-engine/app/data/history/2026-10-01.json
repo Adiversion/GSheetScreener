@@ -1,6 +1,6 @@
 {
   "status": "CASH",
-  "timestamp": "2026-10-01 18:23 IST",
+  "timestamp": "2026-10-01 18:45 IST",
   "trade_date": "2026-10-01",
   "trade_date_display": "01-Oct-2026",
   "is_today": true,
@@ -23,7 +23,7 @@
   "rows": [
     {
       "STATUS": "CASH",
-      "TIMESTAMP": "2026-10-01 18:23 IST",
+      "TIMESTAMP": "2026-10-01 18:45 IST",
       "SYMBOL": "\u2014",
       "CMP": "\u2014",
       "CMS_SCORE": "\u2014",
@@ -108,7 +108,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "INOXINDIA",
@@ -170,7 +171,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "MOREPENLAB",
@@ -232,7 +234,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 135.56 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Probing major resistance (135.29). Rejection wick (CR 85%) on 2.16x volume. Breakout unconfirmed; awaiting clearance above 135.29 or downside retention.",
       "PIVOT_RESISTANCE": 135.29,
-      "DOWNSIDE_FLOOR": 117.37
+      "DOWNSIDE_FLOOR": 117.37,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "SHILPAMED",
@@ -296,7 +299,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 1097.19 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Probing major resistance (1095.00). Rejection wick (CR 49%) on 1.92x volume. Breakout unconfirmed; awaiting clearance above 1095.00 or downside retention.",
       "PIVOT_RESISTANCE": 1095.0,
-      "DOWNSIDE_FLOOR": 998.0
+      "DOWNSIDE_FLOOR": 998.0,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "RAMRAT",
@@ -360,7 +364,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 621.24 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Probing major resistance (620.00). Rejection wick (CR 92%) on 3.3x volume. Breakout unconfirmed; awaiting clearance above 620.00 or downside retention.",
       "PIVOT_RESISTANCE": 620.0,
-      "DOWNSIDE_FLOOR": 559.75
+      "DOWNSIDE_FLOOR": 559.75,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "RATNAVEER",
@@ -422,7 +427,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 345.09 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (331.95). High reached 344.4. Testing support acceptance.",
       "PIVOT_RESISTANCE": 344.4,
-      "DOWNSIDE_FLOOR": 321.99
+      "DOWNSIDE_FLOOR": 321.99,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "UNIMECH",
@@ -482,9 +488,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 1715.0 reclaimed.",
       "PIVOT_RESISTANCE": 1868.2,
-      "DOWNSIDE_FLOOR": 1715.0
+      "DOWNSIDE_FLOOR": 1715.0,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "DIVISLAB",
@@ -544,9 +551,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 9431.0 broken.",
       "PIVOT_RESISTANCE": 9610.5,
-      "DOWNSIDE_FLOOR": 9431.0
+      "DOWNSIDE_FLOOR": 9431.0,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "EBGNG",
@@ -604,11 +612,12 @@
       "FIP_STATUS": "STEADY_ACCUMULATION",
       "INSTITUTIONAL_WARNINGS": [],
       "IS_INSTITUTIONAL": true,
-      "FTF_STATE": "RESISTANCE_PROBE",
+      "FTF_STATE": "FTF_COILING",
       "FTF_TRIGGER": "Buy Stop @ INR 731.46 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Re-testing prior resistance peak (730.0 from 244). Breakout unconfirmed (CR 81%); awaiting clearance above 730.0 or retention above 640.5.",
+      "FTF_DIAGNOSTIC": "Prior rejection at 730.0 (244) absorbed. Floor 697.3 reclaimed (1.1%). Retesting resistance on dry volume (1.06x). Coiling for expansion.",
       "PIVOT_RESISTANCE": 730.0,
-      "DOWNSIDE_FLOOR": 640.5
+      "DOWNSIDE_FLOOR": 697.3,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "RBLBANK",
@@ -668,9 +677,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "FTF_COILING",
       "FTF_TRIGGER": "Buy Stop @ INR 424.05 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 423.2 (246) absorbed. Floor 409.1 held (-1.7%). Retesting resistance on dry volume (1.49x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Prior rejection at 423.2 (246) absorbed. Floor 409.1 reclaimed (0.6%). Retesting resistance on dry volume (1.49x). Coiling for expansion.",
       "PIVOT_RESISTANCE": 423.2,
-      "DOWNSIDE_FLOOR": 409.1
+      "DOWNSIDE_FLOOR": 409.1,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "AUROPHARMA",
@@ -730,11 +740,12 @@
         "Resistance rejection warning: Session closed in lower half (CR 0.49) \u2014 Breakout unconfirmed"
       ],
       "IS_INSTITUTIONAL": true,
-      "FTF_STATE": "FTF_COILING",
+      "FTF_STATE": "RESISTANCE_PROBE",
       "FTF_TRIGGER": "Buy Stop @ INR 1710.61 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 1707.2 (249) absorbed. Floor 1649.3 held (1.7%). Retesting resistance on dry volume (1.41x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Re-testing prior resistance peak (1707.2 from 249). Breakout unconfirmed (CR 49%); awaiting clearance above 1707.2 or retention above 1649.3.",
       "PIVOT_RESISTANCE": 1707.2,
-      "DOWNSIDE_FLOOR": 1649.3
+      "DOWNSIDE_FLOOR": 1649.3,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "IOLCP",
@@ -796,7 +807,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 219.48 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Probing major resistance (219.04). Rejection wick (CR 61%) on 1.02x volume. Breakout unconfirmed; awaiting clearance above 219.04 or downside retention.",
       "PIVOT_RESISTANCE": 219.04,
-      "DOWNSIDE_FLOOR": 195.5
+      "DOWNSIDE_FLOOR": 195.5,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "IPCALAB",
@@ -858,9 +870,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 1964.0 tested.",
       "PIVOT_RESISTANCE": 2038.0,
-      "DOWNSIDE_FLOOR": 1964.0
+      "DOWNSIDE_FLOOR": 1964.0,
+      "FLOOR_STATUS": "TESTED"
     },
     {
       "SYMBOL": "ROSSTECH",
@@ -924,7 +937,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 1528.05 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (1464.9). High reached 1525.0. Testing support acceptance.",
       "PIVOT_RESISTANCE": 1525.0,
-      "DOWNSIDE_FLOOR": 1420.95
+      "DOWNSIDE_FLOOR": 1420.95,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "WELSPUNLIV",
@@ -988,7 +1002,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "Cleared prior rejection peak (233.0) on 4.27x volume with 69% close.",
       "PIVOT_RESISTANCE": 233.0,
-      "DOWNSIDE_FLOOR": 221.01
+      "DOWNSIDE_FLOOR": 221.01,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "WHEELS",
@@ -1050,9 +1065,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 2176.0 reclaimed.",
       "PIVOT_RESISTANCE": 2498.0,
-      "DOWNSIDE_FLOOR": 2176.0
+      "DOWNSIDE_FLOOR": 2176.0,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "MARINE",
@@ -1116,7 +1132,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 450.57 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Probing major resistance (449.67). Rejection wick (CR 85%) on 0.75x volume. Breakout unconfirmed; awaiting clearance above 449.67 or downside retention.",
       "PIVOT_RESISTANCE": 449.67,
-      "DOWNSIDE_FLOOR": 406.25
+      "DOWNSIDE_FLOOR": 406.25,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "TDPOWERSYS",
@@ -1181,7 +1198,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 819.19 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Re-testing prior resistance peak (817.55 from 239). Breakout unconfirmed (CR 48%); awaiting clearance above 817.55 or retention above 711.15.",
       "PIVOT_RESISTANCE": 817.55,
-      "DOWNSIDE_FLOOR": 711.15
+      "DOWNSIDE_FLOOR": 711.15,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "LALPATHLAB",
@@ -1243,9 +1261,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "FTF_COILING",
       "FTF_TRIGGER": "Buy Stop @ INR 2042.68 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 2038.6 (240) absorbed. Floor 1870.0 held (1.4%). Retesting resistance on dry volume (1.57x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Prior rejection at 2038.6 (240) absorbed. Floor 1870.0 intact (7.2%). Retesting resistance on dry volume (1.57x). Coiling for expansion.",
       "PIVOT_RESISTANCE": 2038.6,
-      "DOWNSIDE_FLOOR": 1870.0
+      "DOWNSIDE_FLOOR": 1870.0,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "LGEINDIA",
@@ -1305,9 +1324,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "FTF_COILING",
       "FTF_TRIGGER": "Buy Stop @ INR 1718.43 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 1715.0 (237) absorbed. Floor 1664.4 held (2.0%). Retesting resistance on dry volume (1.03x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Prior rejection at 1715.0 (237) absorbed. Floor 1664.4 intact (3.4%). Retesting resistance on dry volume (1.03x). Coiling for expansion.",
       "PIVOT_RESISTANCE": 1715.0,
-      "DOWNSIDE_FLOOR": 1664.4
+      "DOWNSIDE_FLOOR": 1664.4,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "FINCABLES",
@@ -1369,9 +1389,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "FTF_COILING",
       "FTF_TRIGGER": "Buy Stop @ INR 1501.00 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 1498.0 (237) absorbed. Floor 1340.1 held (-0.0%). Retesting resistance on dry volume (0.51x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Prior rejection at 1498.0 (237) absorbed. Floor 1340.1 reclaimed (8.9%). Retesting resistance on dry volume (0.51x). Coiling for expansion.",
       "PIVOT_RESISTANCE": 1498.0,
-      "DOWNSIDE_FLOOR": 1340.1
+      "DOWNSIDE_FLOOR": 1340.1,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "APARINDS",
@@ -1433,9 +1454,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 17919.0 broken.",
       "PIVOT_RESISTANCE": 19265.0,
-      "DOWNSIDE_FLOOR": 17919.0
+      "DOWNSIDE_FLOOR": 17919.0,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "ROLEXRINGS",
@@ -1498,9 +1520,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "FTF_COILING",
       "FTF_TRIGGER": "Buy Stop @ INR 198.85 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 198.45 (248) absorbed. Floor 190.51 held (-0.2%). Retesting resistance on dry volume (2.63x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Prior rejection at 198.45 (248) absorbed. Floor 190.51 reclaimed (3.1%). Retesting resistance on dry volume (2.63x). Coiling for expansion.",
       "PIVOT_RESISTANCE": 198.45,
-      "DOWNSIDE_FLOOR": 190.51
+      "DOWNSIDE_FLOOR": 190.51,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "NRBBEARING",
@@ -1563,9 +1586,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "FTF_COILING",
       "FTF_TRIGGER": "Buy Stop @ INR 561.02 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 559.9 (247) absorbed. Floor 524.2 held (1.9%). Retesting resistance on dry volume (0.63x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Prior rejection at 559.9 (247) absorbed. Floor 524.2 intact (3.5%). Retesting resistance on dry volume (0.63x). Coiling for expansion.",
       "PIVOT_RESISTANCE": 559.9,
-      "DOWNSIDE_FLOOR": 524.2
+      "DOWNSIDE_FLOOR": 524.2,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "PRECWIRE",
@@ -1628,9 +1652,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "FTF_COILING",
       "FTF_TRIGGER": "Buy Stop @ INR 514.73 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 513.7 (249) absorbed. Floor 476.55 held (3.3%). Retesting resistance on dry volume (1.08x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Prior rejection at 513.7 (249) absorbed. Floor 476.55 intact (5.2%). Retesting resistance on dry volume (1.08x). Coiling for expansion.",
       "PIVOT_RESISTANCE": 513.7,
-      "DOWNSIDE_FLOOR": 476.55
+      "DOWNSIDE_FLOOR": 476.55,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "ACE",
@@ -1695,7 +1720,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 1270.54 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Re-testing prior resistance peak (1268.0 from 243). Breakout unconfirmed (CR 41%); awaiting clearance above 1268.0 or retention above 1197.5.",
       "PIVOT_RESISTANCE": 1268.0,
-      "DOWNSIDE_FLOOR": 1197.5
+      "DOWNSIDE_FLOOR": 1197.5,
+      "FLOOR_STATUS": "TESTED"
     },
     {
       "SYMBOL": "GNFC",
@@ -1759,7 +1785,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "Breakout above 615.85 reached 636.0 but failed to hold support at 615.85. Closed at 589.15.",
       "PIVOT_RESISTANCE": 636.0,
-      "DOWNSIDE_FLOOR": 591.22
+      "DOWNSIDE_FLOOR": 591.22,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "MARKSANS",
@@ -1821,9 +1848,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor intact.",
       "PIVOT_RESISTANCE": 345.9,
-      "DOWNSIDE_FLOOR": 321.0
+      "DOWNSIDE_FLOOR": 321.0,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "JSWINFRA",
@@ -1888,7 +1916,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 376.25 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (349.2). High reached 375.5. Testing support acceptance.",
       "PIVOT_RESISTANCE": 375.5,
-      "DOWNSIDE_FLOOR": 338.72
+      "DOWNSIDE_FLOOR": 338.72,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "AETHER",
@@ -1948,11 +1977,12 @@
         "Expanding volatility whipsaw (VCP 1.49) \u2014 Stop-out risk"
       ],
       "IS_INSTITUTIONAL": true,
-      "FTF_STATE": "NORMAL_TREND",
+      "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Floor 1707.0 broken on heavy volume (1.27x) with weak close (CR 55%). True distribution.",
       "PIVOT_RESISTANCE": 1773.7,
-      "DOWNSIDE_FLOOR": 1707.0
+      "DOWNSIDE_FLOOR": 1707.0,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "AEGISLOG",
@@ -2015,9 +2045,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 1382.1 reclaimed.",
       "PIVOT_RESISTANCE": 1528.7,
-      "DOWNSIDE_FLOOR": 1382.1
+      "DOWNSIDE_FLOOR": 1382.1,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "ZYDUSLIFE",
@@ -2079,9 +2110,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Rejection at 1232.1 broke below floor 1200.5 on heavy volume. True distribution.",
+      "FTF_DIAGNOSTIC": "Floor 1200.5 broken on heavy volume (1.67x) with weak close (CR 64%). True distribution.",
       "PIVOT_RESISTANCE": 1232.1,
-      "DOWNSIDE_FLOOR": 1200.5
+      "DOWNSIDE_FLOOR": 1200.5,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "ENRIN",
@@ -2146,7 +2178,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "Cleared prior rejection peak (3322.8) on 3.85x volume with 86% close.",
       "PIVOT_RESISTANCE": 3322.8,
-      "DOWNSIDE_FLOOR": 3200.0
+      "DOWNSIDE_FLOOR": 3200.0,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "FILATEX",
@@ -2210,7 +2243,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 114.17 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (91.3). High reached 113.94. Testing support acceptance.",
       "PIVOT_RESISTANCE": 113.94,
-      "DOWNSIDE_FLOOR": 88.56
+      "DOWNSIDE_FLOOR": 88.56,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "LAURUSLABS",
@@ -2272,9 +2306,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "FTF_COILING",
       "FTF_TRIGGER": "Buy Stop @ INR 2028.95 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 2024.9 (249) absorbed. Floor 1979.0 held (0.1%). Retesting resistance on dry volume (0.9x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Prior rejection at 2024.9 (249) absorbed. Floor 1979.0 reclaimed (0.3%). Retesting resistance on dry volume (0.9x). Coiling for expansion.",
       "PIVOT_RESISTANCE": 2024.9,
-      "DOWNSIDE_FLOOR": 1979.0
+      "DOWNSIDE_FLOOR": 1979.0,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "LENSKART",
@@ -2337,9 +2372,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 677.55 reclaimed.",
       "PIVOT_RESISTANCE": 725.0,
-      "DOWNSIDE_FLOOR": 677.55
+      "DOWNSIDE_FLOOR": 677.55,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "FCL",
@@ -2400,11 +2436,12 @@
         "Expanding volatility whipsaw (VCP 1.06) \u2014 Stop-out risk"
       ],
       "IS_INSTITUTIONAL": true,
-      "FTF_STATE": "NORMAL_TREND",
+      "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Floor 58.05 broken on heavy volume (1.21x) with weak close (CR 26%). True distribution.",
       "PIVOT_RESISTANCE": 61.73,
-      "DOWNSIDE_FLOOR": 58.05
+      "DOWNSIDE_FLOOR": 58.05,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "LLOYDSENGG",
@@ -2467,9 +2504,10 @@
       "IS_INSTITUTIONAL": true,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 97.51 reclaimed.",
       "PIVOT_RESISTANCE": 104.2,
-      "DOWNSIDE_FLOOR": 97.51
+      "DOWNSIDE_FLOOR": 97.51,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "RAYMOND",
@@ -2534,7 +2572,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 1243.48 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (1122.0). High reached 1241.0. Testing support acceptance.",
       "PIVOT_RESISTANCE": 1241.0,
-      "DOWNSIDE_FLOOR": 1088.34
+      "DOWNSIDE_FLOOR": 1088.34,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "CUPID",
@@ -2598,7 +2637,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 314.93 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Probing major resistance (314.30). Rejection wick (CR 69%) on 1.11x volume. Breakout unconfirmed; awaiting clearance above 314.30 or downside retention.",
       "PIVOT_RESISTANCE": 314.3,
-      "DOWNSIDE_FLOOR": 261.4
+      "DOWNSIDE_FLOOR": 261.4,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "REDINGTON",
@@ -2663,7 +2703,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 414.03 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Re-testing prior resistance peak (413.2 from 242). Breakout unconfirmed (CR 32%); awaiting clearance above 413.2 or retention above 399.1.",
       "PIVOT_RESISTANCE": 413.2,
-      "DOWNSIDE_FLOOR": 399.1
+      "DOWNSIDE_FLOOR": 399.1,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "CYIENTDLM",
@@ -2728,7 +2769,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "YATHARTH",
@@ -2792,9 +2834,10 @@
       "IS_INSTITUTIONAL": false,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 1082.4 broken.",
       "PIVOT_RESISTANCE": 1184.0,
-      "DOWNSIDE_FLOOR": 1082.4
+      "DOWNSIDE_FLOOR": 1082.4,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "ACMESOLAR",
@@ -2855,11 +2898,12 @@
         "Low breakout volume (0.4x vs 20d avg) \u2014 High fakeout risk"
       ],
       "IS_INSTITUTIONAL": false,
-      "FTF_STATE": "NORMAL_TREND",
+      "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Floor 441.55 broken on heavy volume (0.4x) with weak close (CR 24%). True distribution.",
       "PIVOT_RESISTANCE": 476.9,
-      "DOWNSIDE_FLOOR": 441.55
+      "DOWNSIDE_FLOOR": 441.55,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "PIXTRANS",
@@ -2924,7 +2968,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "MANINDS",
@@ -2989,7 +3034,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 1041.78 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (944.0). High reached 1039.7. Testing support acceptance.",
       "PIVOT_RESISTANCE": 1039.7,
-      "DOWNSIDE_FLOOR": 915.68
+      "DOWNSIDE_FLOOR": 915.68,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "ENGINERSIN",
@@ -3054,7 +3100,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 322.04 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Probing major resistance (321.40). Rejection wick (CR 64%) on 1.33x volume. Breakout unconfirmed; awaiting clearance above 321.40 or downside retention.",
       "PIVOT_RESISTANCE": 321.4,
-      "DOWNSIDE_FLOOR": 304.75
+      "DOWNSIDE_FLOOR": 304.75,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "WELCORP",
@@ -3119,7 +3166,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "SONACOMS",
@@ -3181,11 +3229,12 @@
         "Discrete jump profile (Smoothness 41.0%) \u2014 Mean-reversion risk"
       ],
       "IS_INSTITUTIONAL": false,
-      "FTF_STATE": "FTF_COILING",
+      "FTF_STATE": "RESISTANCE_PROBE",
       "FTF_TRIGGER": "Buy Stop @ INR 829.46 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 827.8 (249) absorbed. Floor 797.7 held (4.0%). Retesting resistance on dry volume (1.58x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Re-testing prior resistance peak (827.8 from 249). Breakout unconfirmed (CR 48%); awaiting clearance above 827.8 or retention above 797.7.",
       "PIVOT_RESISTANCE": 827.8,
-      "DOWNSIDE_FLOOR": 797.7
+      "DOWNSIDE_FLOOR": 797.7,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "VENUSPIPES",
@@ -3248,9 +3297,10 @@
       "IS_INSTITUTIONAL": false,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 2211.1 tested.",
       "PIVOT_RESISTANCE": 2347.9,
-      "DOWNSIDE_FLOOR": 2211.1
+      "DOWNSIDE_FLOOR": 2211.1,
+      "FLOOR_STATUS": "TESTED"
     },
     {
       "SYMBOL": "SANSERA",
@@ -3313,9 +3363,10 @@
       "IS_INSTITUTIONAL": false,
       "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Rejection at 4743.5 broke below floor 4530.0 on heavy volume. True distribution.",
+      "FTF_DIAGNOSTIC": "Floor 4530.0 broken on heavy volume (1.38x) with weak close (CR 30%). True distribution.",
       "PIVOT_RESISTANCE": 4743.5,
-      "DOWNSIDE_FLOOR": 4530.0
+      "DOWNSIDE_FLOOR": 4530.0,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "EDELWEISS",
@@ -3376,11 +3427,12 @@
         "Low breakout volume (0.61x vs 20d avg) \u2014 High fakeout risk"
       ],
       "IS_INSTITUTIONAL": false,
-      "FTF_STATE": "NORMAL_TREND",
+      "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Floor 140.05 broken on heavy volume (0.61x) with weak close (CR 32%). True distribution.",
       "PIVOT_RESISTANCE": 146.0,
-      "DOWNSIDE_FLOOR": 140.05
+      "DOWNSIDE_FLOOR": 140.05,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "AVALON",
@@ -3446,7 +3498,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "MCX",
@@ -3507,11 +3560,12 @@
         "Expanding volatility whipsaw (VCP 1.13) \u2014 Stop-out risk"
       ],
       "IS_INSTITUTIONAL": false,
-      "FTF_STATE": "NORMAL_TREND",
+      "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Floor 3351.1 broken on heavy volume (1.09x) with weak close (CR 8%). True distribution.",
       "PIVOT_RESISTANCE": 3477.0,
-      "DOWNSIDE_FLOOR": 3351.1
+      "DOWNSIDE_FLOOR": 3351.1,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "AZAD",
@@ -3574,9 +3628,10 @@
       "IS_INSTITUTIONAL": false,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 2875.6 tested.",
       "PIVOT_RESISTANCE": 3127.9,
-      "DOWNSIDE_FLOOR": 2875.6
+      "DOWNSIDE_FLOOR": 2875.6,
+      "FLOOR_STATUS": "TESTED"
     },
     {
       "SYMBOL": "CARBORUNIV",
@@ -3639,9 +3694,10 @@
       "IS_INSTITUTIONAL": false,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 1257.1 tested.",
       "PIVOT_RESISTANCE": 1368.9,
-      "DOWNSIDE_FLOOR": 1257.1
+      "DOWNSIDE_FLOOR": 1257.1,
+      "FLOOR_STATUS": "TESTED"
     },
     {
       "SYMBOL": "SHRIPISTON",
@@ -3702,11 +3758,12 @@
         "Expanding volatility whipsaw (VCP 1.55) \u2014 Stop-out risk"
       ],
       "IS_INSTITUTIONAL": false,
-      "FTF_STATE": "NORMAL_TREND",
+      "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Floor 4624.0 broken on heavy volume (2.23x) with weak close (CR 43%). True distribution.",
       "PIVOT_RESISTANCE": 4843.0,
-      "DOWNSIDE_FLOOR": 4624.0
+      "DOWNSIDE_FLOOR": 4624.0,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "NAZARA",
@@ -3772,7 +3829,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 402.70 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Re-testing prior resistance peak (401.9 from 250). Breakout unconfirmed (CR 46%); awaiting clearance above 401.9 or retention above 371.15.",
       "PIVOT_RESISTANCE": 401.9,
-      "DOWNSIDE_FLOOR": 371.15
+      "DOWNSIDE_FLOOR": 371.15,
+      "FLOOR_STATUS": "TESTED"
     },
     {
       "SYMBOL": "SHANTIGOLD",
@@ -3837,7 +3895,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 333.76 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (291.25). High reached 333.09. Testing support acceptance.",
       "PIVOT_RESISTANCE": 333.09,
-      "DOWNSIDE_FLOOR": 282.51
+      "DOWNSIDE_FLOOR": 282.51,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "RPTECH",
@@ -3900,9 +3959,10 @@
       "IS_INSTITUTIONAL": false,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor intact.",
       "PIVOT_RESISTANCE": 1004.7,
-      "DOWNSIDE_FLOOR": 930.15
+      "DOWNSIDE_FLOOR": 930.15,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "GREAVESCOT",
@@ -3967,7 +4027,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 240.88 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (205.7). High reached 240.4. Testing support acceptance.",
       "PIVOT_RESISTANCE": 240.4,
-      "DOWNSIDE_FLOOR": 199.53
+      "DOWNSIDE_FLOOR": 199.53,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "GLAND",
@@ -4033,7 +4094,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "PVRINOX",
@@ -4098,7 +4160,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "PHOENIXLTD",
@@ -4161,9 +4224,10 @@
       "IS_INSTITUTIONAL": false,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 1948.0 tested.",
       "PIVOT_RESISTANCE": 2035.6,
-      "DOWNSIDE_FLOOR": 1948.0
+      "DOWNSIDE_FLOOR": 1948.0,
+      "FLOOR_STATUS": "TESTED"
     },
     {
       "SYMBOL": "OPTIEMUS",
@@ -4229,7 +4293,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "JGCHEM",
@@ -4293,9 +4358,10 @@
       "IS_INSTITUTIONAL": false,
       "FTF_STATE": "NORMAL_TREND",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Price drifting within normal trading band. Floor 617.5 tested.",
       "PIVOT_RESISTANCE": 688.0,
-      "DOWNSIDE_FLOOR": 617.5
+      "DOWNSIDE_FLOOR": 617.5,
+      "FLOOR_STATUS": "TESTED"
     },
     {
       "SYMBOL": "SYRMA",
@@ -4361,7 +4427,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 1807.51 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Re-testing prior resistance peak (1803.9 from 244). Breakout unconfirmed (CR 7%); awaiting clearance above 1803.9 or retention above 1685.0.",
       "PIVOT_RESISTANCE": 1803.9,
-      "DOWNSIDE_FLOOR": 1685.0
+      "DOWNSIDE_FLOOR": 1685.0,
+      "FLOOR_STATUS": "RECLAIMED"
     },
     {
       "SYMBOL": "KAJARIACER",
@@ -4423,11 +4490,12 @@
         "Discrete jump profile (Smoothness 45.0%) \u2014 Mean-reversion risk"
       ],
       "IS_INSTITUTIONAL": false,
-      "FTF_STATE": "FTF_COILING",
+      "FTF_STATE": "RESISTANCE_PROBE",
       "FTF_TRIGGER": "Buy Stop @ INR 1268.43 on Volume >= 1.5x",
-      "FTF_DIAGNOSTIC": "Prior rejection at 1265.9 (249) absorbed. Floor 1212.8 held (1.0%). Retesting resistance on dry volume (1.39x). Coiling for expansion.",
+      "FTF_DIAGNOSTIC": "Re-testing prior resistance peak (1265.9 from 249). Breakout unconfirmed (CR 11%); awaiting clearance above 1265.9 or retention above 1167.0.",
       "PIVOT_RESISTANCE": 1265.9,
-      "DOWNSIDE_FLOOR": 1212.8
+      "DOWNSIDE_FLOOR": 1167.0,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "AEGISVOPAK",
@@ -4489,11 +4557,12 @@
         "Discrete jump profile (Smoothness 48.7%) \u2014 Mean-reversion risk"
       ],
       "IS_INSTITUTIONAL": false,
-      "FTF_STATE": "NORMAL_TREND",
+      "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Floor 296.7 broken on heavy volume (0.95x) with weak close (CR 29%). True distribution.",
       "PIVOT_RESISTANCE": 320.85,
-      "DOWNSIDE_FLOOR": 296.7
+      "DOWNSIDE_FLOOR": 296.7,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "EMIL",
@@ -4559,7 +4628,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 209.40 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (202.86). High reached 208.98. Testing support acceptance.",
       "PIVOT_RESISTANCE": 208.98,
-      "DOWNSIDE_FLOOR": 196.77
+      "DOWNSIDE_FLOOR": 196.77,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "SAMBHV",
@@ -4625,7 +4695,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 167.64 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (161.63). High reached 167.31. Testing support acceptance.",
       "PIVOT_RESISTANCE": 167.31,
-      "DOWNSIDE_FLOOR": 156.78
+      "DOWNSIDE_FLOOR": 156.78,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "MANKIND",
@@ -4691,7 +4762,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "MEESHO",
@@ -4757,7 +4829,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 245.23 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (220.0). High reached 244.74. Testing support acceptance.",
       "PIVOT_RESISTANCE": 244.74,
-      "DOWNSIDE_FLOOR": 213.4
+      "DOWNSIDE_FLOOR": 213.4,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "ABDL",
@@ -4819,11 +4892,12 @@
         "Expanding volatility whipsaw (VCP 1.23) \u2014 Stop-out risk"
       ],
       "IS_INSTITUTIONAL": false,
-      "FTF_STATE": "NORMAL_TREND",
+      "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Floor 720.25 broken on heavy volume (0.93x) with weak close (CR 12%). True distribution.",
       "PIVOT_RESISTANCE": 739.0,
-      "DOWNSIDE_FLOOR": 720.25
+      "DOWNSIDE_FLOOR": 720.25,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "ANTELOPUS",
@@ -4890,7 +4964,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "ADANIPORTS",
@@ -4956,7 +5031,8 @@
       "FTF_TRIGGER": null,
       "FTF_DIAGNOSTIC": "No prior high-volume rejection or active resistance probe found",
       "PIVOT_RESISTANCE": null,
-      "DOWNSIDE_FLOOR": null
+      "DOWNSIDE_FLOOR": null,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "SSWL",
@@ -4994,7 +5070,7 @@
         "stop_distance_pct": 4.0
       },
       "CIRCUIT_RISK": false,
-      "AQS_SCORE": 35.0,
+      "AQS_SCORE": 65.0,
       "AQS_GRADE": "TRAP_VETO",
       "IS_TRAP_VETO": true,
       "CLOSING_RANGE": 0.3,
@@ -5005,7 +5081,7 @@
       "VDU_STATUS": "ACTIVE_CHURN",
       "RS_12M": 85.6,
       "INSTITUTIONAL_GRADE": "TRAP_VETO",
-      "INSTITUTIONAL_SCORE": 35.0,
+      "INSTITUTIONAL_SCORE": 65.0,
       "VCP_RATIO": 1.16,
       "VCP_STATUS": "NEUTRAL",
       "VOL_SURGE_RATIO": 2.3,
@@ -5021,7 +5097,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 420.64 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Probing major resistance (419.80). Rejection wick (CR 30%) on 2.3x volume. Breakout unconfirmed; awaiting clearance above 419.80 or downside retention.",
       "PIVOT_RESISTANCE": 419.8,
-      "DOWNSIDE_FLOOR": 376.0
+      "DOWNSIDE_FLOOR": 376.0,
+      "FLOOR_STATUS": "INTACT"
     },
     {
       "SYMBOL": "LUMAXTECH",
@@ -5059,7 +5136,7 @@
         "stop_distance_pct": 4.0
       },
       "CIRCUIT_RISK": false,
-      "AQS_SCORE": 35.0,
+      "AQS_SCORE": 65.0,
       "AQS_GRADE": "TRAP_VETO",
       "IS_TRAP_VETO": true,
       "CLOSING_RANGE": 0.27,
@@ -5070,7 +5147,7 @@
       "VDU_STATUS": "VDU_CONFIRMED",
       "RS_12M": 82.0,
       "INSTITUTIONAL_GRADE": "TRAP_VETO",
-      "INSTITUTIONAL_SCORE": 35.0,
+      "INSTITUTIONAL_SCORE": 65.0,
       "VCP_RATIO": 1.0,
       "VCP_STATUS": "NORMAL_CONTRACTION",
       "VOL_SURGE_RATIO": 1.85,
@@ -5082,11 +5159,12 @@
         "Discrete jump profile (Smoothness 46.2%) \u2014 Mean-reversion risk"
       ],
       "IS_INSTITUTIONAL": false,
-      "FTF_STATE": "NORMAL_TREND",
+      "FTF_STATE": "TRAP_CONFIRMED",
       "FTF_TRIGGER": null,
-      "FTF_DIAGNOSTIC": "Price drifting within normal trading band.",
+      "FTF_DIAGNOSTIC": "Floor 2040.0 broken on heavy volume (1.85x) with weak close (CR 27%). True distribution.",
       "PIVOT_RESISTANCE": 2190.0,
-      "DOWNSIDE_FLOOR": 2040.0
+      "DOWNSIDE_FLOOR": 2040.0,
+      "FLOOR_STATUS": "BROKEN"
     },
     {
       "SYMBOL": "GALAXYSURF",
@@ -5124,7 +5202,7 @@
         "stop_distance_pct": 4.0
       },
       "CIRCUIT_RISK": false,
-      "AQS_SCORE": 35.0,
+      "AQS_SCORE": 50.0,
       "AQS_GRADE": "TRAP_VETO",
       "IS_TRAP_VETO": true,
       "CLOSING_RANGE": 0.26,
@@ -5135,7 +5213,7 @@
       "VDU_STATUS": "MODERATE_VOLUME",
       "RS_12M": 50.8,
       "INSTITUTIONAL_GRADE": "TRAP_VETO",
-      "INSTITUTIONAL_SCORE": 35.0,
+      "INSTITUTIONAL_SCORE": 50.0,
       "VCP_RATIO": 1.14,
       "VCP_STATUS": "NEUTRAL",
       "VOL_SURGE_RATIO": 4.26,
@@ -5152,7 +5230,8 @@
       "FTF_TRIGGER": "Buy Stop @ INR 2492.17 on Volume >= 1.5x",
       "FTF_DIAGNOSTIC": "Post-breakout retest of prior cleared pivot (2378.9). High reached 2487.2. Testing support acceptance.",
       "PIVOT_RESISTANCE": 2487.2,
-      "DOWNSIDE_FLOOR": 2307.53
+      "DOWNSIDE_FLOOR": 2307.53,
+      "FLOOR_STATUS": "INTACT"
     }
   ],
   "skewness_proof": {

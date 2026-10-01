@@ -210,11 +210,22 @@ def compute_failure_to_fail(
                 "diagnostic": f"Post-breakout retest of prior cleared pivot ({p_high}). High reached {new_peak}. Testing support acceptance."
             }
 
-    # Downside Retention: Following welspun.txt Section 2:
-    # ForwardDownside = Close[t] - minimum(Close[t+1:t+3]).
-    # Floor is held if closing prices did not break below rejection low (or intraday dip within 3.0% shakeout buffer)
-    floor_held = (min_inter_close >= p_low * 0.985) or (min_inter_low >= p_low * 0.970)
-    downside_retention_pct = round(((min_inter_close - p_low) / p_low) * 100.0, 1)
+    # Floor Lifecycle Management (INTACT, TESTED, BROKEN, RECLAIMED)
+    has_prior_intraday_dip = min_inter_low < p_low * 0.99
+    is_curr_close_broken = curr_c < p_low * 0.985
+    is_curr_low_broken = curr_l < p_low * 0.970
+
+    if is_curr_close_broken:
+        floor_status = "BROKEN"
+    elif has_prior_intraday_dip and curr_c >= p_low:
+        floor_status = "RECLAIMED"
+    elif has_prior_intraday_dip or is_curr_low_broken:
+        floor_status = "TESTED"
+    else:
+        floor_status = "INTACT"
+
+    floor_held = floor_status in ("INTACT", "RECLAIMED", "TESTED")
+    downside_retention_pct = round(((curr_c - p_low) / p_low) * 100.0, 1)
 
     # Ceiling Proximity: How close is current price to the rejection peak?
     proximity_to_peak_pct = round(((p_high - curr_c) / p_high) * 100.0, 1)
@@ -230,9 +241,10 @@ def compute_failure_to_fail(
         floor_held and
         (curr_c <= p_high * 1.01) and
         (proximity_to_peak_pct <= 3.5) and
+        (curr_cr >= 0.50 or curr_vol_ratio <= 1.0) and
         (not is_confirmed_breakout)
     )
-    is_breakdown = (curr_c < p_low * 0.97) and (curr_vol_ratio >= 1.30)
+    is_breakdown = (floor_status == "BROKEN") and (curr_vol_ratio >= 1.20 or curr_cr <= 0.35)
     high_prox_pct = ((p_high - curr_h) / p_high) * 100.0 if p_high > 0 else 999.0
     is_probe = (not is_confirmed_breakout) and (not is_ftf_coiling) and (not is_breakdown) and ((proximity_to_peak_pct <= 3.5) or (high_prox_pct <= 2.0))
 
@@ -242,7 +254,7 @@ def compute_failure_to_fail(
     elif is_ftf_coiling:
         state = "FTF_COILING"
         diagnostic = (
-            f"Prior rejection at {p_high} ({rejection['date']}) absorbed. Floor {p_low} held ({downside_retention_pct}%). "
+            f"Prior rejection at {p_high} ({rejection['date']}) absorbed. Floor {p_low} {floor_status.lower()} ({downside_retention_pct}%). "
             f"Retesting resistance on dry volume ({curr_vol_ratio}x). Coiling for expansion."
         )
     elif is_probe:
@@ -255,10 +267,11 @@ def compute_failure_to_fail(
         )
     elif is_breakdown:
         state = "TRAP_CONFIRMED"
-        diagnostic = f"Rejection at {p_high} broke below floor {p_low} on heavy volume. True distribution."
+        diagnostic = f"Floor {p_low} broken on heavy volume ({curr_vol_ratio}x) with weak close (CR {curr_cr*100:.0f}%). True distribution."
     else:
         state = "NORMAL_TREND"
-        diagnostic = "Price drifting within normal trading band."
+        floor_note = f"Floor {p_low} {floor_status.lower()}." if floor_status != "INTACT" else "Floor intact."
+        diagnostic = f"Price drifting within normal trading band. {floor_note}"
 
     has_trigger = is_ftf_coiling or is_probe
     return {
@@ -273,6 +286,7 @@ def compute_failure_to_fail(
         "rejection_low": p_low,
         "rejection_vol_ratio": rejection["vol_ratio"],
         "floor_held": floor_held,
+        "floor_status": floor_status,
         "downside_retention_pct": downside_retention_pct,
         "proximity_to_peak_pct": proximity_to_peak_pct,
         "intermediate_vol_ratio": avg_inter_vol_ratio,
