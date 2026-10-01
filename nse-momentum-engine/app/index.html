@@ -65,6 +65,9 @@
       <button class="desktop-tab-btn" data-tab="Portfolio" role="tab" aria-selected="false">
         <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg><span class="tab-label">Portfolio</span>
       </button>
+      <button class="desktop-tab-btn" data-tab="Research" role="tab" aria-selected="false">
+        <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span class="tab-label">Research</span>
+      </button>
       <button class="desktop-tab-btn" data-tab="Compounding" role="tab" aria-selected="false">
         <svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg><span class="tab-label">Equity</span>
       </button>
@@ -221,7 +224,7 @@
                     <th class="col-sec" scope="col" data-sort="symbol"><button class="sort-btn">Security<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num" scope="col" data-sort="cmp"><button class="sort-btn">CMP<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num col-cms" scope="col" data-sort="cms"><button class="sort-btn">CMS<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
-                    <th class="num col-cred" scope="col" data-sort="cred"><button class="sort-btn" title="Backtest credibility score (+15% hit rate vs stop)">Cred<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
+                    <th class="num col-vol" scope="col" data-sort="vol"><button class="sort-btn" title="Minervini volume surge ratio (vs 20-day avg)">Vol<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num col-rsi" scope="col" data-sort="rsi"><button class="sort-btn">RSI<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num col-roc col-roc1" scope="col" data-sort="roc1"><button class="sort-btn">1M<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
                     <th class="num col-roc" scope="col" data-sort="roc3"><button class="sort-btn">3M<svg class="ic ic--xs" aria-hidden="true"><use href="#i-sort"/></svg></button></th>
@@ -382,16 +385,6 @@
                 </div>
               </div>
 
-              <!-- Backtest credibility for the selected stock -->
-              <div class="card" id="credCard" hidden>
-                <div class="card__head">
-                  <h3>Backtest credibility</h3>
-                  <span class="badge" id="credVerdict">—</span>
-                </div>
-                <div class="cred-grid" id="credGrid"></div>
-                <p class="cred-foot" id="credFoot"></p>
-              </div>
-
             </div><!-- /.inspector__scroll -->
 
             <!-- Mobile close affordance for the sheet -->
@@ -479,6 +472,41 @@
             <button class="btn btn--secondary btn--sm" id="btnLiveSaveKey"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Save source</button>
             <p class="muted">⚡ Real-time Yahoo WebSocket is active automatically for both your stocks and the Nifty 500 benchmark (zero setup, 100% free).</p>
           </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── BACKTEST RESEARCH & OBSERVATION ─────────── -->
+    <section class="tab-panel" id="tabResearch">
+      <div class="page">
+        <header class="page__head">
+          <div>
+            <h1 class="page__title">Backtest Research Lab</h1>
+            <p class="page__sub">Offline statistical laboratory for observation &amp; forward-outcome studies.</p>
+          </div>
+        </header>
+
+        <div class="card" style="margin-bottom:18px;">
+          <div class="card__head">
+            <h3>Historical Research &amp; Observation</h3>
+            <span class="badge badge--muted">Observation Lab Only</span>
+          </div>
+          <p class="muted" style="margin-bottom:14px;">Live investing decisions in the Terminal follow the canonical institutional ruleset (Regime, Turnover, VCP, Volume Surge, Over-Extension). Use this lab purely to study historical trade distributions, hold times, and cycle drawdowns across individual securities.</p>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <label for="researchStockSelect" style="font-weight:600;font-size:0.85rem;">Select Security:</label>
+            <select id="researchStockSelect" class="field-select" style="min-width:240px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text);border:1px solid var(--border);">
+              <option value="">Select a security…</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card" id="researchCard">
+          <div class="card__head">
+            <h3 id="researchSymbolTitle">Statistical Study</h3>
+            <span class="badge" id="researchVerdict">–</span>
+          </div>
+          <div class="cred-grid" id="researchGrid"></div>
+          <p class="cred-foot" id="researchFoot" style="margin-top:16px;"></p>
         </div>
       </div>
     </section>
@@ -700,6 +728,9 @@
     </button>
     <button class="nav-item" data-tab="Portfolio">
       <svg class="ic" aria-hidden="true"><use href="#i-portfolio"/></svg><span class="nav-label">Portfolio</span>
+    </button>
+    <button class="nav-item" data-tab="Research">
+      <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><span class="nav-label">Research</span>
     </button>
     <button class="nav-item" data-tab="Compounding">
       <svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg><span class="nav-label">Equity</span>

@@ -195,6 +195,7 @@ function switchTab(name) {
   closeInspector();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (name === 'Portfolio')   renderPortfolio();
+  if (name === 'Research')    renderResearch();
   if (name === 'Compounding') renderCompounding();
   if (name === 'History')     renderHistory();
   if (name === 'Settings')    populateSettings();
@@ -1780,15 +1781,6 @@ function renderDecision(s, isDefensive, capital) {
       <div><strong>⚠️ Over-Extended Setup (+30%+ above 50 SMA)</strong>Price is severely extended above its 50 SMA. Inverted risk-reward. DO NOT CHASE at the top. Wait for a pullback consolidation or pick a fresh basing alternate.</div>`;
     return;
   }
-  const credEntry = (state.credIndex || {})[String(s.SYMBOL).toUpperCase()];
-  const credScore = credEntry && credEntry.score != null ? credEntry.score : null;
-  if (credScore != null && credScore < 50) {
-    box.className = 'decision decision--warn';
-    box.hidden = false;
-    box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
-      <div><strong>⚠️ Low Backtest Credibility (Score: ${credScore.toFixed(1)}/100)</strong>3-year historical test shows stops dominate (+15% target reached in only ${credEntry.target_hit_rate_pct != null ? credEntry.target_hit_rate_pct + '%' : 'minority'}). High risk of whipsaw stop-out.</div>`;
-    return;
-  }
   if (s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP') {
     const reason = (s.INSTITUTIONAL_WARNINGS && s.INSTITUTIONAL_WARNINGS[0]) || 'Low volume or expanding volatility';
     box.className = 'decision decision--warn';
@@ -1885,7 +1877,6 @@ function renderActiveSignal(h, alts, isDefensive = false) {
   if (specCircuit) specCircuit.textContent = `${h.CIRCUIT_BAND || '20'}%${h.CIRCUIT_RISK ? ' · risky' : ''}`;
 
   renderGTT(h);
-  renderCredibility(h.SYMBOL);
 }
 
 function renderGTT(h) {
@@ -1933,13 +1924,9 @@ function buildGridRow(s, idx, userCapital) {
   const shares = affordable ? Math.max(Math.floor((userCapital - 26) / cmp), 1) : 0;
   const isSelected = state.activeStock && state.activeStock.SYMBOL === s.SYMBOL;
   const rsiTone = rsi < 45 ? 'var(--red)' : rsi <= 82 ? 'var(--accent)' : 'var(--yellow)';
-  const cmsClass = cms >= 90 ? 'hi' : cms >= 75 ? 'mid' : 'lo';
-  const cred = (state.credIndex || {})[String(s.SYMBOL).toUpperCase()];
-  const credScore = cred && cred.score != null ? cred.score : null;
-  const credClass = credScore == null ? 'lo' : credScore >= 60 ? 'hi' : credScore >= 40 ? 'mid' : 'lo';
-  const credTitle = cred
-    ? `Credibility ${cred.credible ? '✓' : '—'} · score ${credScore == null ? '—' : credScore} · pace ${cred.pace} · +15% hit ${cred.target_hit_rate_pct}% · median ${cred.median_days_to_target}d`
-    : 'No backtest report';
+  const volSurge = parseFloat(s.VOL_SURGE_RATIO) || parseFloat(s.VOL_RATIO) || 1.0;
+  const volTone = volSurge >= 2.0 ? 'hi' : volSurge >= 1.5 ? 'mid' : 'lo';
+  const volTitle = `Minervini volume surge: ${volSurge.toFixed(1)}x 20-day volume · VCP: ${s.VCP_RATIO || '1.0'}`;
   const pctCell = v => isNaN(v) ? '–' : `<span class="${v >= 0 ? 'pos' : 'neg'}">${v >= 0 ? '+' : ''}${v.toFixed(1)}%</span>`;
 
   const isTrap = s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP';
@@ -1965,7 +1952,7 @@ function buildGridRow(s, idx, userCapital) {
     </td>
     <td class="num" data-label="CMP">${fmtINR(cmp)}</td>
     <td class="num col-cms" data-label="CMS"><span class="score-pill ${cmsClass}">${isNaN(cms) ? '–' : cms.toFixed(1)}</span></td>
-    <td class="num col-cred" data-label="Cred"><span class="score-pill ${credClass}" title="${credTitle}">${credScore == null ? '–' : credScore.toFixed(0)}</span></td>
+    <td class="num col-vol" data-label="Vol"><span class="score-pill ${volTone}" title="${volTitle}">${volSurge.toFixed(1)}x</span></td>
     <td class="num col-rsi" data-label="RSI"><span style="color:${rsiTone}">${isNaN(rsi) ? '–' : rsi.toFixed(1)}</span></td>
     <td class="num col-roc col-roc1" data-label="1M ROC">${pctCell(roc1)}</td>
     <td class="num col-roc" data-label="3M ROC">${pctCell(roc3)}</td>
@@ -1988,14 +1975,13 @@ function renderAllStocksTable(stocks, userCapital) {
   if (!tbody) return;
   userCapital = userCapital || state.userCapital || DEFAULT_CAPITAL;
   const all = stocks || [];
-  ensureCredIndex();
 
   const getters = {
     rank:     (s, i) => i,
     symbol:   (s) => s.SYMBOL,
     cmp:      (s) => parseFloat(s.CMP) || 0,
     cms:      (s) => parseFloat(s.CMS_SCORE) || 0,
-    cred:     (s) => { const e = (state.credIndex || {})[String(s.SYMBOL).toUpperCase()]; return e && e.score != null ? e.score : -1; },
+    vol:      (s) => parseFloat(s.VOL_SURGE_RATIO) || parseFloat(s.VOL_RATIO) || 0,
     rsi:      (s) => parseFloat(s.RSI_14) || 0,
     roc1:     (s) => parseFloat(s.ROC_1M) || 0,
     roc3:     (s) => parseFloat(s.ROC_3M) || 0,
@@ -2298,48 +2284,92 @@ function populateSettings() {
   loadKiteSettings();
 }
 
-/* ─── Backtest credibility panel ─── */
-function renderCredibility(symbol) {
-  const card = document.getElementById('credCard');
-  const grid = document.getElementById('credGrid');
-  const verdict = document.getElementById('credVerdict');
-  const foot = document.getElementById('credFoot');
+/* ─── Backtest Research & Observation Laboratory ─── */
+async function renderResearch() {
+  const sel = document.getElementById('researchStockSelect');
+  if (!sel) return;
+
+  if (!state.credIndex || !Object.keys(state.credIndex).length) {
+    try {
+      const res = await fetch('data/backtests/_index.json?_t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        const entries = (json && json.entries) || [];
+        state.credIndex = {};
+        entries.forEach(e => { if (e && e.symbol) state.credIndex[String(e.symbol).toUpperCase()] = e; });
+      }
+    } catch (_) {}
+  }
+
+  const idx = state.credIndex || {};
+  const symbols = Object.keys(idx).sort();
+  if (!symbols.length) return;
+
+  if (sel.options.length <= 1) {
+    sel.innerHTML = '<option value="">Select a security to inspect…</option>' +
+      symbols.map(s => {
+        const e = idx[s];
+        const score = e && e.score != null ? `(Score: ${e.score})` : '';
+        return `<option value="${s}">${s} ${score}</option>`;
+      }).join('');
+
+    sel.addEventListener('change', () => {
+      const val = sel.value;
+      if (val) loadResearchReport(val);
+    });
+  }
+
+  const initialSym = (state.activeStock && state.activeStock.SYMBOL)
+    || (state.signalData && state.signalData[0] && state.signalData[0].SYMBOL)
+    || symbols[0];
+
+  if (!sel.value && initialSym) {
+    sel.value = initialSym;
+    loadResearchReport(initialSym);
+  }
+}
+
+function loadResearchReport(symbol) {
+  const card = document.getElementById('researchCard');
+  const title = document.getElementById('researchSymbolTitle');
+  const grid = document.getElementById('researchGrid');
+  const verdict = document.getElementById('researchVerdict');
+  const foot = document.getElementById('researchFoot');
   if (!card || !grid) return;
-  if (!symbol) { card.hidden = true; return; }
+
   state.backtests = state.backtests || {};
+  if (title) title.textContent = `Backtest Study — ${symbol}`;
 
   const paint = (r) => {
-    card.hidden = false;
     if (!r) {
       if (verdict) { verdict.className = 'badge'; verdict.textContent = 'no report'; }
-      grid.innerHTML = '<div class="cred-item"><small>Credibility</small><span>—</span></div>';
-      if (foot) foot.textContent = `No backtest report for ${symbol}. Generate one with: python scripts/single_stock_backtest.py --symbol ${symbol}`;
+      grid.innerHTML = '<div class="cred-item"><small>Status</small><span>No offline backtest report on disk</span></div>';
+      if (foot) foot.textContent = `To generate a report for ${symbol}, run: python scripts/single_stock_backtest.py --symbol ${symbol}`;
       return;
     }
     const s = r.study || {}, sim = r.simulation || {}, v = r.verdict || {};
-    const score = (v.score == null) ? '—' : v.score;
+    const score = (v.score == null) ? '–' : v.score;
     if (verdict) {
       verdict.className = 'badge ' + (v.credible ? 'badge--bull' : 'badge--defensive');
       verdict.textContent = (v.credible ? 'Credible · ' : 'Low credibility · ') + score;
     }
     const item = (k, val, tone) => `<div class="cred-item ${tone || ''}"><small>${k}</small><span>${val}</span></div>`;
     grid.innerHTML = [
-      item('+15% hit rate', s.target_hit_rate_pct != null ? s.target_hit_rate_pct + '%' : '—', s.target_hit_rate_pct >= 55 ? 'is-bull' : 'is-caution'),
-      item('Stopped out', s.stop_hit_rate_pct != null ? s.stop_hit_rate_pct + '%' : '—', 'is-bear'),
-      item('Expectancy', s.expectancy_pct != null ? (s.expectancy_pct >= 0 ? '+' : '') + s.expectancy_pct + '%' : '—', s.expectancy_pct >= 0 ? 'is-bull' : 'is-bear'),
-      item('Signals tested', s.observations != null ? s.observations : '—'),
-      item('Avg hold → target', s.avg_hold_to_target_days != null ? s.avg_hold_to_target_days + 'd' : '—'),
+      item('+15% hit rate', s.target_hit_rate_pct != null ? s.target_hit_rate_pct + '%' : '–', s.target_hit_rate_pct >= 55 ? 'is-bull' : 'is-caution'),
+      item('Stopped out', s.stop_hit_rate_pct != null ? s.stop_hit_rate_pct + '%' : '–', 'is-bear'),
+      item('Expectancy', s.expectancy_pct != null ? (s.expectancy_pct >= 0 ? '+' : '') + s.expectancy_pct + '%' : '–', s.expectancy_pct >= 0 ? 'is-bull' : 'is-bear'),
+      item('Signals tested', s.observations != null ? s.observations : '–'),
+      item('Avg hold → target', s.avg_hold_to_target_days != null ? s.avg_hold_to_target_days + 'd' : '–'),
       item('Median days → +15%', (s.time_to_target && s.time_to_target.trading_days)
-        ? `${s.time_to_target.trading_days.median}d (${s.time_to_target.calendar_days.median} cal)` : '—'),
-      item('Rotation cycles', sim.cycles != null ? sim.cycles : '—'),
-      item('Sim ₹1k →', sim.final_capital != null ? fmtINR(sim.final_capital) : '—', sim.total_return_pct >= 0 ? 'is-bull' : 'is-bear'),
-      item('Sim return', sim.total_return_pct != null ? (sim.total_return_pct >= 0 ? '+' : '') + sim.total_return_pct + '%' : '—', sim.total_return_pct >= 0 ? 'is-bull' : 'is-bear'),
+        ? `${s.time_to_target.trading_days.median}d (${s.time_to_target.calendar_days.median} cal)` : '–'),
+      item('Rotation cycles', sim.cycles != null ? sim.cycles : '–'),
+      item('Win rate', sim.win_rate_pct != null ? sim.win_rate_pct + '%' : '–', sim.win_rate_pct >= 50 ? 'is-bull' : 'is-caution'),
+      item('Sim return', sim.total_return_pct != null ? (sim.total_return_pct >= 0 ? '+' : '') + sim.total_return_pct + '%' : '–', sim.total_return_pct >= 0 ? 'is-bull' : 'is-bear'),
     ].join('');
     if (foot) foot.textContent = (v.summary || '') + (r.period ? `  ·  backtested ${r.period.start} → ${r.period.end}` : '');
   };
 
   if (state.backtests[symbol] !== undefined) { paint(state.backtests[symbol]); return; }
-  card.hidden = false;
   grid.innerHTML = '<div class="cred-item"><small>Backtest</small><span>loading…</span></div>';
   if (foot) foot.textContent = '';
   fetch(`data/backtests/${encodeURIComponent(symbol)}.json?_t=` + Date.now(), { cache: 'no-store' })
