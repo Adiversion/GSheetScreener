@@ -297,6 +297,9 @@ def compounding_sim(df: pd.DataFrame, p: dict) -> dict:
     opens = d["Open"].to_numpy(dtype=float) if "Open" in d.columns else closes
 
     capital = float(p["capital"])
+    max_price = float(np.nanmax(closes)) if len(closes) else 0.0
+    if max_price > 0 and capital < max_price:
+        capital = float(math.ceil(max_price * 10 / 1000) * 1000)
     initial = capital
     equity_curve = [capital]
     trades = []
@@ -367,6 +370,7 @@ def compounding_sim(df: pd.DataFrame, p: dict) -> dict:
             "cycles": 0, "final_capital": round(initial, 2),
             "total_return_pct": 0.0, "win_rate_pct": 0.0, "profit_factor": 0.0,
             "max_drawdown_pct": 0.0, "avg_cycle_days": None, "trades": [],
+            "target_exits": 0, "stop_exits": 0, "deadline_exits": 0, "cagr_pct": 0.0,
         }
 
     pf = pd.DataFrame(trades)

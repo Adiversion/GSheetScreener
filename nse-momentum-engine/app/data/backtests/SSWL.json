@@ -1,0 +1,214 @@
+{
+  "symbol": "SSWL",
+  "generated_at": "2026-10-01T07:02:39Z",
+  "period": {
+    "start": "2023-10-03",
+    "end": "2026-10-01",
+    "bars": 744
+  },
+  "pace": "medium",
+  "params": {
+    "capital": 1000.0,
+    "target_pct": 15.0,
+    "stop_floor_pct": 5.0,
+    "stop_cap_pct": 7.0,
+    "stop_atr_mult": 2.0,
+    "max_hold_days": 60
+  },
+  "study": {
+    "observations": 101,
+    "target_hits": 45,
+    "stop_hits": 48,
+    "timeouts": 8,
+    "target_hit_rate_pct": 44.6,
+    "stop_hit_rate_pct": 47.5,
+    "expectancy_pct": 3.4,
+    "avg_hold_to_target_days": 11.8,
+    "avg_hold_to_stop_days": 8.9,
+    "median_return_pct": -1.71,
+    "p10_return_pct": -7.0,
+    "p90_return_pct": 15.0,
+    "avg_stop_distance_pct": 6.91,
+    "time_to_target": {
+      "target_count": 45,
+      "trading_days": {
+        "count": 45,
+        "min": 0.0,
+        "p25": 7.0,
+        "median": 11.0,
+        "p75": 16.0,
+        "p90": 21.0,
+        "max": 27.0
+      },
+      "calendar_days": {
+        "count": 45,
+        "min": 0.0,
+        "p25": 10.0,
+        "median": 15.0,
+        "p75": 22.0,
+        "p90": 29.0,
+        "max": 39.0
+      },
+      "buckets_trading_days": {
+        "0-2d": 2,
+        "3-5d (\u22641 week)": 4,
+        "6-10d (\u22642 weeks)": 15,
+        "11-21d (\u22641 month)": 20,
+        "22-42d (\u22642 months)": 4,
+        ">42d (slow)": 0
+      }
+    }
+  },
+  "simulation": {
+    "cycles": 11,
+    "final_capital": 1056.76,
+    "total_return_pct": 5.68,
+    "win_rate_pct": 45.5,
+    "profit_factor": 1.12,
+    "max_drawdown_pct": -26.85,
+    "avg_cycle_days": 10.5,
+    "cagr_pct": 4.2,
+    "target_exits": 5,
+    "stop_exits": 5,
+    "deadline_exits": 1,
+    "trades": [
+      {
+        "entry_date": "2025-05-28",
+        "exit_date": "2025-06-19",
+        "entry_price": 238.25,
+        "exit_price": 273.99,
+        "shares": 4,
+        "pnl": 124.97,
+        "pnl_pct": 13.1,
+        "hold_days": 16,
+        "reason": "target",
+        "capital_after": 1124.97
+      },
+      {
+        "entry_date": "2025-06-23",
+        "exit_date": "2025-07-08",
+        "entry_price": 255.5,
+        "exit_price": 237.61,
+        "shares": 4,
+        "pnl": -89.44,
+        "pnl_pct": -8.74,
+        "hold_days": 11,
+        "reason": "stop",
+        "capital_after": 1035.53
+      },
+      {
+        "entry_date": "2025-07-14",
+        "exit_date": "2025-07-31",
+        "entry_price": 248.2,
+        "exit_price": 230.83,
+        "shares": 4,
+        "pnl": -87.34,
+        "pnl_pct": -8.79,
+        "hold_days": 13,
+        "reason": "stop",
+        "capital_after": 948.19
+      },
+      {
+        "entry_date": "2025-09-25",
+        "exit_date": "2025-10-08",
+        "entry_price": 237.42,
+        "exit_price": 220.8,
+        "shares": 3,
+        "pnl": -67.16,
+        "pnl_pct": -9.42,
+        "hold_days": 8,
+        "reason": "stop",
+        "capital_after": 881.02
+      },
+      {
+        "entry_date": "2025-10-29",
+        "exit_date": "2025-11-06",
+        "entry_price": 234.1,
+        "exit_price": 220.5,
+        "shares": 3,
+        "pnl": -58.09,
+        "pnl_pct": -8.26,
+        "hold_days": 5,
+        "reason": "stop",
+        "capital_after": 822.93
+      },
+      {
+        "entry_date": "2026-06-11",
+        "exit_date": "2026-07-15",
+        "entry_price": 227.0,
+        "exit_price": 261.05,
+        "shares": 3,
+        "pnl": 84.76,
+        "pnl_pct": 12.43,
+        "hold_days": 24,
+        "reason": "target",
+        "capital_after": 907.69
+      },
+      {
+        "entry_date": "2026-07-17",
+        "exit_date": "2026-07-27",
+        "entry_price": 263.73,
+        "exit_price": 303.29,
+        "shares": 3,
+        "pnl": 101.05,
+        "pnl_pct": 12.76,
+        "hold_days": 6,
+        "reason": "target",
+        "capital_after": 1008.74
+      },
+      {
+        "entry_date": "2026-08-07",
+        "exit_date": "2026-09-01",
+        "entry_price": 305.05,
+        "exit_price": 350.81,
+        "shares": 3,
+        "pnl": 119.37,
+        "pnl_pct": 13.03,
+        "hold_days": 17,
+        "reason": "target",
+        "capital_after": 1128.11
+      },
+      {
+        "entry_date": "2026-09-03",
+        "exit_date": "2026-09-16",
+        "entry_price": 353.4,
+        "exit_price": 328.66,
+        "shares": 3,
+        "pnl": -92.19,
+        "pnl_pct": -8.69,
+        "hold_days": 9,
+        "reason": "stop",
+        "capital_after": 1035.92
+      },
+      {
+        "entry_date": "2026-09-18",
+        "exit_date": "2026-09-29",
+        "entry_price": 351.65,
+        "exit_price": 404.4,
+        "shares": 2,
+        "pnl": 88.05,
+        "pnl_pct": 12.51,
+        "hold_days": 7,
+        "reason": "target",
+        "capital_after": 1123.98
+      },
+      {
+        "entry_date": "2026-10-01",
+        "exit_date": "2026-10-01",
+        "entry_price": 409.0,
+        "exit_price": 384.15,
+        "shares": 2,
+        "pnl": -67.22,
+        "pnl_pct": -8.21,
+        "hold_days": 0,
+        "reason": "deadline",
+        "capital_after": 1056.76
+      }
+    ]
+  },
+  "verdict": {
+    "credible": false,
+    "score": 37.0,
+    "summary": "Weak: stops dominate (48% stopped, 45% reached target)."
+  }
+}

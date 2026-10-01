@@ -322,7 +322,7 @@ function renderMarketRegime(regime) {
     return;
   }
 
-  const cmpStr = regime.nifty_cmp ? '₹' + Number(regime.nifty_cmp).toLocaleString('en-IN') : '–';
+  const cmpStr = regime.nifty_cmp ? fmtINR(regime.nifty_cmp) : '–';
   const isBull = regime.regime === 'BULL_MARKET';
   const isCaution = regime.regime === 'CORRECTION_WATCH';
   const stateWord = isBull ? 'bull' : isCaution ? 'caution' : 'defensive';
@@ -342,8 +342,8 @@ function renderMarketRegime(regime) {
     : 'HOLD · 100% cash';
   if (bench) {
     const parts = [];
-    if (regime.sma_50)  parts.push('50SMA ₹' + Number(regime.sma_50).toLocaleString('en-IN'));
-    if (regime.sma_200) parts.push('200SMA ₹' + Number(regime.sma_200).toLocaleString('en-IN'));
+    if (regime.sma_50)  parts.push('50SMA ' + fmtINR(regime.sma_50));
+    if (regime.sma_200) parts.push('200SMA ' + fmtINR(regime.sma_200));
     bench.textContent = parts.join('  ·  ');
   }
 
@@ -598,7 +598,7 @@ function renderGTT(h) {
   const currentEntry = parseFloat(h.ACTUAL_ENTRY || h.CMP);
 
   if (entryInput) {
-    entryInput.value = currentEntry;
+    entryInput.value = currentEntry.toFixed(2);
   }
   updateGapPillActive(0);
   recalculateFromEntry(currentEntry);
@@ -650,7 +650,7 @@ function recalculateFromEntry(entry) {
   }
 
   if (basisBadge) {
-    basisBadge.textContent = `Entry: ₹${entry.toFixed(2)}`;
+    basisBadge.textContent = `Entry: ${fmtINR(entry)}`;
   }
 
   // 2. Recalculate GTT levels based on entry & ATR & Regime
@@ -1770,7 +1770,23 @@ function renderDecision(s, isDefensive, capital) {
     box.className = 'decision decision--warn';
     box.hidden = false;
     box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
-      <div><strong>Not affordable at ₹${Number(capital).toLocaleString('en-IN')}</strong>Needs about ₹${Math.ceil(cmp + 26).toLocaleString('en-IN')} for one share. Raise sizing capital or pick a lower-priced leader.</div>`;
+      <div><strong>Not affordable at ${fmtINR(capital)}</strong>Needs about ${fmtINR(cmp + 26)} for one share. Raise sizing capital or pick a lower-priced leader.</div>`;
+    return;
+  }
+  if (s.SETUP_QUALITY === 'OVER_EXTENDED') {
+    box.className = 'decision decision--warn';
+    box.hidden = false;
+    box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+      <div><strong>⚠️ Over-Extended Setup (+30%+ above 50 SMA)</strong>Price is severely extended above its 50 SMA. Inverted risk-reward. DO NOT CHASE at the top. Wait for a pullback consolidation or pick a fresh basing alternate.</div>`;
+    return;
+  }
+  const credEntry = (state.credIndex || {})[String(s.SYMBOL).toUpperCase()];
+  const credScore = credEntry && credEntry.score != null ? credEntry.score : null;
+  if (credScore != null && credScore < 50) {
+    box.className = 'decision decision--warn';
+    box.hidden = false;
+    box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>
+      <div><strong>⚠️ Low Backtest Credibility (Score: ${credScore.toFixed(1)}/100)</strong>3-year historical test shows stops dominate (+15% target reached in only ${credEntry.target_hit_rate_pct != null ? credEntry.target_hit_rate_pct + '%' : 'minority'}). High risk of whipsaw stop-out.</div>`;
     return;
   }
   if (s.INSTITUTIONAL_GRADE === 'RETAIL_TRAP') {
@@ -1791,7 +1807,7 @@ function renderDecision(s, isDefensive, capital) {
   box.className = 'decision decision--go';
   box.hidden = false;
   box.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>
-    <div><strong>Deploy — setup validated</strong>Affordable at ₹${Number(capital).toLocaleString('en-IN')} with ${turnover ? `₹${turnover.toFixed(1)} Cr 20-day turnover` : 'sufficient liquidity'}. Risk is capped at 1% of equity by the ticket below.</div>`;
+    <div><strong>Deploy — setup validated</strong>Affordable at ${fmtINR(capital)} with ${turnover ? `₹${turnover.toFixed(1)} Cr 20-day turnover` : 'sufficient liquidity'}. Risk is capped at 1% of equity by the ticket below.</div>`;
 }
 
 function renderActiveSignal(h, alts, isDefensive = false) {
@@ -1877,7 +1893,7 @@ function renderGTT(h) {
   const gttCard = document.getElementById('gttCard');
   const entryInput = document.getElementById('inputActualEntry');
   const currentEntry = parseFloat(h.ACTUAL_ENTRY || h.CMP);
-  if (entryInput) entryInput.value = currentEntry;
+  if (entryInput) entryInput.value = currentEntry.toFixed(2);
   updateGapPillActive(0);
   recalculateFromEntry(currentEntry);
   wireZerodhaButtons(h);
@@ -2458,7 +2474,28 @@ function saveTrackedStocks(list) {
 }
 
 function getAllSubscribedSymbols() {
-  const set = new Set(['^CRSLDX']); // Benchmark always subscribed!
+  const set = new Set(['^CRSLDX', '^NSEI']); // Benchmark always subscribed!
+  // Active / inspected stock
+  if (state.activeStock && state.activeStock.SYMBOL) {
+    const ySym = toYahooSymbol(state.activeStock.SYMBOL);
+    if (ySym) set.add(ySym);
+  }
+  // Hero leader
+  if (state.signalData && state.signalData[0] && state.signalData[0].SYMBOL) {
+    const ySym = toYahooSymbol(state.signalData[0].SYMBOL);
+    if (ySym) set.add(ySym);
+  }
+  // Top 10 leaders from screener payload
+  const all = (state.payload && (state.payload.all_qualified || state.payload.stocks)) || [];
+  for (let i = 0; i < Math.min(10, all.length); i++) {
+    const s = all[i];
+    const sym = s && (s.SYMBOL || s.symbol);
+    if (sym) {
+      const ySym = toYahooSymbol(sym);
+      if (ySym) set.add(ySym);
+    }
+  }
+  // All tracked watchlist stocks
   const list = getTrackedStocks();
   for (const item of list) {
     const ySym = toYahooSymbol(item.symbol);
@@ -2512,10 +2549,7 @@ function connectYahooMultiStream() {
         if (tick.id === '^CRSLDX' || tick.id === '^NSEI') {
           handleBenchmarkTick(roundedPrice);
         } else {
-          // Re-render live cards if on Portfolio tab
-          if (state.currentTab === 'Portfolio') {
-            renderLiveTracker();
-          }
+          handleStockTick(tick.id, roundedPrice);
         }
       } catch (_) {}
     };
@@ -2530,9 +2564,49 @@ function connectYahooMultiStream() {
   } catch (_) {}
 }
 
+function handleStockTick(tickerId, livePrice) {
+  const sym = String(tickerId || '').replace(/\.NS$/i, '').toUpperCase();
+  if (!sym) return;
+
+  // 1. Update active / hero if matching
+  if (state.signalData && state.signalData[0] && state.signalData[0].SYMBOL.toUpperCase() === sym) {
+    state.signalData[0].CMP = livePrice;
+    const heroCmp = document.querySelector('.hero-cmp');
+    if (heroCmp) {
+      heroCmp.textContent = fmtINR(livePrice);
+    }
+  }
+
+  // 2. Update Inspector if open for this symbol
+  if (state.activeStock && state.activeStock.SYMBOL.toUpperCase() === sym) {
+    state.activeStock.CMP = livePrice;
+    const insCmp = document.querySelector('.ins-cmp');
+    if (insCmp) {
+      insCmp.textContent = fmtINR(livePrice);
+    }
+    const entryInput = document.getElementById('inputActualEntry');
+    const entryVal = parseFloat(entryInput && entryInput.value) || livePrice;
+    recalculateFromEntry(entryVal);
+  }
+
+  // 3. Update table row CMP if visible
+  const row = document.querySelector(`tr[data-symbol="${sym}"]`);
+  if (row) {
+    const cmpCell = row.querySelector('td[data-label="CMP"]');
+    if (cmpCell) {
+      cmpCell.textContent = fmtINR(livePrice);
+    }
+  }
+
+  // 4. Update Portfolio Tab Watchlist
+  if (state.currentTab === 'Portfolio') {
+    renderLiveTracker();
+  }
+}
+
 function handleBenchmarkTick(liveCmp) {
   state.liveNiftyCmp = liveCmp;
-  const cmpStr = '₹' + Number(liveCmp).toLocaleString('en-IN');
+  const cmpStr = fmtINR(liveCmp);
   const regime = (state.payload && state.payload.regime) || {};
   regime.nifty_cmp = liveCmp;
   const sma50 = regime.sma_50 || 23223.03;
@@ -2648,7 +2722,7 @@ function renderLiveTracker() {
   if (!body) return;
 
   const list = getTrackedStocks();
-  if (countBadge) countBadge.textContent = `${list.length} tracked`;
+  if (countBadge) countBadge.innerHTML = `${list.length} tracked <span style="margin-left:6px;color:var(--accent);font-weight:700;font-size:0.75rem;">⚡ 1s Live Stream</span>`;
 
   if (!list.length) {
     body.innerHTML = `
@@ -2700,7 +2774,7 @@ function renderLiveTracker() {
           <div style="display:flex;align-items:center;gap:10px;">
             <strong style="font-size:1.15rem;letter-spacing:0.02em;">${item.symbol}</strong>
             <span class="badge ${badgeCls}">${badgeTxt}</span>
-            ${cached ? '<span class="badge badge--bull" style="font-size:0.65rem;">⚡ Live</span>' : ''}
+            ${cached ? '<span class="badge badge--bull" style="font-size:0.65rem;">⚡ 1s Live</span>' : ''}
           </div>
           <div style="display:flex;align-items:baseline;gap:8px;">
             <span class="live-price" style="font-size:1.35rem;">${fmtINR(cmp)}</span>
@@ -2901,8 +2975,10 @@ function wireLiveTracker() {
   renderLiveTracker();
   if (!state.liveTimer) {
     state.liveTimer = setInterval(() => {
-      if (document.visibilityState === 'visible') syncAllStreams();
-    }, 60000);
+      if (document.visibilityState === 'visible') {
+        if (state.currentTab === 'Portfolio') renderLiveTracker();
+      }
+    }, 1000);
   }
 }
 
