@@ -241,8 +241,10 @@ async function fetchSignal(showLoading = true) {
       }
     }
     if (payload) {
-      let manifest = payload.history_manifest;
-      renderSessionSwitcher(manifest, payload.trade_date);
+      if (payload.history_manifest && payload.history_manifest.length) {
+        state.historyManifest = payload.history_manifest;
+      }
+      renderSessionSwitcher(state.historyManifest, payload.trade_date);
     }
     updateLastUpdated(new Date());
     if (showLoading) showToast('Signal refreshed', 'success', '📡');
@@ -262,7 +264,10 @@ async function fetchSignal(showLoading = true) {
         }
       }
       if (cached.payload) {
-        renderSessionSwitcher(cached.payload.history_manifest, cached.payload.trade_date);
+        if (cached.payload.history_manifest && cached.payload.history_manifest.length) {
+          state.historyManifest = cached.payload.history_manifest;
+        }
+        renderSessionSwitcher(state.historyManifest, cached.payload.trade_date);
       }
       updateLastUpdated(new Date(cached.fetchedAt), true);
       showToast('Showing cached data (offline)', 'info', '📦');
@@ -1482,7 +1487,8 @@ function renderSessionSwitcher(manifest, currentTradeDate) {
   const pendingNotice = document.getElementById('bhavcopyPendingNotice');
   if (!sessionCard || !pillsContainer) return;
 
-  if (!manifest || manifest.length <= 1) {
+  const manifestList = (manifest && manifest.length) ? manifest : (state.historyManifest && state.historyManifest.length ? state.historyManifest : null);
+  if (!manifestList || manifestList.length <= 1) {
     sessionCard.hidden = true;
     return;
   }
@@ -1493,10 +1499,11 @@ function renderSessionSwitcher(manifest, currentTradeDate) {
     pendingNotice.hidden = !isFallback;
   }
 
+  const activeDate = state.selectedDate || currentTradeDate;
   pillsContainer.innerHTML = '';
-  manifest.forEach((m, idx) => {
+  manifestList.forEach((m, idx) => {
     const btn = document.createElement('button');
-    const isSelected = (m.date === (state.selectedDate || currentTradeDate));
+    const isSelected = (m.date === activeDate);
     const isLatest = idx === 0;
     btn.className = `pill-session ${isSelected ? 'active' : ''}`;
     btn.innerHTML = `${isLatest ? '⚡' : '📅'} ${m.display_date || m.date}${isLatest ? ' <span class="tag-latest">Latest</span>' : ''}`;
@@ -1505,7 +1512,7 @@ function renderSessionSwitcher(manifest, currentTradeDate) {
     pillsContainer.appendChild(btn);
   });
 
-  updateMarketStatusBar(manifest, currentTradeDate);
+  updateMarketStatusBar(manifestList, currentTradeDate);
 }
 
 function updateMarketStatusBar(manifest, currentTradeDate) {
@@ -1515,9 +1522,12 @@ function updateMarketStatusBar(manifest, currentTradeDate) {
   const todayEl = document.getElementById('marketStatusToday');
   const desc = document.getElementById('marketStatusDesc');
   const pill = document.getElementById('marketStatusActivePill');
+  const activeSessionEl = document.getElementById('marketStatusActiveSession');
   const btnReturn = document.getElementById('btnReturnLatestSession');
 
   if (!bar) return;
+
+  const manifestList = (manifest && manifest.length) ? manifest : (state.historyManifest && state.historyManifest.length ? state.historyManifest : null);
 
   // Real-time IST calculation
   const now = new Date();
@@ -1535,19 +1545,24 @@ function updateMarketStatusBar(manifest, currentTradeDate) {
   const todayStr = `${String(istDate.getDate()).padStart(2, '0')}-${months[istDate.getMonth()]}-${istDate.getFullYear()}`;
   if (todayEl) todayEl.textContent = `Today: ${todayStr}`;
 
-  const latestSession = (manifest && manifest.length > 0) ? manifest[0] : null;
+  const latestSession = (manifestList && manifestList.length > 0) ? manifestList[0] : null;
   const activeDate = state.selectedDate || currentTradeDate;
   const isViewingLatest = !latestSession || (activeDate === latestSession.date);
 
+  const activeItem = manifestList ? manifestList.find(m => m.date === activeDate) : null;
+  const activeDisplay = activeItem ? (activeItem.display_date || activeItem.date) : (state.payload && state.payload.trade_date_display ? state.payload.trade_date_display : activeDate);
+
   if (pill) {
-    const activeItem = manifest ? manifest.find(m => m.date === activeDate) : null;
-    pill.textContent = `Session: ${activeItem ? (activeItem.display_date || activeItem.date) : activeDate}`;
+    pill.textContent = `Session: ${activeDisplay}`;
+  }
+  if (activeSessionEl) {
+    activeSessionEl.textContent = activeDisplay;
   }
 
   if (!isViewingLatest) {
     if (dot) dot.className = 'status-pulse-dot archive';
-    if (phase) phase.textContent = 'HISTORICAL SESSION ARCHIVE';
-    if (desc) desc.innerHTML = `Viewing historical session snapshot for <strong>${activeDate}</strong>. Data preserved for backtest and performance review.`;
+    if (phase) phase.textContent = `HISTORICAL SESSION ARCHIVE (${activeDisplay})`;
+    if (desc) desc.innerHTML = `Viewing historical session snapshot for <strong>${activeDisplay}</strong>. Data preserved for backtest and performance review.`;
     if (btnReturn && latestSession) {
       btnReturn.hidden = false;
       btnReturn.textContent = `Back to Latest (${latestSession.display_date})`;
@@ -1584,6 +1599,15 @@ async function selectSessionDate(dateStr) {
     const res = await fetch(`data/history/${dateStr}.json?_t=` + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error(`Could not load session ${dateStr}`);
     const payload = await res.json();
+
+    // Preserve history manifest across session switches
+    if (!state.historyManifest || !state.historyManifest.length) {
+      try {
+        const mRes = await fetch('data/history/manifest.json?_t=' + Date.now(), { cache: 'no-store' });
+        if (mRes.ok) state.historyManifest = await mRes.json();
+      } catch (_) {}
+    }
+    payload.history_manifest = state.historyManifest;
     state.payload = payload;
     state.signalData = payload.rows || [];
 
@@ -1592,7 +1616,7 @@ async function selectSessionDate(dateStr) {
     if (payload.all_qualified) {
       renderAllStocksTable(payload.all_qualified, state.userCapital || store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL));
     }
-    renderSessionSwitcher(payload.history_manifest || (state.payload && state.payload.history_manifest), dateStr);
+    renderSessionSwitcher(state.historyManifest, dateStr);
     showToast(`Viewing session: ${payload.trade_date_display || dateStr}`, 'info', '📅');
   } catch (err) {
     showToast('Failed to load past session: ' + err.message, 'error');
