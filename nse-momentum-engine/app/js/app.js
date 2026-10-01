@@ -653,6 +653,7 @@ function recalculateFromEntry(entry) {
   if (basisBadge) {
     basisBadge.textContent = `Entry: ${fmtINR(entry)}`;
   }
+  updateInspectorPnL(entry, cmp);
 
   // 2. Recalculate GTT levels based on entry & ATR & Regime
   const atrStopPct = isDefensive ? 0.04 : Math.min(0.07, Math.max(0.05, (2.0 * atr) / entry));
@@ -1802,6 +1803,21 @@ function renderDecision(s, isDefensive, capital) {
     <div><strong>Deploy — setup validated</strong>Affordable at ${fmtINR(capital)} with ${turnover ? `₹${turnover.toFixed(1)} Cr 20-day turnover` : 'sufficient liquidity'}. Risk is capped at 1% of equity by the ticket below.</div>`;
 }
 
+function updateInspectorPnL(entry, cmp) {
+  if (!entry || entry <= 0 || !cmp || cmp <= 0) return;
+  const pnlEl = document.querySelector('.ins-pnl');
+  const entryEl = document.querySelector('.ins-entry-val');
+  if (entryEl) entryEl.textContent = fmtINR(entry);
+
+  if (pnlEl) {
+    const pnlPct = ((cmp - entry) / entry) * 100;
+    const pnlINR = cmp - entry;
+    const tone = pnlPct >= 0 ? 'pos' : 'neg';
+    pnlEl.className = `ins-pnl num ${tone}`;
+    pnlEl.textContent = `${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}% (${pnlINR >= 0 ? '+' : ''}${fmtINR(pnlINR)})`;
+  }
+}
+
 function renderActiveSignal(h, alts, isDefensive = false) {
   const heroCard = document.getElementById('heroCard');
   if (!heroCard) return;
@@ -1816,6 +1832,13 @@ function renderActiveSignal(h, alts, isDefensive = false) {
   const rsi = parseFloat(h.RSI_14);
   const setup = (h.SETUP_QUALITY || '').toString().replace(/_/g, ' ');
 
+  const tracked = getTrackedStocks().find(x => x.symbol.toUpperCase() === h.SYMBOL.toUpperCase());
+  const entry = tracked && tracked.entry > 0 ? tracked.entry : (parseFloat(h.ACTUAL_ENTRY) || cmp);
+  const pnlPct = entry > 0 ? ((cmp - entry) / entry) * 100 : 0;
+  const pnlINR = cmp - entry;
+  const pnlTone = pnlPct >= 0 ? 'pos' : 'neg';
+  const pnlDisp = `${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}% (${pnlINR >= 0 ? '+' : ''}${fmtINR(pnlINR)})`;
+
   heroCard.className = 'inspector__header';
   heroCard.innerHTML = `
     <div class="ins-top">
@@ -1823,11 +1846,21 @@ function renderActiveSignal(h, alts, isDefensive = false) {
       <span class="ins-rank">${isDefensive ? 'Candidate #1' : 'Leader #1'}</span>
     </div>
     <div class="ins-identity">
-      <span class="ins-symbol">${h.SYMBOL}</span>
-      ${h.INSTITUTIONAL_GRADE === 'PRIME_INSTITUTIONAL' ? '<span class="tag tag--prime" style="background:rgba(34,197,94,0.18);color:#22c55e;border:1px solid rgba(34,197,94,0.4)">★ INST PRIME</span>' : ''}
-      ${h.INSTITUTIONAL_GRADE === 'RETAIL_TRAP' ? '<span class="tag tag--risk" style="background:rgba(239,68,68,0.18);color:#ef4444;border:1px solid rgba(239,68,68,0.4)">⚠️ RETAIL TRAP</span>' : ''}
-      ${h.IS_PRIME && h.INSTITUTIONAL_GRADE !== 'PRIME_INSTITUTIONAL' ? '<span class="tag tag--prime">PRIME</span>' : ''}
-      <span class="ins-cmp num">${fmtINR(cmp)}</span>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span class="ins-symbol">${h.SYMBOL}</span>
+        ${h.INSTITUTIONAL_GRADE === 'PRIME_INSTITUTIONAL' ? '<span class="tag tag--prime" style="background:rgba(34,197,94,0.18);color:#22c55e;border:1px solid rgba(34,197,94,0.4)">★ INST PRIME</span>' : ''}
+        ${h.INSTITUTIONAL_GRADE === 'RETAIL_TRAP' ? '<span class="tag tag--risk" style="background:rgba(239,68,68,0.18);color:#ef4444;border:1px solid rgba(239,68,68,0.4)">⚠️ RETAIL TRAP</span>' : ''}
+        ${h.IS_PRIME && h.INSTITUTIONAL_GRADE !== 'PRIME_INSTITUTIONAL' ? '<span class="tag tag--prime">PRIME</span>' : ''}
+      </div>
+      <div class="ins-price-block" style="margin-left:auto;text-align:right;">
+        <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:8px;">
+          <span class="ins-cmp num" style="font-size:1.35rem;font-weight:700;">${fmtINR(cmp)}</span>
+          <span class="ins-pnl num ${pnlTone}" style="font-size:0.95rem;font-weight:600;">${pnlDisp}</span>
+        </div>
+        <div class="ins-entry-badge" style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">
+          Entry: <strong class="ins-entry-val" style="color:var(--text);font-family:var(--font-mono);">${fmtINR(entry)}</strong>
+        </div>
+      </div>
     </div>
     <div class="ins-sub">${setup || 'Stage-2 momentum leader'}</div>
     <div class="prox">
@@ -2621,8 +2654,9 @@ function handleStockTick(tickerId, livePrice) {
       insCmp.textContent = fmtINR(livePrice);
     }
     const entryInput = document.getElementById('inputActualEntry');
-    const entryVal = parseFloat(entryInput && entryInput.value) || livePrice;
+    const entryVal = parseFloat(entryInput && entryInput.value) || parseFloat(state.activeStock.ACTUAL_ENTRY) || livePrice;
     recalculateFromEntry(entryVal);
+    updateInspectorPnL(entryVal, livePrice);
   }
 
   // 3. Update table row CMP if visible

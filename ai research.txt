@@ -1,51 +1,1149 @@
-An independent technical and quantitative critique of this engine reveals a sound foundational framework borrowed from classical trend-following, alongside several structural flaws, statistical oversights, and implementation risks specific to the Indian equity markets.
+Yes. I reviewed the specification as a **system-design / quantitative-trading ruleset**, focusing on internal consistency, mathematical definitions, implementation ambiguity, and places where the stated rationale does not actually follow from the rule.
+
+## Overall assessment
+
+**Confidence: High** on the internal consistency findings; **Moderate** on whether individual thresholds are statistically useful, because that requires backtesting.
+
+The architecture is coherent at a high level: liquidity → market regime → trend → cross-sectional momentum → quality/trap filters → sizing → execution. The main problem is that several rules currently **look institutional but are not yet sufficiently rigorous to justify that characterization**.
+
+I would **not implement v2.4.0 exactly as written**. There are several important contradictions and a few mathematical problems that could materially change the live results.
 
 ---
 
-### Strongest Counterargument (The Core Flaw)
+# 1. The biggest issue: Gate 1 contradicts itself
 
-The primary vulnerability of this system lies in **Milestone 3: Full Take Profit at +50%**.
+At the pipeline level you state:
 
-Trend-following and Stage-2 momentum strategies (Minervini, O'Neil, Donchian) derive their entire mathematical edge from **positive skewness** (a fat right tail where a tiny fraction of trades yield 200% to 500%+ gains to offset numerous small losses and breakevens). Capping upside at +50% truncates the distribution's right tail, transforming an asymmetric trend-following model into a high-churn swing-trading model with an inferior payoff ratio. In a choppy or rotational market, repeated -7% cuts will bleed the portfolio, while in a structural bull run, the engine cuts winners prematurely just as institutional accumulation enters its parabolic phase.
+> Turnover >= ₹5 Cr
 
----
+But the mathematical definition says:
 
-### Strategy-by-Strategy Technical Audit
+- Single-day turnover ≥ ₹2 Cr
+- 20-day ADTV ≥ ₹5 Cr INSTITUTIONAL_RULESET_SPEC
 
-| # | Strategy Component | Mechanical Assessment & Limitations |
-| --- | --- | --- |
-| **1** | **Stage-2 Trend Template** | **Sound, but late.** Requiring $Price > SMA_{50} > SMA_{150} > SMA_{200}$ alongside a rising $SMA_{200}$ is robust for trend confirmation, but it is inherently lagging. By the time this alignment solidifies, 30%–60% of the initial Stage 2 move off a base has already occurred. |
-| **2** | **Compound Momentum Score (CMS)** | **Dimensional mismatch & redundant math.** <br>
+Those are different filters.
 
-<br>1. *Formula redundancy:* $(1 - \frac{52W_{High} - CMP}{52W_{High}}) \times 100 = \frac{CMP}{52W_{High}} \times 100$. Wrapping it in a two-step subtraction adds no informational value.<br>
+The actual implementation should probably be explicitly:
 
-<br>2. *Unit mismatch:* $ROC_{3M}$ is an unscaled percentage (often ranging from -20% to +100%+), while Proximity Score is bounded strictly between 0 and 100. Adding these directly without cross-sectional percentile normalization means an extreme 3-month runner will distort the composite weight far beyond the nominal 60/40 ratio. |
-| **3** | **Base Extension & ATR Cap** | **Contradictory filters.** A maximum $Dist_{50} \le 25\%$ protects against buying overbought peaks. However, coupling this with a requirement that the stock be within 25% of its 52-week high while $SMA_{50} > SMA_{150} > SMA_{200}$ creates a narrow band. Furthermore, an ATR ceiling of $\le 5.0\%$ will systematically eliminate the highest-beta mid- and small-cap leaders on the NSE, which frequently trade at higher daily ATRs during breakout regimes. |
-| **4** | **RSI (14) Sweet Zone** | **Capping RSI at 75 penalizes true power trends.** Classical Minervini/CANSLIM leaders frequently sustain daily RSI readings between 75 and 85 during their most aggressive markup phases. An upper limit of 75 triggers false negatives on the strongest institutional momentum names. |
-| **5** | **Liquidity Threshold** | **Turnover $\ge$ ₹2 Crore is too low for zero slippage.** An entity trading ₹2 Crore ($20\text{ million INR}$) daily can only support position sizes of ₹2–5 Lakh without moving the bid-ask spread. For institutional scaling or accounts compounding past ₹50 Lakh, this threshold creates severe market-impact slippage, especially on lower-circuit days. |
-| **6** | **Macro Regime Guard** | **Nifty 50 is the wrong benchmark.** Small- and mid-caps regularly diverge from the large-cap Nifty 50 index for quarters at a time. The **Nifty Midcap 150** or **Nifty 500** provides a significantly more accurate regime signal for an all-NSE stock pool. |
-| **7** | **Exit System (GTT)** | **Premature profit lock and execution risk:**<br>
+```text
+Daily Turnover >= ₹2 Cr
+AND
+20D ADTV >= ₹5 Cr
+```
 
-<br>• Moving stops to +2.5% at +15% gain ignores the normal volatility of Indian mid-caps. A standard 10–12% base-retest will routinely stop the position out at +2.5% before the real trend develops.<br>
+if that is what you intend.
 
-<br>• GTT orders on NSE execute as market orders once triggered; during gap-downs or lower circuits (common in high-momentum Indian equities), a -7% GTT stop offers no guarantee of being filled at ₹930. |
+Otherwise change the pipeline diagram to match the mathematical definition.
 
----
+### More importantly
 
-### Critical NSE-Specific Realities Overlooked
+A ₹5 Cr ADTV threshold is **not equivalent to institutional liquidity**. It is simply a liquidity filter.
 
-1. **Circuit Limits & Liquidity Traps:**
-Many stocks passing the ₹2 Crore / 100k volume filter sit in 5% or 10% daily price bands. If momentum reverses, stocks frequently hit lower circuits back-to-back, rendering GTT and stop-loss rules physically non-executable until losses far exceed -7%.
-2. **Survivorship & Corporate Action Biases:**
-Scanning 2,600+ NSE stocks requires point-in-time historical data adjusted for splits, bonuses, and rights issues. Evaluating unadjusted 52-week highs and moving averages across non-survivorship-free databases generates phantom Stage 2 breakouts.
-3. **Tax & Churn Drag:**
-Targeting +15% to +50% swings with strict ratchets creates high portfolio turnover. Under the Indian tax framework (STCG at 20% post-July 2024 budget, plus STT, stamp duty, exchange turnover charges, and GST), frequent rebalancing places a heavy hurdle on net portfolio CAGR.
+The specification currently moves from:
+
+> "Top Liquid Equities"
+
+to an implication of institutional suitability.
+
+Those aren't necessarily the same thing.
 
 ---
 
-### Quantitative Recommendations
+# 2. Circuit-band rule needs redesign
 
-* **Normalize Momentum Scores:** Standardize $ROC_{3M}$ and Proximity via cross-sectional percentile ranks ($Percentile(ROC_{3M}) \times 0.60 + Percentile(Proximity) \times 0.40$) to enforce consistent factor exposures.
-* **Remove the Hard +50% Ceiling:** Replace Milestone 3 with a dynamic trend-following exit, such as an ATR trailing stop or a confirmed close below the 50-day SMA, allowing outsized outliers to compound uninterrupted.
-* **Align Macro Benchmark:** Replace Nifty 50 with the Nifty 500 or Nifty MidSmallcap 400 to reflect the broader breadth of the eligible 2,600-stock universe.
-* **Raise Liquidity Floor:** Increase the minimum average daily turnover to at least ₹5–10 Crore to absorb trade execution and limit circuit-lock exposure.
+The rule says:
+
+> 2% and 5% circuit bands are strictly disqualified; only ≥10% or dynamic F&O bands permitted. INSTITUTIONAL_RULESET_SPEC
+
+The reasoning is understandable—lower circuit bands can make exits difficult—but the implementation has a conceptual problem.
+
+A stock's **current circuit band does not necessarily tell you whether your stop can execute during a gap or locked limit-down event**.
+
+A better risk model would distinguish:
+
+```text
+Circuit Band
++
+Average daily turnover
++
+Bid/ask liquidity
++
+Historical gap frequency
++
+Historical lower-circuit events
++
+ATR
++
+Position size / ADV
+```
+
+In other words, circuit band should be **one execution-risk variable**, not the primary safety mechanism.
+
+---
+
+# 3. Gate 2 has an important regime problem
+
+Your regime:
+
+```text
+Bull:
+Nifty500 > SMA50 AND Nifty500 > SMA200
+
+Correction:
+SMA200 < Nifty500 <= SMA50
+
+Defensive:
+Nifty500 < SMA200
+```
+
+leaves an edge case:
+
+```text
+Nifty500 = SMA200
+```
+
+There is no regime defined for equality.
+
+That's easy to fix:
+
+```text
+Bull:
+Close > SMA50 AND Close > SMA200
+
+Correction:
+Close <= SMA50 AND Close > SMA200
+
+Defensive:
+Close <= SMA200
+```
+
+But there's a deeper issue.
+
+You are using **one binary index state to determine whether every individual stock can be bought**.
+
+That may be intentionally conservative, but it can create a major opportunity-set discontinuity.
+
+For example:
+
+```text
+Nifty 500 falls below SMA200
+        ↓
+100% cash
+        ↓
+Even stocks with excellent Stage-2 structure are rejected
+```
+
+That is a **portfolio-level risk policy**, not an objective statement about individual-stock momentum.
+
+I would keep the regime governor, but consider separating:
+
+```text
+Market Regime
+        ↓
+Maximum Portfolio Exposure
+```
+
+from:
+
+```text
+Stock Quality
+        ↓
+Whether individual setup qualifies
+```
+
+That gives you more granular control.
+
+---
+
+# 4. The Stage-2 implementation is reasonably structured
+
+This is one of the stronger sections.
+
+You have:
+
+- price > 50 SMA > 150 SMA > 200 SMA
+- rising 200 SMA
+- proximity to 52-week high
+- distance from 52-week low
+- RSI constraint
+- short-term momentum retention INSTITUTIONAL_RULESET_SPEC
+
+That creates a fairly strict trend template.
+
+However, this is **not exactly Minervini's original template** once you've added your own RSI/ROC conditions.
+
+That's completely fine.
+
+I'd rename it:
+
+> **Minervini-inspired Stage-2 Trend Template**
+
+rather than presenting every condition as though it were directly part of the original framework.
+
+---
+
+# 5. Your "200 SMA slope" is not actually a slope
+
+You define:
+
+```text
+SMA200,t > SMA200,t-22
+```
+
+and call this:
+
+> 200 SMA slope
+
+Mathematically, that's a **directional change**, not a slope.
+
+A proper slope would be something like:
+
+```text
+Slope200 =
+(SMA200[t] - SMA200[t-N]) / N
+```
+
+or preferably a normalized version:
+
+```text
+Slope200Pct =
+((SMA200[t] / SMA200[t-22]) - 1) × 100
+```
+
+Why does this matter?
+
+Consider:
+
+```text
+SMA200 today      = ₹100
+SMA200 22d ago    = ₹99.99
+```
+
+Your rule passes.
+
+But:
+
+```text
+SMA200 today      = ₹100
+SMA200 22d ago    = ₹90
+```
+
+also passes.
+
+Those are completely different trend environments.
+
+### Better
+
+Use:
+
+```text
+SMA200[t] > SMA200[t-22]
+AND
+Slope200Pct >= minimum threshold
+```
+
+The threshold itself should be backtested rather than guessed.
+
+---
+
+# 6. CMS is good conceptually, but percentile methodology must be specified
+
+You define:
+
+```text
+CMS =
+0.60 × PercentileRank(ROC3M)
++
+0.40 × PercentileRank(52W proximity)
+```
+
+INSTITUTIONAL_RULESET_SPEC
+
+This is a sensible cross-sectional framework.
+
+But you haven't specified:
+
+### Universe
+
+Is percentile calculated over:
+
+```text
+all 2,600 stocks?
+```
+
+or:
+
+```text
+Gate-1 survivors?
+```
+
+or:
+
+```text
+Gate-3 Stage-2 survivors?
+```
+
+The diagram suggests Stage-2 survivors, but the specification needs to say it explicitly.
+
+I recommend:
+
+```text
+CMS percentile universe =
+all stocks passing Gates 1–3
+```
+
+Otherwise the score is not reproducible.
+
+### Percentile convention
+
+You should also define whether you're using:
+
+```text
+rank / N
+```
+
+or:
+
+```text
+rank / (N-1)
+```
+
+and how ties are handled.
+
+Small detail, but important for deterministic execution.
+
+---
+
+# 7. The VCP definition is the biggest conceptual weakness
+
+You define:
+
+```text
+VCP Ratio = ATR5 / ATR20
+```
+
+then call:
+
+```text
+<= 0.90 = Tight Coil
+0.90–1.05 = Normal Contraction
+```
+
+INSTITUTIONAL_RULESET_SPEC
+
+This is **not sufficient to identify a VCP**.
+
+ATR contraction merely tells you:
+
+> recent volatility is lower than longer-term volatility.
+
+A genuine VCP-style structure involves things such as:
+
+```text
+successive contractions
++
+decreasing price ranges
++
+decreasing volume
++
+relatively tight consolidation
++
+supportive price structure
+```
+
+Your metric can identify:
+
+> low recent volatility
+
+but not necessarily:
+
+> Volatility Contraction Pattern.
+
+So I would rename this metric:
+
+```text
+Volatility Contraction Ratio
+```
+
+rather than VCP Ratio.
+
+Then, if you actually want VCP detection, build a separate structural detector.
+
+---
+
+# 8. There is a direct contradiction between Gate 5 and the regime rule
+
+Correction regime says:
+
+```text
+VCP <= 0.90
+```
+
+INSTITUTIONAL_RULESET_SPEC
+
+But Gate 5 says:
+
+```text
+VCP <= 0.90 = tight coil
+0.90 < VCP <= 1.05 = normal contraction
+```
+
+That's okay mathematically, but it means Correction mode only allows the **most compressed subset**.
+
+That's an extremely aggressive reduction in candidate count.
+
+You should explicitly determine whether that's intentional.
+
+For example:
+
+```text
+Bull:
+VCR <= 1.05
+
+Correction:
+VCR <= 0.90
+```
+
+could be a deliberate regime-dependent quality threshold.
+
+If so, document it as such.
+
+---
+
+# 9. FIP implementation has a serious mathematical problem
+
+This is probably the most important quantitative issue.
+
+You define:
+
+```text
+Max 1D Jump Share =
+max(ΔPrice1D) / (Price_t - Price_t-40) × 100
+```
+
+INSTITUTIONAL_RULESET_SPEC
+
+The denominator is **net 40-day price change**.
+
+That can be problematic.
+
+Example:
+
+```text
+Price 40 days ago = 100
+Price today       = 110
+```
+
+Net gain = 10.
+
+Suppose one day the stock jumped from 100 → 108.
+
+Then:
+
+```text
+Max jump = 8
+Jump share = 8 / 10 = 80%
+```
+
+You reject it.
+
+But if the stock had:
+
+```text
+100 → 108
+108 → 105
+105 → 110
+```
+
+the 8% jump represents a large part of the net move even though the overall path could be perfectly legitimate.
+
+Worse, if the 40-day net return approaches zero:
+
+```text
+Price 40d = 100
+Price now = 101
+```
+
+the denominator becomes tiny and the metric becomes unstable.
+
+And if the 40-day return is negative, the metric can become negative.
+
+### This needs redesign.
+
+A more robust measure would compare the largest daily move against **total absolute movement**, e.g.:
+
+```text
+MaxJumpShare =
+max(|daily return|)
+/
+Σ |daily return|
+```
+
+or use a dedicated return-discreteness statistic.
+
+That would be much more stable.
+
+---
+
+# 10. "Institutional buying" cannot be inferred from these metrics alone
+
+The document repeatedly uses terms like:
+
+> institutional surge  
+> institutional accumulation  
+> institutional base  
+> retail fakeout
+
+For example, the volume rule labels 1.5× volume an **"INSTITUTIONAL SURGE"**. INSTITUTIONAL_RULESET_SPEC
+
+But:
+
+```text
+Volume / average volume = 1.5
+```
+
+doesn't identify the participant.
+
+It tells you there was unusually high trading activity.
+
+That activity could result from:
+
+- institutional buying
+- institutional selling
+- retail buying
+- retail selling
+- news
+- index rebalancing
+- block transactions
+- corporate events
+- derivatives hedging
+- other flows
+
+Therefore I'd change the terminology.
+
+Instead of:
+
+```text
+INSTITUTIONAL SURGE
+```
+
+use:
+
+```text
+HIGH VOLUME CONFIRMATION
+```
+
+And instead of:
+
+```text
+institutional base
+```
+
+use:
+
+```text
+VOLATILITY-COMPRESSED BASE
+```
+
+This makes the specification scientifically defensible.
+
+---
+
+# 11. Volume thresholds have an unexplained gap
+
+You define:
+
+```text
+>= 1.50 → surge
+1.00–1.50 → confirmed
+< 0.70 → disqualified
+```
+
+But:
+
+```text
+0.70–1.00
+```
+
+is undefined.
+
+What happens?
+
+Presumably it fails, but deterministic systems shouldn't rely on implication.
+
+Make it explicit:
+
+```text
+< 0.70       → Reject: low volume
+0.70–1.00    → Reject: insufficient confirmation
+1.00–1.50    → Pass
+>= 1.50      → Strong pass
+```
+
+or whatever behavior your intended engine uses.
+
+---
+
+# 12. VCP also has an undefined zone
+
+You define:
+
+```text
+<= 0.90
+0.90–1.05
+> 1.25
+```
+
+But:
+
+```text
+1.05–1.25
+```
+
+is undefined.
+
+Again, the engine needs an explicit result.
+
+---
+
+# 13. Over-extension rule contradicts its own stated threshold
+
+You define:
+
+```text
+Distance to 50 SMA > 25%
+```
+
+as overextended. INSTITUTIONAL_RULESET_SPEC
+
+Then the explanation says:
+
+> refuses to deploy into over-extended leaders (+30%+ above 50 SMA)
+
+That's inconsistent.
+
+The actual rule is **>25%**, not +30%.
+
+Pick one.
+
+I would trust the mathematical rule and change the prose to:
+
+> refuses deployment when price is more than 25% above the 50 SMA.
+
+---
+
+# 14. Position sizing has an important liquidity-unit issue
+
+You define:
+
+```text
+Q_liquidity =
+floor(ADTV20 × 0.015 / CMP)
+```
+
+INSTITUTIONAL_RULESET_SPEC
+
+This is dimensionally correct **if ADTV20 is rupee turnover**.
+
+For example:
+
+```text
+ADTV = ₹10 crore
+1.5% = ₹15 lakh
+CMP = ₹500
+
+Q = 15,00,000 / 500
+  = 3,000 shares
+```
+
+Good.
+
+But there is a hidden question:
+
+### Is 1.5% of daily turnover appropriate for a single retail order?
+
+You don't need to assume it is.
+
+It should be treated as a configurable execution constraint and backtested against:
+
+```text
+spread
+slippage
+market impact
+time of execution
+order type
+```
+
+The formula itself is fine; the 1.5% threshold is an empirical assumption.
+
+---
+
+# 15. The ₹1,000 account example exposes a practical problem
+
+You state:
+
+> initial ₹1,000 retail compounding accounts
+
+and then reserve ₹26 for charges. INSTITUTIONAL_RULESET_SPEC
+
+This creates an unusually large cost percentage:
+
+```text
+₹26 / ₹1,000 = 2.6%
+```
+
+More importantly, the system simultaneously has:
+
+```text
+1% portfolio risk
++
+15% maximum position exposure
+```
+
+So a ₹1,000 account can theoretically allocate only:
+
+```text
+₹150
+```
+
+to one position.
+
+That makes the stated ₹26 buffer potentially disproportionate.
+
+The micro-account section should therefore be treated as a **separate execution mode**, not merely a scaled-down version of the institutional model.
+
+---
+
+# 16. State 1 has an obvious wording contradiction
+
+You say:
+
+```text
++15% gain
+Ratchet stop to +1.5%
+Update GTT trigger to breakeven
+```
+
+INSTITUTIONAL_RULESET_SPEC
+
+These are not the same thing.
+
+A:
+
+```text
++1.5% stop
+```
+
+is **not breakeven**.
+
+It is a profitable stop.
+
+You need to decide whether the intended rule is:
+
+```text
+Entry +15%
+→ stop = Entry
+```
+
+or:
+
+```text
+Entry +15%
+→ stop = Entry +1.5%
+```
+
+Given the stated rationale of covering costs, the second appears to be the intended rule—but the wording must be corrected.
+
+---
+
+# 17. "3R" needs a precise definition
+
+State 2 says:
+
+> Sell 40% position at ≥3R. INSTITUTIONAL_RULESET_SPEC
+
+But because the initial stop is:
+
+```text
+2 × ATR14
+bounded -5% to -7%
+```
+
+you need to define:
+
+```text
+R = Entry Price - Initial Stop Price
+```
+
+and then:
+
+```text
+3R target = Entry + 3R
+```
+
+Otherwise someone implementing the system could interpret 3R differently.
+
+---
+
+# 18. State 2 has another sizing issue
+
+Suppose:
+
+```text
+Initial position = 100 shares
+```
+
+At +22%:
+
+```text
+Sell 40 shares
+Keep 60
+```
+
+Fine.
+
+But what happens if:
+
+- the stock gaps through the 22% level?
+- it gaps directly from +18% to +30%?
+- the GTT cannot execute at the exact trigger?
+- the position is partially filled?
+
+The state machine needs **event-driven execution rules**, not only price milestones.
+
+---
+
+# 19. State 3 creates a potentially dangerous ambiguity
+
+You write:
+
+```text
+Trailing stop: 50 SMA / 20 EMA
+```
+
+and:
+
+```text
+trail below 20 EMA
+```
+
+INSTITUTIONAL_RULESET_SPEC
+
+What does:
+
+```text
+50 SMA / 20 EMA
+```
+
+mean?
+
+Possible interpretations:
+
+```text
+min(50SMA, 20EMA)
+max(50SMA, 20EMA)
+whichever is closer
+whichever is lower
+50SMA initially → 20EMA later
+```
+
+You need an explicit state rule.
+
+---
+
+# 20. The GTT section needs a corporate-action/data-quality layer
+
+A production system needs explicit handling for:
+
+- stock splits
+- bonuses
+- rights issues
+- dividends
+- mergers
+- symbol changes
+- suspended securities
+- newly listed stocks
+- stale OHLC data
+- missing volume
+- abnormal volume
+- corporate announcements
+
+Otherwise your:
+
+```text
+52W high
+SMA
+ATR
+ROC
+position stop
+```
+
+can become mathematically correct but economically meaningless.
+
+This is particularly important for automated execution.
+
+---
+
+# 21. "Zero Manual Reporting Guarantee" is too broad
+
+The specification says:
+
+> 100% Deterministic Code Execution  
+> No Agent Discretion  
+> Neither AI agent nor human operators manually select or override signals. INSTITUTIONAL_RULESET_SPEC
+
+The deterministic part is good.
+
+But **deterministic ≠ correct**.
+
+A better architecture is:
+
+```text
+Raw market data
+      ↓
+Data validation
+      ↓
+Deterministic feature calculation
+      ↓
+Deterministic screening
+      ↓
+Deterministic risk engine
+      ↓
+Execution safety checks
+      ↓
+Order
+```
+
+You need a **kill switch / safety layer** even if there is no discretionary stock selection.
+
+For example:
+
+```text
+Data stale → NO TRADE
+Data missing → NO TRADE
+Price gap abnormal → NO TRADE
+Broker API error → NO TRADE
+Duplicate order detected → NO TRADE
+Position mismatch → NO TRADE
+Corporate action unresolved → NO TRADE
+```
+
+That's still deterministic.
+
+---
+
+# 22. The architecture is missing backtesting methodology
+
+This is the biggest missing section if this is intended to become a real trading engine.
+
+Before calling the rules "institutional", you need:
+
+### Walk-forward testing
+
+```text
+Train / parameter selection
+        ↓
+Out-of-sample period
+        ↓
+Roll forward
+        ↓
+Repeat
+```
+
+### Include
+
+```text
+Brokerage
+STT
+exchange charges
+GST
+SEBI charges
+stamp duty
+slippage
+gap execution
+partial fills
+corporate actions
+survivorship bias
+delisted stocks
+```
+
+And especially:
+
+### Avoid look-ahead bias
+
+For an EOD system:
+
+```text
+15:30 close
+     ↓
+calculate indicators
+     ↓
+generate signal
+     ↓
+earliest realistic execution = next session
+```
+
+You cannot use information that only became available after the decision timestamp.
+
+---
+
+# 23. The system should separate three different concepts
+
+Right now the specification mixes them:
+
+### A. Alpha
+
+```text
+ROC
+52W proximity
+trend
+momentum
+FIP
+```
+
+### B. Risk
+
+```text
+ATR
+stop
+portfolio risk
+position exposure
+regime
+```
+
+### C. Execution
+
+```text
+turnover
+circuit bands
+ADTV
+slippage
+GTT
+```
+
+I'd restructure the system around these three layers.
+
+That would make the architecture substantially easier to test.
+
+---
+
+# Recommended v3 architecture
+
+I would redesign the specification approximately like this:
+
+```text
+                MARKET DATA
+                    │
+                    ▼
+             DATA VALIDATION
+                    │
+                    ▼
+          ┌───────────────────┐
+          │  MARKET REGIME    │
+          │ Nifty 500         │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │ UNIVERSE FILTER   │
+          │ Liquidity         │
+          │ Price             │
+          │ Circuit           │
+          │ Data quality      │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │ TREND ENGINE      │
+          │ Stage-2 structure │
+          │ SMA relationships │
+          │ 52W position      │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │ MOMENTUM ENGINE    │
+          │ ROC                │
+          │ Cross-sectional    │
+          │ percentile         │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │ QUALITY ENGINE     │
+          │ Volume             │
+          │ Volatility         │
+          │ FIP                │
+          │ Base structure     │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │ EXTENSION FILTER   │
+          │ SMA distance       │
+          │ ATR/CMP            │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │ RISK ENGINE        │
+          │ 1% risk            │
+          │ 15% exposure       │
+          │ liquidity cap      │
+          └─────────┬─────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │ EXECUTION ENGINE   │
+          │ GTT                │
+          │ slippage           │
+          │ partial fills      │
+          │ broker state       │
+          └─────────┬─────────┘
+                    │
+                    ▼
+              ORDER / NO ORDER
+```
+
+---
+
+# My priority list
+
+If you're going to turn this into actual code, I would fix these **before writing more implementation**:
+
+| Priority | Issue | Action |
+|---|---|---|
+| 🔴 | FIP denominator | Redesign |
+| 🔴 | VCP = ATR ratio | Rename or build actual VCP detector |
+| 🔴 | State 1 +1.5% vs breakeven | Resolve |
+| 🔴 | Undefined threshold ranges | Define every range |
+| 🔴 | 200 SMA "slope" | Define mathematically |
+| 🔴 | Backtesting methodology | Add |
+| 🔴 | Data/corporate-action handling | Add |
+| 🟠 | Gate 1 diagram vs equations | Reconcile |
+| 🟠 | Circuit-band logic | Rework as execution-risk feature |
+| 🟠 | Institutional terminology | Make claims more precise |
+| 🟠 | State 3 trailing rule | Define exact algorithm |
+| 🟠 | 3R definition | Formalize |
+| 🟡 | Micro-account mode | Separate from normal sizing |
+| 🟡 | Percentile methodology | Specify |
+| 🟡 | Regime equality cases | Define |
+
+### Bottom line
+
+The **architecture is worth developing**, but v2.4.0 should be treated as a **research specification rather than a validated trading strategy**. The most important distinction is that the document currently gives several heuristic indicators institutional-sounding interpretations that the formulas themselves don't establish.
+
+The next useful step would be to turn this into a **v2.5 "implementation-grade specification"** where every rule has:
+
+```text
+Input
+→ Formula
+→ Valid range
+→ Pass/Fail condition
+→ Edge cases
+→ Data dependency
+→ Execution behavior
+→ Test case
+```
+
+That would make it directly usable for your Python quant engine without leaving ambiguous decisions for the developer.

@@ -117,20 +117,21 @@ def compute_frog_in_the_pan(df: pd.DataFrame, lookback: int = 40) -> Dict[str, A
 
     smoothness_pct = round((pos_count / total_active * 100.0), 1) if total_active > 0 else 50.0
 
-    # Max single-day price gain as a % of cumulative 40-day advance
-    cum_advance = float(c.iloc[-1] - c.iloc[-lookback])
-    daily_gains = (c - c.shift(1)).tail(lookback)
-    max_1d_gain = float(daily_gains.max())
+    # Robust FIP: Max single-day price gain as % of total cumulative positive gains
+    diffs = (c - c.shift(1)).tail(lookback)
+    pos_gains = diffs.clip(lower=0)
+    sum_pos_gains = float(pos_gains.sum())
+    max_1d_gain = float(pos_gains.max())
 
-    if cum_advance > 0 and max_1d_gain > 0:
-        max_jump_pct = round((max_1d_gain / cum_advance) * 100.0, 1)
+    if sum_pos_gains > 0 and max_1d_gain > 0:
+        max_jump_pct = round((max_1d_gain / sum_pos_gains) * 100.0, 1)
     else:
         max_jump_pct = 0.0
 
-    # Smoothness >= 50% and no single day accounts for > 60% of total gain
-    is_smooth = (smoothness_pct >= 50.0) and (max_jump_pct < 60.0)
+    # Smoothness >= 50% and no single day accounts for > 40% of total gains
+    is_smooth = (smoothness_pct >= 50.0) and (max_jump_pct <= 40.0)
 
-    if smoothness_pct >= 55.0 and max_jump_pct <= 40.0:
+    if smoothness_pct >= 55.0 and max_jump_pct <= 25.0:
         status = "STEADY_ACCUMULATION"
     elif is_smooth:
         status = "MODERATE_SMOOTHNESS"
