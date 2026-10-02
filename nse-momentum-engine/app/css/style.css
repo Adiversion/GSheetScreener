@@ -311,6 +311,10 @@ code { font-family: var(--font-mono); font-size: .85em; background: var(--surfac
 .btn-return-latest:hover {
   background: var(--brand); color: #fff;
 }
+.btn-return-latest[hidden],
+[hidden] {
+  display: none !important;
+}
 @media (max-width: 640px) {
   .market-status-bar { padding: 6px 12px; gap: 6px; }
   .market-status-bar__center { font-size: .7rem; flex-basis: 100%; }

@@ -262,7 +262,7 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
     # 1. Download official NSE Bhavcopy
     df_bhav, trade_date, dt_obj = download_nse_bhavcopy(target_date_str)
     is_today = (trade_date == today_str)
-    bhavcopy_status = "CURRENT_SESSION" if is_today else "PREVIOUS_SESSION_FALLBACK"
+    bhavcopy_status = "CURRENT_SESSION" if is_today else ("LATEST_CONFIRMED" if is_latest else "HISTORICAL_ARCHIVE")
 
     # 2. Download official NSE Circuit Bands
     circuit_bands = download_nse_circuit_bands()
@@ -671,6 +671,7 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
         "trade_date": trade_date,
         "trade_date_display": dt_obj.strftime("%d-%b-%Y"),
         "is_today": is_today,
+        "is_latest_session": is_latest,
         "bhavcopy_status": bhavcopy_status,
         "capital_base": capital_default,
         "total_qualified": total_qualified,
@@ -703,6 +704,7 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
         "date": trade_date,
         "display_date": dt_obj.strftime("%d %b %Y"),
         "is_today": is_today,
+        "is_latest": is_latest,
         "winner": winner_sized["SYMBOL"] if winner_sized else "CASH",
         "cmp": winner_sized["CMP"] if winner_sized else 0,
         "cms": winner_sized["CMS_SCORE"] if winner_sized else 0,
@@ -710,6 +712,8 @@ def run_screener(capital_override=None, target_date_str=None, is_latest=True):
         "regime": regime_info.get("regime", "UNKNOWN")
     })
     manifest = sorted(manifest, key=lambda x: x["date"], reverse=True)
+    for idx, m in enumerate(manifest):
+        m["is_latest"] = (idx == 0)
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 

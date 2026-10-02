@@ -927,12 +927,13 @@ function renderHistory() {
       { date: '2026-09-30', display_date: '30 Sep 2026', is_today: true },
       { date: '2026-09-29', display_date: '29 Sep 2026', is_today: false }
     ];
-    sessionsContainer.innerHTML = manifest.map(m => {
-      const isSelected = m.date === (state.selectedDate || '2026-09-30');
+    sessionsContainer.innerHTML = manifest.map((m, idx) => {
+      const isSelected = m.date === (state.selectedDate || (state.payload && state.payload.trade_date) || '2026-10-01');
+      const isLatest = idx === 0 || m.is_latest;
       return `
         <div class="session-archive-item ${isSelected ? 'selected' : ''}" onclick="selectSessionDate('${m.date}'); switchTab('Signal');">
           <div class="session-archive-main">
-            <div class="session-archive-date">${m.is_today ? '🟢' : '📅'} ${m.display_date || m.date}</div>
+            <div class="session-archive-date">${isLatest ? '🟢' : '📅'} ${m.display_date || m.date}${isLatest ? ' <span class="tag-latest" style="font-size:0.65rem; background:var(--brand-soft); color:#99c2ff; padding:2px 6px; border-radius:4px; margin-left:6px;">Latest</span>' : ''}</div>
             <div class="session-archive-meta">NSE EOD Confirmed Bhavcopy Snapshot</div>
           </div>
           <button class="btn-action inspect" style="font-size:0.75rem; padding:4px 10px;">
@@ -1501,11 +1502,21 @@ function renderSessionSwitcher(manifest, currentTradeDate) {
   }
   sessionCard.hidden = false;
 
-  const isFallback = state.payload && state.payload.bhavcopy_status === 'PREVIOUS_SESSION_FALLBACK';
+  const now = new Date();
+  const utcMs = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+  const istDate = new Date(utcMs + (5.5 * 60 * 60 * 1000));
+  const day = istDate.getDay(); // 0 Sun, 6 Sat
+  const hour = istDate.getHours();
+  const minute = istDate.getMinutes();
+  const isWeekday = day >= 1 && day <= 5;
+  const isCompilingTime = isWeekday && ((hour === 15 && minute > 30) || (hour >= 16 && hour < 17) || (hour === 17 && minute <= 30));
+  const todayIso = `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
+  const isCompilingNotice = isCompilingTime && (state.payload && state.payload.trade_date !== todayIso);
+
   if (pendingNotice) {
-    pendingNotice.hidden = !isFallback;
-    pendingNotice.style.display = isFallback ? 'inline-flex' : 'none';
-    if (isFallback) {
+    pendingNotice.hidden = !isCompilingNotice;
+    pendingNotice.style.display = isCompilingNotice ? 'inline-flex' : 'none';
+    if (isCompilingNotice) {
       pendingNotice.textContent = `⏳ Compiling · using ${state.payload.trade_date_display || 'prior session'}`;
     }
   }
@@ -1554,6 +1565,7 @@ function updateMarketStatusBar(manifest, currentTradeDate) {
 
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const todayStr = `${String(istDate.getDate()).padStart(2, '0')}-${months[istDate.getMonth()]}-${istDate.getFullYear()}`;
+  const todayIso = `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
   if (todayEl) todayEl.textContent = `Today: ${todayStr}`;
 
   const latestSession = (manifestList && manifestList.length > 0) ? manifestList[0] : null;
@@ -1576,30 +1588,36 @@ function updateMarketStatusBar(manifest, currentTradeDate) {
     if (desc) desc.innerHTML = `Viewing historical session snapshot for <strong>${activeDisplay}</strong>. Data preserved for backtest and performance review.`;
     if (btnReturn && latestSession) {
       btnReturn.hidden = false;
-      btnReturn.textContent = `Back to Latest (${latestSession.display_date})`;
+      btnReturn.style.display = 'inline-flex';
+      btnReturn.textContent = `Back to Latest (${latestSession.display_date || latestSession.date})`;
       btnReturn.onclick = () => selectSessionDate(latestSession.date);
     }
     return;
   }
 
-  if (btnReturn) btnReturn.hidden = true;
+  if (btnReturn) {
+    btnReturn.hidden = true;
+    btnReturn.style.display = 'none';
+  }
 
-  if (state.payload && state.payload.is_today) {
+  const isBhavcopyFromToday = (activeDate === todayIso);
+
+  if (isBhavcopyFromToday) {
     if (dot) dot.className = 'status-pulse-dot synced';
     if (phase) phase.textContent = 'SESSION SYNCHRONIZED';
-    if (desc) desc.innerHTML = `Official NSE Bhavcopy for <strong>${todayStr}</strong> is verified and active.`;
+    if (desc) desc.innerHTML = `Official NSE Bhavcopy for <strong>${activeDisplay}</strong> is verified and active.`;
   } else if (isMarketOpen) {
     if (dot) dot.className = 'status-pulse-dot live';
     if (phase) phase.textContent = 'NSE LIVE SESSION (09:15 – 15:30 IST)';
-    if (desc) desc.innerHTML = `Today's official Bhavcopy releases post-market (~17:30 IST). Showing latest confirmed session: <strong>${latestSession ? latestSession.display_date : '30 Sep 2026'}</strong>.`;
+    if (desc) desc.innerHTML = `Today's market is live. Showing latest confirmed Bhavcopy: <strong>${activeDisplay}</strong>. Today's official Bhavcopy releases post-market (~17:30 IST).`;
   } else if (isCompilingBhavcopy) {
     if (dot) dot.className = 'status-pulse-dot compiling';
     if (phase) phase.textContent = 'NSE COMPILING BHAVCOPY (Market Closed)';
-    if (desc) desc.innerHTML = `Exchange clearing & reconciliation in progress (releases ~17:30 IST). Showing latest confirmed session: <strong>${latestSession ? latestSession.display_date : '30 Sep 2026'}</strong>.`;
+    if (desc) desc.innerHTML = `Exchange clearing & reconciliation in progress for today (~17:30 IST). Showing latest confirmed session: <strong>${activeDisplay}</strong>.`;
   } else {
-    if (dot) dot.className = 'status-pulse-dot neutral';
-    if (phase) phase.textContent = 'MARKET CLOSED';
-    if (desc) desc.innerHTML = `Next session opens at 09:15 IST. Displaying confirmed session: <strong>${latestSession ? latestSession.display_date : '30 Sep 2026'}</strong>.`;
+    if (dot) dot.className = 'status-pulse-dot synced';
+    if (phase) phase.textContent = 'MARKET CLOSED · SESSION CONFIRMED';
+    if (desc) desc.innerHTML = `Displaying official confirmed NSE Bhavcopy for <strong>${activeDisplay}</strong>. Complete dataset active for research.`;
   }
 }
 
@@ -2491,13 +2509,14 @@ function renderHistory() {
     if (!manifest.length) {
       sessionsContainer.innerHTML = `<div class="empty-state"><p>No archived sessions available yet.</p></div>`;
     } else {
-      sessionsContainer.innerHTML = manifest.map(m => {
+      sessionsContainer.innerHTML = manifest.map((m, idx) => {
         const isSelected = m.date === (state.selectedDate || (state.payload && state.payload.trade_date));
         const winner = (m.winner && m.winner !== 'CASH') ? m.winner : 'CASH';
+        const isLatest = idx === 0 || m.is_latest;
         return `
           <div class="session-archive-item ${isSelected ? 'selected' : ''}" role="button" tabindex="0" data-date="${m.date}">
             <div>
-              <div class="session-archive-date">${m.display_date || m.date} ${m.is_today ? '<span class="tag tag--prime">today</span>' : ''}</div>
+              <div class="session-archive-date">${m.display_date || m.date} ${isLatest ? '<span class="tag tag--prime">latest</span>' : ''}</div>
               <div class="session-archive-meta">${m.total_qualified != null ? m.total_qualified + ' leaders qualified' : 'EOD bhavcopy snapshot'}</div>
             </div>
             <div class="session-archive-stats">
