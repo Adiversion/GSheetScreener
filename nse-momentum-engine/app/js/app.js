@@ -5,6 +5,13 @@
 
 'use strict';
 
+window.addEventListener('error', e => {
+  console.error('[NSE Uncaught Error]', e.message, 'at', e.filename, 'line', e.lineno, e.error);
+});
+window.addEventListener('unhandledrejection', e => {
+  console.error('[NSE Unhandled Rejection]', e.reason);
+});
+
 /* ─── Constants ─── */
 const LS = {
   CAPITAL_BASE:    'nse_capital_base',
@@ -206,23 +213,37 @@ function switchTab(name) {
 ══════════════════════════════════════════════════════ */
 
 async function fetchSignal(showLoading = true) {
-  if (state.refreshing) return;
+  console.log('[NSE Fetch] Starting fetchSignal...', { showLoading, refreshing: state.refreshing });
+  if (state.refreshing) {
+    console.log('[NSE Fetch] Already refreshing, exiting.');
+    return;
+  }
   if (showLoading) { setRefreshing(true); showSkeleton(true); }
 
   try {
     let rows = null;
     let payload = null;
 
-    // Direct Native High-Speed Static API (GitHub Pages CDN / local)
+    console.log('[NSE Fetch] Requesting data/signal.json...');
     const res = await fetch('data/signal.json?_t=' + Date.now(), { cache: 'no-store' });
+    console.log('[NSE Fetch] data/signal.json response:', res.status, res.statusText);
+
     if (res.ok) {
       payload = await res.json();
       rows = payload.rows || [];
+      console.log('[NSE Fetch] Successfully received signal.json:', {
+        trade_date: payload.trade_date,
+        total_qualified: payload.total_qualified,
+        rows_count: rows.length,
+        regime: payload.regime ? payload.regime.regime : null
+      });
     } else {
+      console.warn('[NSE Fetch] signal.json non-ok, falling back to signal.csv...');
       const csvRes = await fetch('data/signal.csv?_t=' + Date.now(), { cache: 'no-store' });
       if (csvRes.ok) {
         const text = await csvRes.text();
         rows = parseCSV(text);
+        console.log('[NSE Fetch] Parsed signal.csv rows:', rows ? rows.length : 0);
       }
     }
 
@@ -232,8 +253,16 @@ async function fetchSignal(showLoading = true) {
     state.payload = payload;
     store.set(LS.LAST_SIGNAL, { rows, payload, fetchedAt: new Date().toISOString() });
 
+    console.log('[NSE Fetch] Dismissing skeleton before rendering...');
+    showSkeleton(false);
+
+    console.log('[NSE Fetch] Rendering market regime...');
     renderMarketRegime(payload ? payload.regime : null);
-    if (state.userCapital && state.userCapital !== DEFAULT_CAPITAL && payload && payload.all_qualified) {
+
+    const isCustomCapital = state.userCapital && state.userCapital !== DEFAULT_CAPITAL && payload && payload.all_qualified;
+    console.log('[NSE Fetch] Render route:', isCustomCapital ? 'onCapitalChange' : 'renderSignal');
+
+    if (isCustomCapital) {
       onCapitalChange(state.userCapital);
     } else {
       renderSignal(rows, payload ? payload.reason : null);
@@ -245,16 +274,20 @@ async function fetchSignal(showLoading = true) {
       if (payload.history_manifest && payload.history_manifest.length) {
         state.historyManifest = payload.history_manifest;
       }
+      console.log('[NSE Fetch] Rendering session switcher for date:', payload.trade_date);
       renderSessionSwitcher(state.historyManifest, payload.trade_date);
     }
     updateLastUpdated(new Date());
     if (showLoading) showToast('Signal refreshed', 'success', '📡');
+    console.log('[NSE Fetch] fetchSignal completed successfully.');
   } catch (err) {
-    console.warn('[Fetch error, checking cache]', err);
+    console.error('[NSE Fetch Error]', err);
     const cached = store.get(LS.LAST_SIGNAL, null);
     if (cached && cached.rows) {
+      console.log('[NSE Fetch] Falling back to cached data from', cached.fetchedAt);
       state.signalData = cached.rows;
       state.payload = cached.payload;
+      showSkeleton(false);
       renderMarketRegime(cached.payload ? cached.payload.regime : null);
       if (state.userCapital && state.userCapital !== DEFAULT_CAPITAL && cached.payload && cached.payload.all_qualified) {
         onCapitalChange(state.userCapital);
@@ -291,6 +324,12 @@ function setRefreshing(val) {
 function showSkeleton(show) {
   const sk = document.getElementById('signalSkeleton');
   const sc = document.getElementById('signalContent');
+  console.log('[NSE Skeleton]', show ? 'SHOWING skeleton' : 'HIDING skeleton', {
+    hasSkeletonEl: !!sk,
+    hasContentEl: !!sc,
+    skPrevDisplay: sk ? sk.style.display : null,
+    scPrevDisplay: sc ? sc.style.display : null
+  });
   if (sk) {
     sk.style.display = show ? 'grid' : 'none';
     if (show) sk.removeAttribute('hidden'); else sk.setAttribute('hidden', '');
@@ -1418,11 +1457,14 @@ function setupWatchlistSearchAndFilters() {
 }
 
 function onCapitalChange(newCapital) {
+  console.log('[NSE Capital] onCapitalChange called with newCapital =', newCapital);
+  showSkeleton(false);
   state.userCapital = newCapital;
   store.set(LS.CURRENT_CAPITAL, newCapital);
   updatePillActive(newCapital);
 
   const allStocks = (state.payload && state.payload.all_qualified) || [];
+  console.log('[NSE Capital] allStocks count =', allStocks.length);
   if (allStocks.length > 0) {
     const isDefensive = (state.payload && state.payload.regime && state.payload.regime.regime === 'DEFENSIVE_CASH');
     let target = state.activeStock ? allStocks.find(s => s.SYMBOL === state.activeStock.SYMBOL) : null;
@@ -1437,8 +1479,10 @@ function onCapitalChange(newCapital) {
       winner.CAPITAL_REQUIRED = shares * parseFloat(winner.CMP);
       winner.CAPITAL_BASE = newCapital;
       const alts = allStocks.filter(s => s.SYMBOL !== winner.SYMBOL).slice(0, 3);
+      console.log('[NSE Capital] Rendering active signal for target stock:', winner.SYMBOL);
       renderActiveSignal(winner, alts, isDefensive);
     }
+    console.log('[NSE Capital] Calling renderAllStocksTable...');
     renderAllStocksTable(allStocks, newCapital);
   }
 }
@@ -1716,10 +1760,15 @@ function wireGlossaryModal() {
 ══════════════════════════════════════════════════════ */
 
 (function init() {
+  console.log('[NSE Init] Booting application...', {
+    onLine: navigator.onLine,
+    storedCapital: store.get(LS.CURRENT_CAPITAL, DEFAULT_CAPITAL)
+  });
   // Purge stale 0-stock caches
   try {
     const cached = store.get(LS.LAST_SIGNAL, null);
     if (cached && (!cached.rows || cached.rows.length === 0 || cached.rows[0].STATUS === 'CASH' || (cached.payload && cached.payload.total_qualified === 0))) {
+      console.log('[NSE Init] Purging stale cash cache from localStorage');
       localStorage.removeItem(LS.LAST_SIGNAL);
     }
   } catch (_) {}
@@ -1729,6 +1778,7 @@ function wireGlossaryModal() {
   wireEntryPriceController();
   wireGlossaryModal();
   setupWatchlistSearchAndFilters();
+  console.log('[NSE Init] UI controllers wired. Calling fetchSignal(true)...');
   fetchSignal(true);
 })();
 
@@ -1789,6 +1839,8 @@ function closeInspectorBtn() {
 }
 
 function renderCashState(hero, overrideMsg = null) {
+  console.log('[NSE Signal] renderCashState called, msg =', overrideMsg);
+  showSkeleton(false);
   const heroCard = document.getElementById('heroCard');
   if (heroCard) {
     heroCard.className = 'inspector__header';
@@ -1881,8 +1933,13 @@ function updateInspectorPnL(entry, cmp) {
 }
 
 function renderActiveSignal(h, alts, isDefensive = false) {
+  console.log('[NSE Signal] renderActiveSignal called for:', h ? h.SYMBOL : 'none', 'isDefensive =', isDefensive);
+  showSkeleton(false);
   const heroCard = document.getElementById('heroCard');
-  if (!heroCard) return;
+  if (!heroCard) {
+    console.error('[NSE Signal] heroCard element not found in DOM!');
+    return;
+  }
 
   const cmp = parseFloat(h.CMP);
   const cms = parseFloat(h.CMS_SCORE);
@@ -2240,10 +2297,14 @@ function buildGridRow(s, idx, userCapital) {
 }
 
 function renderAllStocksTable(stocks, userCapital) {
+  console.log('[NSE Table] renderAllStocksTable called with', stocks ? stocks.length : 0, 'stocks, userCapital =', userCapital);
   const tbody = document.getElementById('allStocksBody');
   const countBadge = document.getElementById('allStocksCountBadge');
   const status = document.getElementById('gridStatus');
-  if (!tbody) return;
+  if (!tbody) {
+    console.error('[NSE Table] tbody #allStocksBody NOT FOUND in DOM!');
+    return;
+  }
   userCapital = userCapital || state.userCapital || DEFAULT_CAPITAL;
   const all = stocks || [];
 
