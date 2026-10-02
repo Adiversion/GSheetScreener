@@ -182,8 +182,14 @@
     if (foot) foot.textContent = (v.summary || '') + periodStr;
   }
 
+  const isValidSym = s => typeof s === 'string' && s.trim().length >= 2 && !/^[—\-_\s]+$/.test(s.trim()) && s.trim().toUpperCase() !== 'NONE';
+
   async function runLiveBacktest(sym) {
-    const symbol = String(sym || '').trim().toUpperCase().replace(/\.NS$/, '');
+    let symbol = String(sym || '').trim().toUpperCase().replace(/\.NS$/, '');
+    if (!isValidSym(symbol)) {
+      const topValid = typeof state !== 'undefined' && state.payload?.all_qualified?.find(x => isValidSym(x.SYMBOL))?.SYMBOL;
+      symbol = topValid || 'CUPID';
+    }
     if (!symbol) return;
 
     const input = document.getElementById('researchCustomTicker');
@@ -262,7 +268,7 @@
     const chipsWrap = document.querySelector('.research-quick-chips');
     if (chipsWrap && typeof state !== 'undefined' && state.payload?.all_qualified?.length > 0) {
       const isDef = state.payload?.regime?.regime === 'DEFENSIVE_CASH';
-      const syms = state.payload.all_qualified.slice(0, 7).map(x => x.SYMBOL);
+      const syms = state.payload.all_qualified.filter(x => isValidSym(x.SYMBOL)).slice(0, 7).map(x => x.SYMBOL);
       chipsWrap.innerHTML = `<span style="font-size:0.75rem;color:var(--text-dim);font-weight:600;text-transform:uppercase;">${isDef ? '🛡️ Defensive Watchlist:' : 'Quick leaders:'}</span>` +
         syms.map(s => `<button class="chip chip--sm chip-leader-suggest" data-sym="${s}">${s}</button>`).join('');
     }
@@ -273,9 +279,9 @@
     // Auto-load initial stock if grid is empty
     const currentTitle = document.getElementById('researchSymbolTitle');
     if (currentTitle && (!currentTitle.textContent || currentTitle.textContent === 'Statistical Study')) {
-      const initialSym = (typeof state !== 'undefined' && state.activeStock && state.activeStock.SYMBOL)
-        || (typeof state !== 'undefined' && state.signalData && state.signalData[0] && state.signalData[0].SYMBOL)
-        || 'CUPID';
+      const topSym = (typeof state !== 'undefined' && state.payload?.all_qualified?.find(x => isValidSym(x.SYMBOL))?.SYMBOL);
+      const activeSym = typeof state !== 'undefined' && isValidSym(state.activeStock?.SYMBOL) ? state.activeStock.SYMBOL : null;
+      const initialSym = activeSym || topSym || 'CUPID';
       if (input) input.value = initialSym;
       runLiveBacktest(initialSym);
     }
