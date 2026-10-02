@@ -289,8 +289,16 @@ function setRefreshing(val) {
 }
 
 function showSkeleton(show) {
-  document.getElementById('signalSkeleton').style.display = show ? 'block' : 'none';
-  document.getElementById('signalContent').style.display  = show ? 'none'  : 'block';
+  const sk = document.getElementById('signalSkeleton');
+  const sc = document.getElementById('signalContent');
+  if (sk) {
+    sk.style.display = show ? 'grid' : 'none';
+    if (show) sk.removeAttribute('hidden'); else sk.setAttribute('hidden', '');
+  }
+  if (sc) {
+    sc.style.display = show ? 'none' : 'block';
+    if (show) sc.setAttribute('hidden', ''); else sc.removeAttribute('hidden');
+  }
 }
 
 function updateLastUpdated(date, fromCache = false) {
@@ -1489,6 +1497,12 @@ function updateGapPillActive(gap) {
    SESSION DATE SWITCHER & MARKET STATUS
 ══════════════════════════════════════════════════════ */
 
+const NSE_HOLIDAYS_2026 = [
+  '2026-01-26', '2026-03-03', '2026-03-20', '2026-04-03', '2026-04-14',
+  '2026-05-01', '2026-05-27', '2026-06-25', '2026-08-15', '2026-09-04',
+  '2026-10-02', '2026-10-20', '2026-11-08', '2026-11-10', '2026-11-24', '2026-12-25'
+];
+
 function renderSessionSwitcher(manifest, currentTradeDate) {
   const sessionCard = document.getElementById('sessionCard');
   const pillsContainer = document.getElementById('sessionPills');
@@ -1509,8 +1523,10 @@ function renderSessionSwitcher(manifest, currentTradeDate) {
   const hour = istDate.getHours();
   const minute = istDate.getMinutes();
   const isWeekday = day >= 1 && day <= 5;
-  const isCompilingTime = isWeekday && ((hour === 15 && minute > 30) || (hour >= 16 && hour < 17) || (hour === 17 && minute <= 30));
   const todayIso = `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
+  const isHoliday = NSE_HOLIDAYS_2026.includes(todayIso);
+  const isTradingDay = isWeekday && !isHoliday;
+  const isCompilingTime = isTradingDay && ((hour === 15 && minute > 30) || (hour >= 16 && hour < 17) || (hour === 17 && minute <= 30));
   const isCompilingNotice = isCompilingTime && (state.payload && state.payload.trade_date !== todayIso);
 
   if (pendingNotice) {
@@ -1560,12 +1576,14 @@ function updateMarketStatusBar(manifest, currentTradeDate) {
   const minute = istDate.getMinutes();
 
   const isWeekday = day >= 1 && day <= 5;
-  const isMarketOpen = isWeekday && ((hour > 9 || (hour === 9 && minute >= 15)) && (hour < 15 || (hour === 15 && minute <= 30)));
-  const isCompilingBhavcopy = isWeekday && ((hour === 15 && minute > 30) || (hour >= 16 && hour < 17) || (hour === 17 && minute <= 30));
-
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const todayStr = `${String(istDate.getDate()).padStart(2, '0')}-${months[istDate.getMonth()]}-${istDate.getFullYear()}`;
   const todayIso = `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
+  const isHoliday = NSE_HOLIDAYS_2026.includes(todayIso);
+  const isTradingDay = isWeekday && !isHoliday;
+  const isMarketOpen = isTradingDay && ((hour > 9 || (hour === 9 && minute >= 15)) && (hour < 15 || (hour === 15 && minute <= 30)));
+  const isCompilingBhavcopy = isTradingDay && ((hour === 15 && minute > 30) || (hour >= 16 && hour < 17) || (hour === 17 && minute <= 30));
+
   if (todayEl) todayEl.textContent = `Today: ${todayStr}`;
 
   const latestSession = (manifestList && manifestList.length > 0) ? manifestList[0] : null;
@@ -1616,7 +1634,8 @@ function updateMarketStatusBar(manifest, currentTradeDate) {
     if (desc) desc.innerHTML = `Exchange clearing & reconciliation in progress for today (~17:30 IST). Showing latest confirmed session: <strong>${activeDisplay}</strong>.`;
   } else {
     if (dot) dot.className = 'status-pulse-dot synced';
-    if (phase) phase.textContent = 'MARKET CLOSED · SESSION CONFIRMED';
+    const tag = !isWeekday ? 'WEEKEND' : (isHoliday ? 'NSE HOLIDAY' : 'MARKET CLOSED');
+    if (phase) phase.textContent = `${tag} · SESSION CONFIRMED`;
     if (desc) desc.innerHTML = `Displaying official confirmed NSE Bhavcopy for <strong>${activeDisplay}</strong>. Complete dataset active for research.`;
   }
 }

@@ -311,8 +311,7 @@ code { font-family: var(--font-mono); font-size: .85em; background: var(--surfac
 .btn-return-latest:hover {
   background: var(--brand); color: #fff;
 }
-.btn-return-latest[hidden],
-[hidden] {
+.btn-return-latest[hidden] {
   display: none !important;
 }
 @media (max-width: 640px) {
