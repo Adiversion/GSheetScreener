@@ -1389,6 +1389,7 @@ function setupWatchlistSearchAndFilters() {
         document.activeElement.blur();
       }
       closeExitModal();
+      closeInspector();
       const glossaryModal = document.getElementById('glossaryModal');
       if (glossaryModal && glossaryModal.classList.contains('open')) {
         glossaryModal.classList.remove('open');
@@ -1800,6 +1801,7 @@ function openInspector() {
 
   if (window.matchMedia('(min-width: 1024px)').matches) return;
   pane.classList.add('open');
+  document.body.classList.add('modal-open');
   let scrim = document.getElementById('inspectorScrim');
   if (!scrim) {
     scrim = document.createElement('div');
@@ -1821,6 +1823,7 @@ function closeInspector() {
   const grid = document.querySelector('.workspace__grid');
   if (grid) grid.classList.add('inspector-collapsed');
   if (scrim) scrim.classList.remove('show');
+  document.body.classList.remove('modal-open');
   state.activeStock = null;
   document.querySelectorAll('.stock-table-row.selected').forEach(el => el.classList.remove('selected'));
 }
