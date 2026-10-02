@@ -1271,6 +1271,16 @@ function wireZerodhaButtons(sig) {
       window.open(`https://in.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(sig.SYMBOL)}`, '_blank', 'noopener');
     };
   }
+
+  const btnResearch = document.getElementById('btnResearchInLab');
+  if (btnResearch) {
+    btnResearch.onclick = () => {
+      switchTab('Research');
+      if (typeof ResearchLab !== 'undefined' && ResearchLab.runLive) {
+        ResearchLab.runLive(sig.SYMBOL);
+      }
+    };
+  }
 }
 
 /** Kite Settings: Save */

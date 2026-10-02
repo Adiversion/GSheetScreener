@@ -396,6 +396,9 @@
                     <button class="btn btn--secondary" id="btnOpenTV">
                       <svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg> Chart
                     </button>
+                    <button class="btn btn--secondary" id="btnResearchInLab" title="Backtest this stock in Research Lab">
+                      <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg> Backtest in Lab
+                    </button>
                     <button class="btn btn--secondary" id="btnQuickTrack">
                       <svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> Track in Portfolio
                     </button>
@@ -543,6 +546,9 @@
             <button class="chip chip--sm chip-leader-suggest" data-sym="KMEW">KMEW</button>
           </div>
         </div>
+
+        <!-- Screener & Defensive Watchlist Diagnostic Profile -->
+        <div class="card" id="researchScreenerCard" style="margin-bottom:18px;display:none;"></div>
 
         <div class="card" id="researchCard">
           <div class="card__head">
@@ -881,7 +887,7 @@
 <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
 
 <script src="js/research-engine.js?v=2"></script>
-<script src="js/research-lab.js?v=2"></script>
-<script src="js/app.js?v=34"></script>
+<script src="js/research-lab.js?v=3"></script>
+<script src="js/app.js?v=35"></script>
 </body>
 </html>
