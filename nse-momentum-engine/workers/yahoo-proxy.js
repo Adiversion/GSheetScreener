@@ -10,11 +10,11 @@
 const YAHOO_HOST = 'query1.finance.yahoo.com';
 
 export default {
-  async fetch(request) {
+  async fetch(request, env, ctx) {
     const cors = {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
     const json = (body, status = 200) =>
       new Response(JSON.stringify(body), {
@@ -23,9 +23,61 @@ export default {
       });
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-    if (request.method !== 'GET') return json({ error: 'method_not_allowed' }, 405);
 
     const url = new URL(request.url);
+
+    // --- CLOUDFLARE KV PORTFOLIO MEMORY STORAGE ---
+    // Persists paper trading across mobile phones, laptops, and home PCs
+    if (url.pathname === '/portfolio' || url.pathname === '/api/portfolio') {
+      const syncKey = (url.searchParams.get('key') || 'default').trim().toLowerCase();
+      const storageKey = `portfolio_${syncKey}`;
+
+      if (request.method === 'GET') {
+        if (!env || !env.PORTFOLIO_KV) {
+          return json({ error: 'kv_not_bound', hint: 'PORTFOLIO_KV binding missing' }, 500);
+        }
+        const saved = await env.PORTFOLIO_KV.get(storageKey, 'json');
+        if (!saved) {
+          return json({
+            initialCapital: 1000000.0,
+            cash: 1000000.0,
+            positions: [],
+            closedTrades: [],
+            lastUpdated: new Date().toISOString(),
+            isNew: true
+          });
+        }
+        return json(saved);
+      }
+
+      if (request.method === 'POST' || request.method === 'PUT') {
+        if (!env || !env.PORTFOLIO_KV) {
+          return json({ error: 'kv_not_bound', hint: 'PORTFOLIO_KV binding missing' }, 500);
+        }
+        try {
+          const body = await request.json();
+          if (!body || typeof body !== 'object') {
+            return json({ error: 'invalid_json_body' }, 400);
+          }
+          body.lastUpdated = new Date().toISOString();
+          await env.PORTFOLIO_KV.put(storageKey, JSON.stringify(body));
+          return json({
+            success: true,
+            key: syncKey,
+            lastUpdated: body.lastUpdated,
+            positionsCount: (body.positions || []).length,
+            closedCount: (body.closedTrades || []).length
+          });
+        } catch (e) {
+          return json({ error: 'failed_to_save', message: String(e) }, 500);
+        }
+      }
+
+      return json({ error: 'method_not_allowed' }, 405);
+    }
+
+    if (request.method !== 'GET') return json({ error: 'method_not_allowed' }, 405);
+
     let symbol = (url.searchParams.get('symbol') || '').trim().toUpperCase();
     if (!symbol) return json({ error: 'missing_symbol', hint: 'pass ?symbol=CUPID.NS' }, 400);
     if (!symbol.includes('.')) symbol += '.NS';   // default to NSE

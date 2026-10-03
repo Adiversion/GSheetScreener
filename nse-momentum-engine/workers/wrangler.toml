@@ -1,3 +1,7 @@
 name = "nse-quote"
 main = "yahoo-proxy.js"
 compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "PORTFOLIO_KV"
+id = "dc64835cb09f49e296f43ce8ce0bab6d"
