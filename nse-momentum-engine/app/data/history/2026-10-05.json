@@ -1,6 +1,6 @@
 {
   "status": "CASH",
-  "timestamp": "2026-10-06 02:42 IST",
+  "timestamp": "2026-10-06 03:03 IST",
   "trade_date": "2026-10-05",
   "trade_date_display": "05-Oct-2026",
   "is_today": false,
@@ -24,7 +24,7 @@
   "rows": [
     {
       "STATUS": "CASH",
-      "TIMESTAMP": "2026-10-06 02:42 IST",
+      "TIMESTAMP": "2026-10-06 03:03 IST",
       "SYMBOL": "\u2014",
       "CMP": "\u2014",
       "CMS_SCORE": "\u2014",
