@@ -1,7 +1,12 @@
 {
+  "status": "CASH",
   "timestamp": "2026-10-09 23:00 IST",
   "trade_date": "2026-10-09",
-  "total_screened": 500,
+  "trade_date_display": "09-Oct-2026",
+  "is_today": true,
+  "is_latest_session": true,
+  "bhavcopy_status": "CURRENT_SESSION",
+  "capital_base": 1000.0,
   "total_qualified": 61,
   "regime": {
     "benchmark": "Nifty 500",
@@ -14,7 +19,36 @@
     "state_0_stop_pct": 0.04,
     "description": "Nifty 500 below 200 SMA. Macro regime is DEFENSIVE_CASH; new entries forbidden, State 0 stops tightened to -4%."
   },
-  "stocks": [
+  "winner": null,
+  "alternates": [],
+  "rows": [
+    {
+      "STATUS": "CASH",
+      "TIMESTAMP": "2026-10-09 23:00 IST",
+      "SYMBOL": "\u2014",
+      "CMP": "\u2014",
+      "CMS_SCORE": "\u2014",
+      "ROC_1M": "\u2014",
+      "ROC_2M": "\u2014",
+      "ROC_3M": "\u2014",
+      "RSI_14": "\u2014",
+      "SMA_50": "\u2014",
+      "SMA_200": "\u2014",
+      "ATR_14": "\u2014",
+      "HIGH_52W": "\u2014",
+      "SHARES": "\u2014",
+      "CAPITAL_REQUIRED": "\u2014",
+      "INITIAL_STOP": "\u2014",
+      "M1_TARGET": "\u2014",
+      "M1_STOP": "\u2014",
+      "M2_TARGET": "\u2014",
+      "M2_STOP": "\u2014",
+      "M3_TARGET": "\u2014",
+      "CAPITAL_BASE": 1000.0,
+      "TOTAL_QUALIFIED": 61
+    }
+  ],
+  "all_qualified": [
     {
       "SYMBOL": "KRISHANA",
       "CMP": 197.11,
@@ -4027,5 +4061,15 @@
       "DOWNSIDE_FLOOR": 87.14,
       "FLOOR_STATUS": "INTACT"
     }
-  ]
+  ],
+  "skewness_proof": {
+    "win_rate_pct": 45.0,
+    "avg_loss_pct": 6.5,
+    "fixed_avg_win_pct": 32.0,
+    "fixed_expected_return_per_trade_pct": 10.83,
+    "dynamic_avg_win_pct": 38.2,
+    "dynamic_expected_return_per_trade_pct": 13.61,
+    "expected_edge_lift_pct": 25.8,
+    "positive_skewness_unlocked": true
+  }
 }
