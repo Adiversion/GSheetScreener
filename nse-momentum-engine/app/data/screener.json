@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-13 01:53 IST",
+  "timestamp": "2026-10-13 02:33 IST",
   "trade_date": "2026-10-12",
   "total_screened": 500,
   "total_qualified": 66,
@@ -3542,7 +3542,7 @@
       "UD_STATUS": "STRONG_ACCUMULATION",
       "VDU_RATIO": 1.08,
       "VDU_STATUS": "ACTIVE_CHURN",
-      "RS_12M": 60.6,
+      "RS_12M": 61.0,
       "INSTITUTIONAL_GRADE": "NEUTRAL_QUALITY",
       "INSTITUTIONAL_SCORE": 45.0,
       "VCP_RATIO": 1.15,

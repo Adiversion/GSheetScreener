@@ -1,6 +1,6 @@
 {
   "status": "CASH",
-  "timestamp": "2026-10-13 01:54 IST",
+  "timestamp": "2026-10-13 02:35 IST",
   "trade_date": "2026-10-08",
   "trade_date_display": "08-Oct-2026",
   "is_today": false,
@@ -24,7 +24,7 @@
   "rows": [
     {
       "STATUS": "CASH",
-      "TIMESTAMP": "2026-10-13 01:54 IST",
+      "TIMESTAMP": "2026-10-13 02:35 IST",
       "SYMBOL": "\u2014",
       "CMP": "\u2014",
       "CMS_SCORE": "\u2014",
@@ -1988,7 +1988,7 @@
       "UD_STATUS": "STRONG_ACCUMULATION",
       "VDU_RATIO": 0.98,
       "VDU_STATUS": "MODERATE_VOLUME",
-      "RS_12M": 60.9,
+      "RS_12M": 61.4,
       "INSTITUTIONAL_GRADE": "NEUTRAL_QUALITY",
       "INSTITUTIONAL_SCORE": 55.0,
       "VCP_RATIO": 0.96,
@@ -3326,7 +3326,7 @@
       "UD_STATUS": "STRONG_ACCUMULATION",
       "VDU_RATIO": 1.09,
       "VDU_STATUS": "ACTIVE_CHURN",
-      "RS_12M": 59.7,
+      "RS_12M": 60.1,
       "INSTITUTIONAL_GRADE": "SPECULATIVE_CHURN",
       "INSTITUTIONAL_SCORE": 30.0,
       "VCP_RATIO": 1.13,
