@@ -2,12 +2,12 @@
   {
     "date": "2026-10-13",
     "display_date": "13 Oct 2026",
-    "is_today": true,
+    "is_today": false,
     "is_latest": true,
     "winner": "CASH",
     "cmp": 0,
     "cms": 0,
-    "total_qualified": 73,
+    "total_qualified": 75,
     "regime": "DEFENSIVE_CASH"
   },
   {
@@ -18,7 +18,7 @@
     "winner": "CASH",
     "cmp": 0,
     "cms": 0,
-    "total_qualified": 66,
+    "total_qualified": 77,
     "regime": "DEFENSIVE_CASH"
   },
   {
