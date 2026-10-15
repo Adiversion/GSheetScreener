@@ -1,6 +1,6 @@
 {
   "status": "CASH",
-  "timestamp": "2026-10-15 21:10 IST",
+  "timestamp": "2026-10-15 22:03 IST",
   "trade_date": "2026-10-15",
   "trade_date_display": "15-Oct-2026",
   "is_today": true,
@@ -24,7 +24,7 @@
   "rows": [
     {
       "STATUS": "CASH",
-      "TIMESTAMP": "2026-10-15 21:10 IST",
+      "TIMESTAMP": "2026-10-15 22:03 IST",
       "SYMBOL": "\u2014",
       "CMP": "\u2014",
       "CMS_SCORE": "\u2014",
@@ -3770,7 +3770,7 @@
       "winner": "CASH",
       "cmp": 0,
       "cms": 0,
-      "total_qualified": 74,
+      "total_qualified": 82,
       "regime": "DEFENSIVE_CASH"
     },
     {
@@ -3781,7 +3781,7 @@
       "winner": "CASH",
       "cmp": 0,
       "cms": 0,
-      "total_qualified": 74,
+      "total_qualified": 73,
       "regime": "DEFENSIVE_CASH"
     },
     {
@@ -3792,7 +3792,7 @@
       "winner": "CASH",
       "cmp": 0,
       "cms": 0,
-      "total_qualified": 77,
+      "total_qualified": 76,
       "regime": "DEFENSIVE_CASH"
     },
     {
