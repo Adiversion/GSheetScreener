@@ -1,13 +1,24 @@
 [
   {
-    "date": "2026-11-02",
-    "display_date": "02 Nov 2026",
+    "date": "2026-11-03",
+    "display_date": "03 Nov 2026",
     "is_today": false,
     "is_latest": true,
     "winner": "CASH",
     "cmp": 0,
     "cms": 0,
-    "total_qualified": 48,
+    "total_qualified": 47,
+    "regime": "DEFENSIVE_CASH"
+  },
+  {
+    "date": "2026-11-02",
+    "display_date": "02 Nov 2026",
+    "is_today": false,
+    "is_latest": false,
+    "winner": "CASH",
+    "cmp": 0,
+    "cms": 0,
+    "total_qualified": 53,
     "regime": "DEFENSIVE_CASH"
   },
   {
