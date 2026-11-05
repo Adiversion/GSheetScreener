@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-06 01:11 IST",
+  "timestamp": "2026-11-06 02:16 IST",
   "trade_date": "2026-11-05",
   "trade_date_display": "05-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-06 01:11 IST",
+      "TIMESTAMP": "2026-11-06 02:16 IST",
       "SYMBOL": "TFCILTD",
       "CMP": 160.89,
       "CMS_SCORE": 91.6,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-06 01:11 IST",
+      "TIMESTAMP": "2026-11-06 02:16 IST",
       "SYMBOL": "SHREEJISPG",
       "CMP": 871.15,
       "CMS_SCORE": 84.0,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-06 01:11 IST",
+      "TIMESTAMP": "2026-11-06 02:16 IST",
       "SYMBOL": "NYKAA",
       "CMP": 355.5,
       "CMS_SCORE": 56.0,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-06 01:11 IST",
+      "TIMESTAMP": "2026-11-06 02:16 IST",
       "SYMBOL": "BEML",
       "CMP": 2123.0,
       "CMS_SCORE": 43.3,
@@ -2942,7 +2942,7 @@
       "IS_PRIME": true,
       "SETUP_QUALITY": "PRIME_LOW_RISK",
       "HIGH_52W": 8941.35,
-      "LOW_52W": 5428.51,
+      "LOW_52W": 5428.52,
       "INITIAL_STOP": 8162.61,
       "INITIAL_STOP_PCT": 7.0,
       "M1_TARGET": 10093.55,
