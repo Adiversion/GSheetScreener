@@ -1,36 +1,47 @@
 [
   {
+    "date": "2026-11-05",
+    "display_date": "05 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "TFCILTD",
+    "cmp": 160.89,
+    "cms": 91.6,
+    "total_qualified": 55,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-04",
     "display_date": "04 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "CASH",
-    "cmp": 0,
-    "cms": 0,
-    "total_qualified": 51,
-    "regime": "DEFENSIVE_CASH"
+    "is_latest": false,
+    "winner": "TFCILTD",
+    "cmp": 160.89,
+    "cms": 90.3,
+    "total_qualified": 64,
+    "regime": "CORRECTION_WATCH"
   },
   {
     "date": "2026-11-03",
     "display_date": "03 Nov 2026",
     "is_today": false,
     "is_latest": false,
-    "winner": "CASH",
-    "cmp": 0,
-    "cms": 0,
+    "winner": "TFCILTD",
+    "cmp": 161.89,
+    "cms": 92.9,
     "total_qualified": 56,
-    "regime": "DEFENSIVE_CASH"
+    "regime": "CORRECTION_WATCH"
   },
   {
     "date": "2026-11-02",
     "display_date": "02 Nov 2026",
     "is_today": false,
     "is_latest": false,
-    "winner": "CASH",
-    "cmp": 0,
-    "cms": 0,
+    "winner": "THELEELA",
+    "cmp": 671.05,
+    "cms": 78.1,
     "total_qualified": 53,
-    "regime": "DEFENSIVE_CASH"
+    "regime": "CORRECTION_WATCH"
   },
   {
     "date": "2026-10-30",
