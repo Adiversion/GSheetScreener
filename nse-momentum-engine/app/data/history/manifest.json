@@ -1,13 +1,24 @@
 [
   {
+    "date": "2026-11-06",
+    "display_date": "06 Nov 2026",
+    "is_today": true,
+    "is_latest": true,
+    "winner": "AARTIPHARM",
+    "cmp": 929.1,
+    "cms": 22.4,
+    "total_qualified": 66,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-05",
     "display_date": "05 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "TFCILTD",
-    "cmp": 160.89,
-    "cms": 91.6,
-    "total_qualified": 55,
+    "is_latest": false,
+    "winner": "SONACOMS",
+    "cmp": 915.25,
+    "cms": 72.9,
+    "total_qualified": 65,
     "regime": "CORRECTION_WATCH"
   },
   {
