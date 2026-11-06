@@ -2,12 +2,12 @@
   {
     "date": "2026-11-06",
     "display_date": "06 Nov 2026",
-    "is_today": true,
+    "is_today": false,
     "is_latest": true,
-    "winner": "AARTIPHARM",
-    "cmp": 929.1,
-    "cms": 22.4,
-    "total_qualified": 66,
+    "winner": "SONACOMS",
+    "cmp": 915.25,
+    "cms": 75.3,
+    "total_qualified": 64,
     "regime": "CORRECTION_WATCH"
   },
   {
