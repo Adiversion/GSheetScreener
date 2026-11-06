@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-07 00:34 IST",
+  "timestamp": "2026-11-07 01:32 IST",
   "trade_date": "2026-11-02",
   "trade_date_display": "02-Nov-2026",
   "is_today": false,
@@ -317,7 +317,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-07 00:34 IST",
+      "TIMESTAMP": "2026-11-07 01:32 IST",
       "SYMBOL": "THELEELA",
       "CMP": 671.05,
       "CMS_SCORE": 78.1,
@@ -342,7 +342,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-07 00:34 IST",
+      "TIMESTAMP": "2026-11-07 01:32 IST",
       "SYMBOL": "MUFIN",
       "CMP": 136.07,
       "CMS_SCORE": 23.0,
@@ -367,7 +367,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-07 00:34 IST",
+      "TIMESTAMP": "2026-11-07 01:32 IST",
       "SYMBOL": "RATNAVEER",
       "CMP": 379.2,
       "CMS_SCORE": 87.2,
@@ -392,7 +392,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-07 00:34 IST",
+      "TIMESTAMP": "2026-11-07 01:32 IST",
       "SYMBOL": "KRISHANA",
       "CMP": 235.07,
       "CMS_SCORE": 86.8,

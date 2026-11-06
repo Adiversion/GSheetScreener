@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-07 00:32 IST",
+  "timestamp": "2026-11-07 01:31 IST",
   "trade_date": "2026-11-06",
   "trade_date_display": "06-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-07 00:32 IST",
+      "TIMESTAMP": "2026-11-07 01:31 IST",
       "SYMBOL": "SONACOMS",
       "CMP": 915.25,
       "CMS_SCORE": 75.3,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-07 00:32 IST",
+      "TIMESTAMP": "2026-11-07 01:31 IST",
       "SYMBOL": "DIVISLAB",
       "CMP": 10140.5,
       "CMS_SCORE": 81.6,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-07 00:32 IST",
+      "TIMESTAMP": "2026-11-07 01:31 IST",
       "SYMBOL": "ETERNAL",
       "CMP": 358.3,
       "CMS_SCORE": 70.0,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-07 00:32 IST",
+      "TIMESTAMP": "2026-11-07 01:31 IST",
       "SYMBOL": "LUMAXTECH",
       "CMP": 2255.8,
       "CMS_SCORE": 54.7,
