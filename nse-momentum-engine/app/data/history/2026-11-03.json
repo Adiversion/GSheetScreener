@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-07 01:32 IST",
+  "timestamp": "2026-11-07 02:00 IST",
   "trade_date": "2026-11-03",
   "trade_date_display": "03-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-07 01:32 IST",
+      "TIMESTAMP": "2026-11-07 02:00 IST",
       "SYMBOL": "TFCILTD",
       "CMP": 161.89,
       "CMS_SCORE": 92.9,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-07 01:32 IST",
+      "TIMESTAMP": "2026-11-07 02:00 IST",
       "SYMBOL": "ZYDUSLIFE",
       "CMP": 1240.6,
       "CMS_SCORE": 57.5,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-07 01:32 IST",
+      "TIMESTAMP": "2026-11-07 02:00 IST",
       "SYMBOL": "SAREGAMA",
       "CMP": 562.2,
       "CMS_SCORE": 42.5,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-07 01:32 IST",
+      "TIMESTAMP": "2026-11-07 02:00 IST",
       "SYMBOL": "AUROPHARMA",
       "CMP": 1694.5,
       "CMS_SCORE": 33.2,
