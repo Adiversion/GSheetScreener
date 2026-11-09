@@ -1,13 +1,24 @@
 [
   {
+    "date": "2026-11-09",
+    "display_date": "09 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "DELTACORP",
+    "cmp": 81.13,
+    "cms": 55.8,
+    "total_qualified": 71,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-06",
     "display_date": "06 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "SONACOMS",
-    "cmp": 915.25,
-    "cms": 75.3,
-    "total_qualified": 64,
+    "is_latest": false,
+    "winner": "AARTIPHARM",
+    "cmp": 929.1,
+    "cms": 22.4,
+    "total_qualified": 66,
     "regime": "CORRECTION_WATCH"
   },
   {
