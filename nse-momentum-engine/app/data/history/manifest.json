@@ -1,9 +1,20 @@
 [
   {
+    "date": "2026-11-11",
+    "display_date": "11 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "DELTACORP",
+    "cmp": 81.13,
+    "cms": 55.6,
+    "total_qualified": 63,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-09",
     "display_date": "09 Nov 2026",
     "is_today": false,
-    "is_latest": true,
+    "is_latest": false,
     "winner": "DELTACORP",
     "cmp": 81.13,
     "cms": 55.8,
