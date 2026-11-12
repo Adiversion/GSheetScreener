@@ -1,13 +1,24 @@
 [
   {
+    "date": "2026-11-12",
+    "display_date": "12 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "FEDERALBNK",
+    "cmp": 361.6,
+    "cms": 35.4,
+    "total_qualified": 74,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-11",
     "display_date": "11 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "DELTACORP",
-    "cmp": 81.13,
-    "cms": 55.6,
-    "total_qualified": 63,
+    "is_latest": false,
+    "winner": "FEDERALBNK",
+    "cmp": 361.6,
+    "cms": 34.4,
+    "total_qualified": 72,
     "regime": "CORRECTION_WATCH"
   },
   {
