@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-13 00:31 IST",
+  "timestamp": "2026-11-13 01:11 IST",
   "trade_date": "2026-11-12",
   "total_screened": 500,
   "total_qualified": 74,
@@ -475,7 +475,7 @@
       "IS_PRIME": true,
       "SETUP_QUALITY": "PRIME_LOW_RISK",
       "HIGH_52W": 9666.0,
-      "LOW_52W": 5428.52,
+      "LOW_52W": 5428.51,
       "INITIAL_STOP": 8982.87,
       "INITIAL_STOP_PCT": 7.0,
       "M1_TARGET": 11107.85,

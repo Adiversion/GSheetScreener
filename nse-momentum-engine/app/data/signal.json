@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-13 00:31 IST",
+  "timestamp": "2026-11-13 01:11 IST",
   "trade_date": "2026-11-12",
   "trade_date_display": "12-Nov-2026",
   "is_today": false,
@@ -319,7 +319,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-13 00:31 IST",
+      "TIMESTAMP": "2026-11-13 01:11 IST",
       "SYMBOL": "FEDERALBNK",
       "CMP": 361.6,
       "CMS_SCORE": 35.4,
@@ -344,7 +344,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-13 00:31 IST",
+      "TIMESTAMP": "2026-11-13 01:11 IST",
       "SYMBOL": "SIMPLEXINF",
       "CMP": 290.65,
       "CMS_SCORE": 34.9,
@@ -369,7 +369,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-13 00:31 IST",
+      "TIMESTAMP": "2026-11-13 01:11 IST",
       "SYMBOL": "UNIMECH",
       "CMP": 1916.8,
       "CMS_SCORE": 79.7,
@@ -394,7 +394,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-13 00:31 IST",
+      "TIMESTAMP": "2026-11-13 01:11 IST",
       "SYMBOL": "APOLLO",
       "CMP": 454.15,
       "CMS_SCORE": 54.3,
@@ -879,7 +879,7 @@
       "IS_PRIME": true,
       "SETUP_QUALITY": "PRIME_LOW_RISK",
       "HIGH_52W": 9666.0,
-      "LOW_52W": 5428.52,
+      "LOW_52W": 5428.51,
       "INITIAL_STOP": 8982.87,
       "INITIAL_STOP_PCT": 7.0,
       "M1_TARGET": 11107.85,
@@ -5975,10 +5975,10 @@
       "display_date": "11 Nov 2026",
       "is_today": false,
       "is_latest": false,
-      "winner": "DELTACORP",
-      "cmp": 81.13,
-      "cms": 55.6,
-      "total_qualified": 63,
+      "winner": "FEDERALBNK",
+      "cmp": 361.6,
+      "cms": 34.4,
+      "total_qualified": 72,
       "regime": "CORRECTION_WATCH"
     },
     {
