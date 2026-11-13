@@ -1,13 +1,24 @@
 [
   {
+    "date": "2026-11-13",
+    "display_date": "13 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "CUPID",
+    "cmp": 384.8,
+    "cms": 88.6,
+    "total_qualified": 88,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-12",
     "display_date": "12 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "FEDERALBNK",
-    "cmp": 361.6,
-    "cms": 35.4,
-    "total_qualified": 74,
+    "is_latest": false,
+    "winner": "CUPID",
+    "cmp": 384.8,
+    "cms": 86.1,
+    "total_qualified": 82,
     "regime": "CORRECTION_WATCH"
   },
   {
