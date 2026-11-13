@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-14 02:06 IST",
+  "timestamp": "2026-11-14 02:27 IST",
   "trade_date": "2026-11-09",
   "trade_date_display": "09-Nov-2026",
   "is_today": false,
@@ -321,7 +321,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-14 02:06 IST",
+      "TIMESTAMP": "2026-11-14 02:27 IST",
       "SYMBOL": "DELTACORP",
       "CMP": 81.13,
       "CMS_SCORE": 55.8,
@@ -346,7 +346,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-14 02:06 IST",
+      "TIMESTAMP": "2026-11-14 02:27 IST",
       "SYMBOL": "RPEL",
       "CMP": 1919.6,
       "CMS_SCORE": 85.6,
@@ -371,7 +371,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-14 02:06 IST",
+      "TIMESTAMP": "2026-11-14 02:27 IST",
       "SYMBOL": "AUROPHARMA",
       "CMP": 1848.3,
       "CMS_SCORE": 61.7,
@@ -396,7 +396,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-14 02:06 IST",
+      "TIMESTAMP": "2026-11-14 02:27 IST",
       "SYMBOL": "MAHABANK",
       "CMP": 87.68,
       "CMS_SCORE": 17.2,
