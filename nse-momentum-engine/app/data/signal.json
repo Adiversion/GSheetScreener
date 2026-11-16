@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-17 02:39 IST",
+  "timestamp": "2026-11-17 03:16 IST",
   "trade_date": "2026-11-16",
   "trade_date_display": "16-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:16 IST",
       "SYMBOL": "NAZARA",
       "CMP": 425.4,
       "CMS_SCORE": 77.4,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:16 IST",
       "SYMBOL": "ROSSTECH",
       "CMP": 1543.4,
       "CMS_SCORE": 63.5,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:16 IST",
       "SYMBOL": "GESHIP",
       "CMP": 1518.0,
       "CMS_SCORE": 39.7,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:16 IST",
       "SYMBOL": "TIPSMUSIC",
       "CMP": 816.45,
       "CMS_SCORE": 88.1,
@@ -5601,10 +5601,10 @@
       "display_date": "13 Nov 2026",
       "is_today": false,
       "is_latest": false,
-      "winner": "CUPID",
-      "cmp": 384.8,
-      "cms": 88.6,
-      "total_qualified": 88,
+      "winner": "KOPRAN",
+      "cmp": 289.07,
+      "cms": 85.2,
+      "total_qualified": 77,
       "regime": "CORRECTION_WATCH"
     },
     {
@@ -5614,8 +5614,8 @@
       "is_latest": false,
       "winner": "CUPID",
       "cmp": 384.8,
-      "cms": 86.1,
-      "total_qualified": 82,
+      "cms": 85.9,
+      "total_qualified": 81,
       "regime": "CORRECTION_WATCH"
     },
     {
@@ -5626,7 +5626,7 @@
       "winner": "FEDERALBNK",
       "cmp": 361.6,
       "cms": 34.4,
-      "total_qualified": 72,
+      "total_qualified": 71,
       "regime": "CORRECTION_WATCH"
     },
     {

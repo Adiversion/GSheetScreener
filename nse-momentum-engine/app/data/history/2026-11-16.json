@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-17 02:39 IST",
+  "timestamp": "2026-11-17 03:16 IST",
   "trade_date": "2026-11-16",
   "trade_date_display": "16-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:16 IST",
       "SYMBOL": "NAZARA",
       "CMP": 425.4,
       "CMS_SCORE": 77.4,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:16 IST",
       "SYMBOL": "ROSSTECH",
       "CMP": 1543.4,
       "CMS_SCORE": 63.5,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:16 IST",
       "SYMBOL": "GESHIP",
       "CMP": 1518.0,
       "CMS_SCORE": 39.7,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:16 IST",
       "SYMBOL": "TIPSMUSIC",
       "CMP": 816.45,
       "CMS_SCORE": 88.1,

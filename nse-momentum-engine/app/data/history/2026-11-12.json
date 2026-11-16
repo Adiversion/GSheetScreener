@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-17 02:39 IST",
+  "timestamp": "2026-11-17 03:17 IST",
   "trade_date": "2026-11-12",
   "trade_date_display": "12-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:17 IST",
       "SYMBOL": "CUPID",
       "CMP": 384.8,
       "CMS_SCORE": 85.9,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:17 IST",
       "SYMBOL": "ABDL",
       "CMP": 758.0,
       "CMS_SCORE": 69.6,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:17 IST",
       "SYMBOL": "AARTIPHARM",
       "CMP": 1010.5,
       "CMS_SCORE": 62.7,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-17 02:39 IST",
+      "TIMESTAMP": "2026-11-17 03:17 IST",
       "SYMBOL": "SIMPLEXINF",
       "CMP": 302.2,
       "CMS_SCORE": 42.0,
