@@ -1,13 +1,24 @@
 [
   {
+    "date": "2026-11-16",
+    "display_date": "16 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "NAZARA",
+    "cmp": 425.4,
+    "cms": 77.4,
+    "total_qualified": 69,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-13",
     "display_date": "13 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "CUPID",
-    "cmp": 384.8,
-    "cms": 88.6,
-    "total_qualified": 88,
+    "is_latest": false,
+    "winner": "KOPRAN",
+    "cmp": 289.07,
+    "cms": 85.2,
+    "total_qualified": 77,
     "regime": "CORRECTION_WATCH"
   },
   {
@@ -17,8 +28,8 @@
     "is_latest": false,
     "winner": "CUPID",
     "cmp": 384.8,
-    "cms": 86.1,
-    "total_qualified": 82,
+    "cms": 85.9,
+    "total_qualified": 81,
     "regime": "CORRECTION_WATCH"
   },
   {
@@ -29,7 +40,7 @@
     "winner": "FEDERALBNK",
     "cmp": 361.6,
     "cms": 34.4,
-    "total_qualified": 72,
+    "total_qualified": 71,
     "regime": "CORRECTION_WATCH"
   },
   {
