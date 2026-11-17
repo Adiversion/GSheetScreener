@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-18 01:27 IST",
+  "timestamp": "2026-11-18 02:07 IST",
   "trade_date": "2026-11-17",
   "trade_date_display": "17-Nov-2026",
   "is_today": false,
@@ -319,7 +319,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-18 01:27 IST",
+      "TIMESTAMP": "2026-11-18 02:07 IST",
       "SYMBOL": "SGFIN",
       "CMP": 740.25,
       "CMS_SCORE": 47.4,
@@ -344,7 +344,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-18 01:27 IST",
+      "TIMESTAMP": "2026-11-18 02:07 IST",
       "SYMBOL": "RPEL",
       "CMP": 1977.2,
       "CMS_SCORE": 78.0,
@@ -369,7 +369,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-18 01:27 IST",
+      "TIMESTAMP": "2026-11-18 02:07 IST",
       "SYMBOL": "ARTEMISMED",
       "CMP": 348.75,
       "CMS_SCORE": 28.5,
@@ -394,7 +394,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-18 01:27 IST",
+      "TIMESTAMP": "2026-11-18 02:07 IST",
       "SYMBOL": "SGMART",
       "CMP": 983.4,
       "CMS_SCORE": 69.0,
@@ -7106,10 +7106,10 @@
       "display_date": "16 Nov 2026",
       "is_today": false,
       "is_latest": false,
-      "winner": "NAZARA",
-      "cmp": 425.4,
-      "cms": 77.4,
-      "total_qualified": 69,
+      "winner": "SGFIN",
+      "cmp": 740.25,
+      "cms": 46.5,
+      "total_qualified": 83,
       "regime": "CORRECTION_WATCH"
     },
     {
