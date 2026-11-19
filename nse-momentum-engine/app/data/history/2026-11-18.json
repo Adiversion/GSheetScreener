@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-20 03:13 IST",
+  "timestamp": "2026-11-20 03:51 IST",
   "trade_date": "2026-11-18",
   "trade_date_display": "18-Nov-2026",
   "is_today": false,
@@ -317,7 +317,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-20 03:13 IST",
+      "TIMESTAMP": "2026-11-20 03:51 IST",
       "SYMBOL": "MEESHO",
       "CMP": 253.55,
       "CMS_SCORE": 76.2,
@@ -342,7 +342,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-20 03:13 IST",
+      "TIMESTAMP": "2026-11-20 03:51 IST",
       "SYMBOL": "FINEORG",
       "CMP": 5519.0,
       "CMS_SCORE": 47.1,
@@ -367,7 +367,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-20 03:13 IST",
+      "TIMESTAMP": "2026-11-20 03:51 IST",
       "SYMBOL": "PGIL",
       "CMP": 1414.7,
       "CMS_SCORE": 75.6,
@@ -392,7 +392,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-20 03:13 IST",
+      "TIMESTAMP": "2026-11-20 03:51 IST",
       "SYMBOL": "NEOGEN",
       "CMP": 2780.2,
       "CMS_SCORE": 75.3,
