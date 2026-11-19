@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-20 01:41 IST",
+  "timestamp": "2026-11-20 03:12 IST",
   "trade_date": "2026-11-19",
   "trade_date_display": "19-Nov-2026",
   "is_today": false,
@@ -319,7 +319,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-20 01:41 IST",
+      "TIMESTAMP": "2026-11-20 03:12 IST",
       "SYMBOL": "MEESHO",
       "CMP": 253.55,
       "CMS_SCORE": 77.0,
@@ -344,7 +344,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-20 01:41 IST",
+      "TIMESTAMP": "2026-11-20 03:12 IST",
       "SYMBOL": "NEOGEN",
       "CMP": 2780.2,
       "CMS_SCORE": 75.9,
@@ -369,7 +369,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-20 01:41 IST",
+      "TIMESTAMP": "2026-11-20 03:12 IST",
       "SYMBOL": "PGIL",
       "CMP": 1414.7,
       "CMS_SCORE": 75.9,
@@ -394,7 +394,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-20 01:41 IST",
+      "TIMESTAMP": "2026-11-20 03:12 IST",
       "SYMBOL": "INOXINDIA",
       "CMP": 2123.2,
       "CMS_SCORE": 28.5,
