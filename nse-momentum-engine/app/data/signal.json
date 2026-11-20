@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-21 00:41 IST",
+  "timestamp": "2026-11-21 01:15 IST",
   "trade_date": "2026-11-20",
   "trade_date_display": "20-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-21 00:41 IST",
+      "TIMESTAMP": "2026-11-21 01:15 IST",
       "SYMBOL": "SHADOWFAX",
       "CMP": 313.6,
       "CMS_SCORE": 77.0,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-21 00:41 IST",
+      "TIMESTAMP": "2026-11-21 01:15 IST",
       "SYMBOL": "MINDACORP",
       "CMP": 753.2,
       "CMS_SCORE": 43.0,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-21 00:41 IST",
+      "TIMESTAMP": "2026-11-21 01:15 IST",
       "SYMBOL": "LGEINDIA",
       "CMP": 1716.2,
       "CMS_SCORE": 18.7,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-21 00:41 IST",
+      "TIMESTAMP": "2026-11-21 01:15 IST",
       "SYMBOL": "NEOGEN",
       "CMP": 2888.5,
       "CMS_SCORE": 94.5,
@@ -7437,10 +7437,10 @@
       "display_date": "19 Nov 2026",
       "is_today": false,
       "is_latest": false,
-      "winner": "MEESHO",
-      "cmp": 253.55,
-      "cms": 77.0,
-      "total_qualified": 92,
+      "winner": "SHADOWFAX",
+      "cmp": 313.6,
+      "cms": 78.6,
+      "total_qualified": 102,
       "regime": "CORRECTION_WATCH"
     },
     {
