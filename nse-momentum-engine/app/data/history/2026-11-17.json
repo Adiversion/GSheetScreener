@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-21 01:16 IST",
+  "timestamp": "2026-11-21 02:56 IST",
   "trade_date": "2026-11-17",
   "trade_date_display": "17-Nov-2026",
   "is_today": false,
@@ -317,7 +317,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-21 01:16 IST",
+      "TIMESTAMP": "2026-11-21 02:56 IST",
       "SYMBOL": "63MOONS",
       "CMP": 958.9,
       "CMS_SCORE": 77.1,
@@ -342,7 +342,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-21 01:16 IST",
+      "TIMESTAMP": "2026-11-21 02:56 IST",
       "SYMBOL": "YATHARTH",
       "CMP": 1109.55,
       "CMS_SCORE": 64.5,
@@ -367,7 +367,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-21 01:16 IST",
+      "TIMESTAMP": "2026-11-21 02:56 IST",
       "SYMBOL": "WELSPUNLIV",
       "CMP": 265.62,
       "CMS_SCORE": 94.0,
@@ -392,7 +392,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-21 01:16 IST",
+      "TIMESTAMP": "2026-11-21 02:56 IST",
       "SYMBOL": "ARTEMISMED",
       "CMP": 348.75,
       "CMS_SCORE": 26.6,
@@ -6615,7 +6615,7 @@
       "IS_PRIME": true,
       "SETUP_QUALITY": "PRIME_LOW_RISK",
       "HIGH_52W": 10165.0,
-      "LOW_52W": 5428.51,
+      "LOW_52W": 5428.52,
       "INITIAL_STOP": 9133.0,
       "INITIAL_STOP_PCT": 6.9,
       "M1_TARGET": 11287.25,
