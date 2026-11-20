@@ -1,13 +1,24 @@
 [
   {
+    "date": "2026-11-20",
+    "display_date": "20 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "SHADOWFAX",
+    "cmp": 313.6,
+    "cms": 77.0,
+    "total_qualified": 94,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-19",
     "display_date": "19 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "MEESHO",
-    "cmp": 253.55,
-    "cms": 77.0,
-    "total_qualified": 92,
+    "is_latest": false,
+    "winner": "SHADOWFAX",
+    "cmp": 313.6,
+    "cms": 78.6,
+    "total_qualified": 102,
     "regime": "CORRECTION_WATCH"
   },
   {
