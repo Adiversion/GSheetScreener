@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-24 04:17 IST",
+  "timestamp": "2026-11-24 05:05 IST",
   "trade_date": "2026-11-23",
   "trade_date_display": "23-Nov-2026",
   "is_today": false,
@@ -317,7 +317,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-24 04:17 IST",
+      "TIMESTAMP": "2026-11-24 05:05 IST",
       "SYMBOL": "POONAWALLA",
       "CMP": 518.4,
       "CMS_SCORE": 58.8,
@@ -342,7 +342,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-24 04:17 IST",
+      "TIMESTAMP": "2026-11-24 05:05 IST",
       "SYMBOL": "PHOENIXLTD",
       "CMP": 2285.3,
       "CMS_SCORE": 77.2,
@@ -367,7 +367,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-24 04:17 IST",
+      "TIMESTAMP": "2026-11-24 05:05 IST",
       "SYMBOL": "WELSPUNLIV",
       "CMP": 268.78,
       "CMS_SCORE": 88.4,
@@ -392,7 +392,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-24 04:17 IST",
+      "TIMESTAMP": "2026-11-24 05:05 IST",
       "SYMBOL": "DLF",
       "CMP": 785.0,
       "CMS_SCORE": 70.0,
@@ -6859,10 +6859,10 @@
       "display_date": "20 Nov 2026",
       "is_today": false,
       "is_latest": false,
-      "winner": "SHADOWFAX",
-      "cmp": 313.6,
-      "cms": 77.0,
-      "total_qualified": 94,
+      "winner": "POONAWALLA",
+      "cmp": 518.4,
+      "cms": 58.6,
+      "total_qualified": 87,
       "regime": "CORRECTION_WATCH"
     },
     {
