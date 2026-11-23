@@ -1,13 +1,24 @@
 [
   {
+    "date": "2026-11-23",
+    "display_date": "23 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "POONAWALLA",
+    "cmp": 518.4,
+    "cms": 58.8,
+    "total_qualified": 86,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-20",
     "display_date": "20 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "SHADOWFAX",
-    "cmp": 313.6,
-    "cms": 77.0,
-    "total_qualified": 94,
+    "is_latest": false,
+    "winner": "POONAWALLA",
+    "cmp": 518.4,
+    "cms": 58.6,
+    "total_qualified": 87,
     "regime": "CORRECTION_WATCH"
   },
   {
