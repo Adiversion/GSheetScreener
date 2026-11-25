@@ -1,9 +1,20 @@
 [
   {
+    "date": "2026-11-25",
+    "display_date": "25 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "RATNAVEER",
+    "cmp": 403.3,
+    "cms": 97.6,
+    "total_qualified": 85,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-23",
     "display_date": "23 Nov 2026",
     "is_today": false,
-    "is_latest": true,
+    "is_latest": false,
     "winner": "RATNAVEER",
     "cmp": 403.3,
     "cms": 96.4,
