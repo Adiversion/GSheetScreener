@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-27 01:51 IST",
+  "timestamp": "2026-11-27 02:37 IST",
   "trade_date": "2026-11-26",
   "trade_date_display": "26-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-27 01:51 IST",
+      "TIMESTAMP": "2026-11-27 02:37 IST",
       "SYMBOL": "KOPRAN",
       "CMP": 289.52,
       "CMS_SCORE": 77.1,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-27 01:51 IST",
+      "TIMESTAMP": "2026-11-27 02:37 IST",
       "SYMBOL": "ANANDRATHI",
       "CMP": 2380.0,
       "CMS_SCORE": 56.2,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-27 01:51 IST",
+      "TIMESTAMP": "2026-11-27 02:37 IST",
       "SYMBOL": "DLF",
       "CMP": 795.0,
       "CMS_SCORE": 79.6,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-27 01:51 IST",
+      "TIMESTAMP": "2026-11-27 02:37 IST",
       "SYMBOL": "FILATEX",
       "CMP": 111.88,
       "CMS_SCORE": 71.8,
@@ -6309,7 +6309,7 @@
       "IS_PRIME": true,
       "SETUP_QUALITY": "PRIME_LOW_RISK",
       "HIGH_52W": 10360.0,
-      "LOW_52W": 5428.51,
+      "LOW_52W": 5428.52,
       "INITIAL_STOP": 9298.32,
       "INITIAL_STOP_PCT": 6.6,
       "M1_TARGET": 11449.4,
@@ -7150,10 +7150,10 @@
       "display_date": "25 Nov 2026",
       "is_today": false,
       "is_latest": false,
-      "winner": "RATNAVEER",
-      "cmp": 403.3,
-      "cms": 97.6,
-      "total_qualified": 85,
+      "winner": "ARFIN",
+      "cmp": 94.93,
+      "cms": 28.7,
+      "total_qualified": 90,
       "regime": "CORRECTION_WATCH"
     },
     {
