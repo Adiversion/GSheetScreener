@@ -1,13 +1,24 @@
 [
   {
+    "date": "2026-11-26",
+    "display_date": "26 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "KOPRAN",
+    "cmp": 289.52,
+    "cms": 77.1,
+    "total_qualified": 90,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-25",
     "display_date": "25 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "RATNAVEER",
-    "cmp": 403.3,
-    "cms": 97.6,
-    "total_qualified": 85,
+    "is_latest": false,
+    "winner": "ARFIN",
+    "cmp": 94.93,
+    "cms": 28.7,
+    "total_qualified": 90,
     "regime": "CORRECTION_WATCH"
   },
   {
