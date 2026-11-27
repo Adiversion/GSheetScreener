@@ -1,13 +1,24 @@
 [
   {
+    "date": "2026-11-27",
+    "display_date": "27 Nov 2026",
+    "is_today": false,
+    "is_latest": true,
+    "winner": "DLF",
+    "cmp": 807.8,
+    "cms": 79.6,
+    "total_qualified": 100,
+    "regime": "CORRECTION_WATCH"
+  },
+  {
     "date": "2026-11-26",
     "display_date": "26 Nov 2026",
     "is_today": false,
-    "is_latest": true,
-    "winner": "KOPRAN",
-    "cmp": 289.52,
-    "cms": 77.1,
-    "total_qualified": 90,
+    "is_latest": false,
+    "winner": "DLF",
+    "cmp": 807.8,
+    "cms": 79.4,
+    "total_qualified": 99,
     "regime": "CORRECTION_WATCH"
   },
   {
