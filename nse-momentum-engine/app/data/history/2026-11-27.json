@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-28 01:37 IST",
+  "timestamp": "2026-11-28 02:21 IST",
   "trade_date": "2026-11-27",
   "trade_date_display": "27-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-28 01:37 IST",
+      "TIMESTAMP": "2026-11-28 02:21 IST",
       "SYMBOL": "DLF",
       "CMP": 807.8,
       "CMS_SCORE": 79.6,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-28 01:37 IST",
+      "TIMESTAMP": "2026-11-28 02:21 IST",
       "SYMBOL": "JSWINFRA",
       "CMP": 365.65,
       "CMS_SCORE": 44.8,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-28 01:37 IST",
+      "TIMESTAMP": "2026-11-28 02:21 IST",
       "SYMBOL": "ANANDRATHI",
       "CMP": 2410.0,
       "CMS_SCORE": 60.2,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-28 01:37 IST",
+      "TIMESTAMP": "2026-11-28 02:21 IST",
       "SYMBOL": "RKFORGE",
       "CMP": 787.85,
       "CMS_SCORE": 44.4,
