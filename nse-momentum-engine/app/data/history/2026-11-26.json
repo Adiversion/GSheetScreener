@@ -1,6 +1,6 @@
 {
   "status": "ACTIVE_SIGNAL",
-  "timestamp": "2026-11-28 03:43 IST",
+  "timestamp": "2026-11-28 04:19 IST",
   "trade_date": "2026-11-26",
   "trade_date_display": "26-Nov-2026",
   "is_today": false,
@@ -315,7 +315,7 @@
   "rows": [
     {
       "STATUS": "ACTIVE_SIGNAL",
-      "TIMESTAMP": "2026-11-28 03:43 IST",
+      "TIMESTAMP": "2026-11-28 04:19 IST",
       "SYMBOL": "DLF",
       "CMP": 807.8,
       "CMS_SCORE": 79.4,
@@ -340,7 +340,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-28 03:43 IST",
+      "TIMESTAMP": "2026-11-28 04:19 IST",
       "SYMBOL": "JSWINFRA",
       "CMP": 365.65,
       "CMS_SCORE": 44.0,
@@ -365,7 +365,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-28 03:43 IST",
+      "TIMESTAMP": "2026-11-28 04:19 IST",
       "SYMBOL": "ANANDRATHI",
       "CMP": 2410.0,
       "CMS_SCORE": 59.8,
@@ -390,7 +390,7 @@
     },
     {
       "STATUS": "ALTERNATE",
-      "TIMESTAMP": "2026-11-28 03:43 IST",
+      "TIMESTAMP": "2026-11-28 04:19 IST",
       "SYMBOL": "RKFORGE",
       "CMP": 787.85,
       "CMS_SCORE": 43.2,
@@ -2491,7 +2491,7 @@
       "IS_PRIME": true,
       "SETUP_QUALITY": "PRIME_LOW_RISK",
       "HIGH_52W": 10360.0,
-      "LOW_52W": 5428.52,
+      "LOW_52W": 5428.51,
       "INITIAL_STOP": 9601.42,
       "INITIAL_STOP_PCT": 6.5,
       "M1_TARGET": 11810.5,
